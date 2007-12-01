@@ -10,7 +10,7 @@
 # (C) 2007 SliTaz - GNU General Public License.
 # Author : <pankso@slitaz.org>
 #
-VERSION=1.1
+VERSION=1.2pre
 
 # Tazlito configuration variables to be shorter
 # and to use words rater than numbers.
@@ -21,9 +21,9 @@ TOP_DIR=`pwd`
 INITRAMFS=rootfs.gz
 
 # Try to include config file, continue if command is gen-config or exit.
-# The main config is in /etc used by default.
-if [ -f "/etc/slitaz-tools/tazlito.conf" ] ; then
-	CONFIG_FILE="/etc/slitaz-tools/tazlito.conf"
+# The main config used by default is in /etc/tazlito.
+if [ -f "/etc/tazlito/tazlito.conf" ] ; then
+	CONFIG_FILE="/etc/tazlito/tazlito.conf"
 fi
 # Specific distro config file can be put in a distro tree.
 if [ -f "$TOP_DIR/tazlito.conf" ] ; then
