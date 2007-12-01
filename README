@@ -1,0 +1,24 @@
+README for Tazlito - SliTaz Live Tool.                                     2007
+===============================================================================
+
+
+Tazlito est une petite application permettant d'extraire et reconstruire une
+image ISO du LiveCD de SliTaz. Tazlito permet aussi de générer une distribution
+en se basant sur une liste de paquets. Le manuel est dans doc/tazlito.html et
+l'installation se fait via 'make install'. Tazlito utilise un fichier de 
+configuration nommé tazlito.conf, ce fichier peur être dans /etc/slitaz-tools
+ou dans le réperoire depuis lequel on travail. Le manuel est installé dans 
+/usr/share/doc/slitaz-tools/tazlito.html.
+
+
+Installation :
+
+ # make install
+
+Désinstaller :
+ 
+ # make uninstall
+
+
+===============================================================================
+                                                         http://www.slitaz.org/
