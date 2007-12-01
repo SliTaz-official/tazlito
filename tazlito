@@ -19,6 +19,7 @@ LIST_NAME=$2
 TMP_DIR=/tmp/tazlito-$$-$RANDOM
 TOP_DIR=`pwd`
 INITRAMFS=rootfs.gz
+LZMA_INITRAMFS=rootfs.lz
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
@@ -129,10 +130,24 @@ gen_initramfs()
 {
 	cd $ROOTFS
 	echo ""
-	echo -n "Generating initramfs... "
-	find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
-	cd $DISTRO
-	cp $INITRAMFS $ROOTCD/boot
+	# Use lzma if installed
+	if [ -x /usr/bin/lzma ]; then
+		echo -n "Generating cpio archive... "
+		find . -print | cpio -o -H newc > ../rootfs.cpio
+		cd $DISTRO
+		lzma e $ROOTFS.cpio $LZMA_INITRAMFS
+		rm rootfs.cpio
+		cp $LZMA_INITRAMFS $ROOTCD/boot
+		# Remove eventual gziped initramfs and sed isolinux.cfg for the path
+		# to lzma rootfs ($LZMA_INITRAMFS)
+		rm -f $ROOTCD/boot/$INITRAMFS
+		sed -i s/$INITRAMFS/$LZMA_INITRAMFS/g $ROOTCD/boot/isolinux/isolinux.cfg
+	else
+		echo -n "Generating gziped initramfs... "
+		find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
+		cd $DISTRO
+		cp $INITRAMFS $ROOTCD/boot
+	fi
 }
 
 # Print ISO and rootfs size.
@@ -144,7 +159,11 @@ distro_stats()
 	echo "Build date      : `date +%Y%m%d\ \at\ \%H:%M:%S`"
 	echo "Packages        : `ls -1 $ROOTFS/var/lib/tazpkg/installed | wc -l`"
 	echo "Rootfs size     : `du -sh $ROOTFS`"
-	echo "Initramfs size  : `du -sh $INITRAMFS`"
+	if [ -f $LZMA_INITRAMFS ]; then
+		echo "Initramfs size  : `du -sh $LZMA_INITRAMFS`"
+	else
+		echo "Initramfs size  : `du -sh $INITRAMFS`"
+	fi
 	echo "ISO image size  : `du -sh $ISO_NAME.iso`"
 	echo "================================================================================"
 	echo ""
