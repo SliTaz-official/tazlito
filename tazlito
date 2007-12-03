@@ -478,6 +478,7 @@ Distro directory    : $DISTRO"
 			if [ -d "$ROOTFS" ] ; then
 				echo -n "Removing the rootfs..."
 				rm -f $DISTRO/$INITRAMFS
+				rm -f $DISTRO/$LZMA_INITRAMFS
 				rm -rf $ROOTFS && status
 			fi
 			if [ -d "$ROOTCD" ] ; then
@@ -513,6 +514,11 @@ Distro directory    : $DISTRO"
 			status
 		else
 			echo "Hacker is already in : $ROOTFS/etc/passwd"
+		fi
+		# Hacker can listen to music
+		#
+		if grep -q audio $ROOTFS/etc/group; then
+			sed -i s/'audio:x:20:'/'audio:x:20:hacker'/ $ROOTFS/etc/group
 		fi
 		# /home/hacker files.
 		#
