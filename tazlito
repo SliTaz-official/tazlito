@@ -8,9 +8,9 @@
 # and the configuration file manipulation.
 #
 # (C) 2007 SliTaz - GNU General Public License.
-# Author : <pankso@slitaz.org>
+# Initial author : <pankso@slitaz.org>
 #
-VERSION=1.2pre
+VERSION=1.2
 
 # Tazlito configuration variables to be shorter
 # and to use words rater than numbers.
