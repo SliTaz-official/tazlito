@@ -20,6 +20,8 @@ TMP_DIR=/tmp/tazlito-$$-$RANDOM
 TOP_DIR=`pwd`
 INITRAMFS=rootfs.gz
 LZMA_INITRAMFS=rootfs.lz
+LOCALSTATE=/var/lib/tazpkg
+INSTALLED=$LOCALSTATE/installed
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
@@ -98,6 +100,15 @@ check_root()
 	fi
 }
 
+# Check for the rootfs tree.
+check_rootfs()
+{
+	if [ ! -d "$ROOTFS" ] ; then
+		echo -e "\nUnable to find a distro rootfs to check.\n"
+		exit 0
+	fi
+}
+
 # Check for the boot dir into the root CD tree.
 verify_rootcd()
 {
@@ -133,11 +144,9 @@ gen_initramfs()
 	# Use lzma if installed
 	if [ -x /usr/bin/lzma ]; then
 		echo -n "Generating cpio archive... "
-		find . -print | cpio -o -H newc > ../rootfs.cpio
+		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$LZMA_INITRAMFS
 		cd $DISTRO
-		lzma e $ROOTFS.cpio $LZMA_INITRAMFS
-		rm rootfs.cpio
-		cp $LZMA_INITRAMFS $ROOTCD/boot
+		mv $LZMA_INITRAMFS $ROOTCD/boot
 		# Remove eventual gziped initramfs and sed isolinux.cfg for the path
 		# to lzma rootfs ($LZMA_INITRAMFS)
 		rm -f $ROOTCD/boot/$INITRAMFS
@@ -146,7 +155,7 @@ gen_initramfs()
 		echo -n "Generating gziped initramfs... "
 		find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
 		cd $DISTRO
-		cp $INITRAMFS $ROOTCD/boot
+		mv $INITRAMFS $ROOTCD/boot
 	fi
 }
 
@@ -160,9 +169,9 @@ distro_stats()
 	echo "Packages        : `ls -1 $ROOTFS/var/lib/tazpkg/installed | wc -l`"
 	echo "Rootfs size     : `du -sh $ROOTFS`"
 	if [ -f $LZMA_INITRAMFS ]; then
-		echo "Initramfs size  : `du -sh $LZMA_INITRAMFS`"
+		echo "Initramfs size  : `du -sh $ROOTCD/boot/$LZMA_INITRAMFS`"
 	else
-		echo "Initramfs size  : `du -sh $INITRAMFS`"
+		echo "Initramfs size  : `du -sh $ROOTCD/boot/$INITRAMFS`"
 	fi
 	echo "ISO image size  : `du -sh $ISO_NAME.iso`"
 	echo "================================================================================"
@@ -244,7 +253,6 @@ Distro directory    : $DISTRO"
 		# a empty config file and sed it.
 		#
 		if [ -f "tazlito.conf" ] ; then
-			continue
 			rm tazlito.conf
 		else
 			if test $(id -u) = 0 ; then
@@ -260,17 +268,17 @@ Distro directory    : $DISTRO"
 		echo -e "\033[1mConfiguring :\033[0m `pwd`/tazlito.conf"
 		echo "================================================================================"
 		# ISO name.
-		echo -n "ISO name            : " ; read anser
-		sed -i s#'ISO_NAME=\"\"'#"ISO_NAME=\"$anser\""# tazlito.conf
+		echo -n "ISO name            : " ; read answer
+		sed -i s#'ISO_NAME=\"\"'#"ISO_NAME=\"$answer\""# tazlito.conf
 		# Volum name.
-		echo -n "Volum name          : " ; read anser
-		sed -i s/'VOLUM_NAME=\"SliTaz\"'/"VOLUM_NAME=\"$anser\""/ tazlito.conf
+		echo -n "Volum name          : " ; read answer
+		sed -i s/'VOLUM_NAME=\"SliTaz\"'/"VOLUM_NAME=\"$answer\""/ tazlito.conf
 		# Packages repository.
-		echo -n "Packages repository : " ; read anser
-		sed -i s#'PACKAGES_REPOSITORY=\"\"'#"PACKAGES_REPOSITORY=\"$anser\""# tazlito.conf
+		echo -n "Packages repository : " ; read answer
+		sed -i s#'PACKAGES_REPOSITORY=\"\"'#"PACKAGES_REPOSITORY=\"$answer\""# tazlito.conf
 		# Distro path.
-		echo -n "Distro path         : " ; read anser
-		sed -i s#'DISTRO=\"\"'#"DISTRO=\"$anser\""# tazlito.conf
+		echo -n "Distro path         : " ; read answer
+		sed -i s#'DISTRO=\"\"'#"DISTRO=\"$answer\""# tazlito.conf
 		echo "================================================================================"
 		echo "Config file is ready to use."
 		echo "You can now extract an ISO or generate a distro."
@@ -336,14 +344,13 @@ Distro directory    : $DISTRO"
 		cp -a $TMP_DIR/boot/isolinux $TARGET/rootcd/boot
 		status
 		echo -n "Copying the rootfs..."
-		cp $TMP_DIR/boot/rootfs.gz $TARGET/rootcd/boot
-		cp $TMP_DIR/boot/rootfs.gz $TARGET/rootfs
+		cp $TMP_DIR/boot/rootfs.?z $TARGET/rootcd/boot
 		status
 		# Exract initramfs.
 		cd $TARGET/rootfs
 		echo -n "Extracting the rootfs... "
-		gzip -d rootfs.gz && cpio -id < rootfs
-		rm rootfs
+		( zcat ../rootcd/boot/rootfs.gz 2>/dev/null || \
+		  lzma d ../rootcd/boot/rootfs.lz -so ) | cpio -id
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
 		cd ..
@@ -410,6 +417,7 @@ Distro directory    : $DISTRO"
 		sleep 2
 		for pkg in $LIST
 		do
+			local here=`pwd`
 			# First copy and extract the package in tmp dir.
 			pkg=${pkg%.tazpkg}
 			mkdir -p $TMP_DIR
@@ -417,21 +425,21 @@ Distro directory    : $DISTRO"
 			echo ""
 			echo -n "Installing $PACKAGE... "
 			cpio -id < $pkg.tazpkg && rm -f $pkg.tazpkg
-			gzip -d fs.cpio.gz
 			echo -n "Extracting the file system... "
-			cpio -id < fs.cpio && rm fs.cpio
+			zcat fs.cpio.gz | cpio -id && rm fs.cpio.gz
 			# Copy all packages fs and receipt to the rootfs.
 			echo -n "Copying files to the rootfs..."
 			cp -a fs/* $ROOTFS
 			. $PWD/receipt
-			mkdir -p $ROOTFS/var/lib/tazpkg/installed/$PACKAGE
+			mkdir -p $ROOTFS$INSTALLED/$PACKAGE
 			# Copy the receipt, list of files and description if exist.
-			cp receipt $ROOTFS/var/lib/tazpkg/installed/$PACKAGE
-			cp files.list $ROOTFS/var/lib/tazpkg/installed/$PACKAGE
+			cp receipt $ROOTFS$INSTALLED/$PACKAGE
+			cp files.list $ROOTFS$INSTALLED/$PACKAGE
 			if [ -f "description.txt" ] ; then
-				cp description.txt $ROOTFS/var/lib/tazpkg/installed/$PACKAGE
+				cp description.txt $ROOTFS$INSTALLED/$PACKAGE
 			fi
 			status
+			cd $here
 			# Remove tmp dir to get a empty one for the next package.
 			rm -rf $TMP_DIR
 		done
@@ -440,7 +448,8 @@ Distro directory    : $DISTRO"
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
 		if [ -d "$ADDFILES/rootfs" ] ; then
 			echo -n "Copying addfiles content to the rootfs... "
-			cp -a $ADDFILES/rootfs/* $ROOTFS && status
+			cp -a $ADDFILES/rootfs/* $ROOTFS
+			status
 		fi
 		echo "Root file system is generated..."
 		# Root CD part.
@@ -453,14 +462,15 @@ Distro directory    : $DISTRO"
 			echo -n "Moving the boot directory..."
 			mv $ROOTFS/boot $ROOTCD
 			cd $ROOTCD/boot
-			mv vmlinuz-* bzImage
+			ln vmlinuz-* bzImage
 			status
 		fi
 		cd $DISTRO
 		# Copy all files from $ADDFILES/rootcd to the rootcd.
 		if [ -d "$ADDFILES/rootcd" ] ; then
 			echo -n "Copying addfiles content to the rootcd... "
-			cp -a $ADDFILES/rootcd/* $ROOTCD && status
+			cp -a $ADDFILES/rootcd/* $ROOTCD
+			status
 		fi
 		# Initramfs and ISO image stuff.
 		gen_initramfs
@@ -479,14 +489,17 @@ Distro directory    : $DISTRO"
 				echo -n "Removing the rootfs..."
 				rm -f $DISTRO/$INITRAMFS
 				rm -f $DISTRO/$LZMA_INITRAMFS
-				rm -rf $ROOTFS && status
+				rm -rf $ROOTFS
+				status
 			fi
 			if [ -d "$ROOTCD" ] ; then
 				echo -n "Removing the rootcd..."
-				rm -rf $ROOTCD && status
+				rm -rf $ROOTCD
+				status
 			fi
 			echo -n "Removing eventual ISO image..."
-			rm -f $DISTRO/$ISO_NAME.iso && status
+			rm -f $DISTRO/$ISO_NAME.iso
+			status
 		fi
 		echo "================================================================================"
 		echo ""
@@ -541,16 +554,13 @@ Distro directory    : $DISTRO"
 	check-distro)
 		# Check for a few LiveCD needed files not installed by packages.
 		#
-		if [ ! -d "$ROOTFS" ] ; then
-			echo -e "\nUnable to find a distro rootfs to check.\n"
-			exit 0
-		fi
+		check_rootfs
 		echo ""
 		echo -e "\033[1mChecking distro :\033[0m $ROOTFS"
 		echo "================================================================================"
 		# SliTaz release info.
 		if [ ! -f "$ROOTFS/etc/slitaz-release" ]; then
-			echo "Missing release info : /var/lib/tazpkg/mirror"
+			echo "Missing release info : /etc/slitaz-release"
 		else
 			release=`cat $ROOTFS/etc/slitaz-release`
 			echo -n "Release      : $release"
@@ -599,8 +609,8 @@ Distro directory    : $DISTRO"
 		echo "ISO image     : $iso"
 		echo "================================================================================"
 		echo ""
-		echo -n "Burn ISO image (y/N) ? "; read anser
-		if [ "$anser" == "y" ]; then
+		echo -n "Burn ISO image (y/N) ? "; read answer
+		if [ "$answer" == "y" ]; then
 			echo ""
 			echo "Starting Wodim to burn the iso..." && sleep 2
 			echo "================================================================================"

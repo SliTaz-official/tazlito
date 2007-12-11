@@ -51,14 +51,14 @@ répertoire courant. Ce fichier de configuration peut facilement être généré
 automatiquement par Tazlito, il spécifie le nom de l'image ISO, le nom du
 volume, le préparateur, le chemin vers le repositoire des paquets et celui
 vers la distribution. Tazlito permet aussi de configurer un répertoire
-contenant des fichiers additionnels, qui seront copier dans le LiveCD lors
+contenant des fichiers additionnels, qui seront copiés dans le LiveCD lors
 de la génération de la distribution.
 </p>
 <p>
 Tazlito fait partie des outils SliTaz (slitaz-tools), distribué sous licence
-libre GNU gpl v3, installé par défaut sur SliTaz et installé/testé avec succès
+libre GNU gpl v3, installé par défaut sur SliTaz et installé/testé avec succés
 sur Debian GNU/Linux. Vous trouverez aussi un complément d'informations au
-sujet de création de sa propre version du LiveCD, via le livre de cuisine
+sujet de la création de votre propre version du LiveCD, via le livre de cuisine
 (Cookbook) de SliTaz (http://www.slitaz.org/doc/cookbook/).
 </p>
 
@@ -73,7 +73,7 @@ courte description :
 </pre>
 <h3><font color="#6c0023">stats</font></h3>
 <p>
-Stats affiche les variables de configurations, le chemim vers les différents
+Stats affiche les variables de configuration, le chemin vers les différents
 fichiers et répertoires et les informations sur l'image ISO :
 </p>
 <pre>
@@ -82,8 +82,8 @@ fichiers et répertoires et les informations sur l'image ISO :
 <h3><font color="#6c0023">gen-config</font></h3>
 <p>
 La commande 'gen-config' vous permet de générer une fichier de configuration
-prête à être édité. Par défaut le fichier est créé dans le répertoire courant
-et peut aussi être dans un autre répertoire si spécifié :
+prêt à être édité. Par défaut le fichier est créé dans le répertoire courant
+et peut aussi l'être dans un autre répertoire si spécifié :
 </p>
 <pre>
  # tazlito gen-config
@@ -100,7 +100,7 @@ système ou celui trouvé dans le répertoire courant :
 <h3><font color="#6c0023">gen-iso</font></h3>
 <p>
 La commande 'gen-iso' pour <em>Generate ISO</em> permet de générer une nouvelle
-image ISO du LiveCD suite à des modifications et ajouter dans le sysstème
+image ISO du LiveCD suite à des modifications et ajouter dans le système
 racine du cdrom. Pour fonctionner cette commande a besoin d'un répertoire
 contenant la structure du système Live, cette structure peur facilement être
 construite avec la commande 'extract-distro', modifiée et reconstruite via :
@@ -110,7 +110,7 @@ construite avec la commande 'extract-distro', modifiée et reconstruite via :
 </pre>
 <h3><font color="#6c0023">gen-initiso</font></h3>
 <p>
-La commande 'gen-initiso' va faire le même travil que 'gen-iso' mais en
+La commande 'gen-initiso' va faire le même travail que 'gen-iso' mais en
 reconstruisant préalablement l'initramfs compressé du système. L'initramfs
 contient tous le système racine de la distribution et doit être reconstruite
 en cas de modifications sur les fichiers.
@@ -132,10 +132,10 @@ d'utilisation :
 <h3><font color="#6c0023">gen-distro</font></h3>
 <p>
 La commande <em>Generate Distribution</em> permet de générer la structure du
-système Live et une image ISO via une liste paquets. Pour fonctionner, cette
+système Live et une image ISO via une liste de paquets. Pour fonctionner, cette
 commande a besoin d'une liste de paquets, d'un répertoire contenant tous les
 paquets (.tazpkg) de la liste et d'un répertoire pour générer la distribution.
-Le chemin vers les différents répertoires sont a configurer dans le fichier de
+Le chemin vers les différents répertoires sont à configurer dans le fichier de
 configuration utilisé et les paquets peuvent être téléchargés depuis les
 miroirs de SliTaz ou générés par Tazwok. Pour générer une distro :
 </p>
@@ -144,7 +144,7 @@ miroirs de SliTaz ou générés par Tazwok. Pour générer une distro :
 </pre>
 <h3><font color="#6c0023">clean-distro</font></h3>
 <p>
-Supprime tous les fichiers généré ou extrait de la structure du LiveCD :
+Supprime tous les fichiers générés ou extraits de la structure du LiveCD :
 </p>
 <pre>
  # tazlito clean-distro
