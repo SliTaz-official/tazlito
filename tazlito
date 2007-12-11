@@ -22,6 +22,8 @@ INITRAMFS=rootfs.gz
 LZMA_INITRAMFS=rootfs.lz
 LOCALSTATE=/var/lib/tazpkg
 INSTALLED=$LOCALSTATE/installed
+CACHE_DIR=/var/cache/tazpkg
+MIRROR=$LOCALSTATE/mirror
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
@@ -85,9 +87,28 @@ status()
 	fi
 	echo -e "\\033[0;39m ]"
 }
+
+yesorno()
+{
+	echo -n "$1"
+	case "$DEFAULT_ANSWER" in
+	Y|y) answer="y";;
+	N|n) answer="n";;
+	*) read answer;;
+	esac
+}
+
 todomsg()
 {
 	echo -e "\\033[70G[ \\033[1;31mTODO\\033[0;39m ]"
+}
+
+# Download a file trying each mirror
+download()
+{
+	for i in $(cat $MIRROR); do
+		wget $i$@
+	done
 }
 
 # Check if user is root.
@@ -205,6 +226,9 @@ DISTRO=""
 # Path to the directory contening additional files
 # to copy into the rootfs and rootcd of the LiveCD.
 ADDFILES="$DISTRO/addfiles"
+
+# Default answer for binary question (Y or N)
+DEFAULT_ANSWER="ASK"
 EOF
 }
 
@@ -408,7 +432,11 @@ Distro directory    : $DISTRO"
 			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ] ; then
 				echo -e "\nUnable to find $pkg in the repository."
 				echo -e "Path : $PACKAGES_REPOSITORY\n"
-				exit 0
+				if [ -f $MIRROR ]; then
+					yesorno "Download packages from mirror (Y/n) ? "
+					[ "$answer" = "n" ] || break
+				fi
+				exit 1
 			fi
 		done
 		# Root fs stuff.
@@ -421,6 +449,19 @@ Distro directory    : $DISTRO"
 			# First copy and extract the package in tmp dir.
 			pkg=${pkg%.tazpkg}
 			mkdir -p $TMP_DIR
+			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
+				# look for package in cache
+				if [ -f $CACHE_DIR/$pkg.tazpkg ]; then
+					ln -s $CACHE_DIR/$pkg.tazpkg $PACKAGES_REPOSITORY
+				else
+				# get package from mirror
+					download $pkg.tazpkg && mv $pkg.tazpkg $PACKAGE_REPOSITORY
+				fi
+			fi
+			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
+				echo "Missing package $pkg."
+				exit 1
+			fi
 			cp $PACKAGES_REPOSITORY/$pkg.tazpkg $TMP_DIR && cd $TMP_DIR
 			echo ""
 			echo -n "Installing $PACKAGE... "
@@ -609,7 +650,7 @@ Distro directory    : $DISTRO"
 		echo "ISO image     : $iso"
 		echo "================================================================================"
 		echo ""
-		echo -n "Burn ISO image (y/N) ? "; read answer
+		yesorno "Burn ISO image (y/N) ? "
 		if [ "$answer" == "y" ]; then
 			echo ""
 			echo "Starting Wodim to burn the iso..." && sleep 2
