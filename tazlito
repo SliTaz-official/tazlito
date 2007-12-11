@@ -19,7 +19,6 @@ LIST_NAME=$2
 TMP_DIR=/tmp/tazlito-$$-$RANDOM
 TOP_DIR=`pwd`
 INITRAMFS=rootfs.gz
-LZMA_INITRAMFS=rootfs.lz
 LOCALSTATE=/var/lib/tazpkg
 INSTALLED=$LOCALSTATE/installed
 CACHE_DIR=/var/cache/tazpkg
@@ -179,20 +178,14 @@ gen_initramfs()
 	echo ""
 	# Use lzma if installed
 	if [ -x /usr/bin/lzma ]; then
-		echo -n "Generating cpio archive... "
-		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$LZMA_INITRAMFS
-		cd $DISTRO
-		mv $LZMA_INITRAMFS $ROOTCD/boot
-		# Remove eventual gziped initramfs and sed isolinux.cfg for the path
-		# to lzma rootfs ($LZMA_INITRAMFS)
-		rm -f $ROOTCD/boot/$INITRAMFS
-		sed -i s/$INITRAMFS/$LZMA_INITRAMFS/g $ROOTCD/boot/isolinux/isolinux.cfg
+		echo -n "Generating lzma'ed initramfs... "
+		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$INITRAMFS
 	else
 		echo -n "Generating gziped initramfs... "
 		find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
-		cd $DISTRO
-		mv $INITRAMFS $ROOTCD/boot
 	fi
+	cd $DISTRO
+	mv $INITRAMFS $ROOTCD/boot
 }
 
 # Print ISO and rootfs size.
@@ -204,11 +197,7 @@ distro_stats()
 	echo "Build date      : `date +%Y%m%d\ \at\ \%H:%M:%S`"
 	echo "Packages        : `ls -1 $ROOTFS/var/lib/tazpkg/installed | wc -l`"
 	echo "Rootfs size     : `du -sh $ROOTFS`"
-	if [ -f $LZMA_INITRAMFS ]; then
-		echo "Initramfs size  : `du -sh $ROOTCD/boot/$LZMA_INITRAMFS`"
-	else
-		echo "Initramfs size  : `du -sh $ROOTCD/boot/$INITRAMFS`"
-	fi
+	echo "Initramfs size  : `du -sh $ROOTCD/boot/$INITRAMFS`"
 	echo "ISO image size  : `du -sh $ISO_NAME.iso`"
 	echo "================================================================================"
 	echo ""
@@ -309,8 +298,8 @@ Distro directory    : $DISTRO"
 		# ISO name.
 		echo -n "ISO name            : " ; read answer
 		sed -i s#'ISO_NAME=\"\"'#"ISO_NAME=\"$answer\""# tazlito.conf
-		# Volum name.
-		echo -n "Volum name          : " ; read answer
+		# Volume name.
+		echo -n "Volume name         : " ; read answer
 		sed -i s/'VOLUM_NAME=\"SliTaz\"'/"VOLUM_NAME=\"$answer\""/ tazlito.conf
 		# Packages repository.
 		echo -n "Packages repository : " ; read answer
@@ -389,7 +378,7 @@ Distro directory    : $DISTRO"
 		cd $TARGET/rootfs
 		echo -n "Extracting the rootfs... "
 		( zcat ../rootcd/boot/rootfs.gz 2>/dev/null || \
-		  lzma d ../rootcd/boot/rootfs.lz -so ) | cpio -id
+		  lzma d ../rootcd/boot/rootfs.?z -so ) | cpio -id
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
 		cd ..
@@ -544,7 +533,6 @@ Distro directory    : $DISTRO"
 			if [ -d "$ROOTFS" ] ; then
 				echo -n "Removing the rootfs..."
 				rm -f $DISTRO/$INITRAMFS
-				rm -f $DISTRO/$LZMA_INITRAMFS
 				rm -rf $ROOTFS
 				status
 			fi
