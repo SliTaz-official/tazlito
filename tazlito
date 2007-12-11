@@ -111,6 +111,17 @@ download()
 	done
 }
 
+# exec hooks provided by some packages
+genisohooks()
+{
+	local here=`pwd`
+	cd $ROOTFS
+	for i in $(ls etc/tazlito/*.$1 2> /dev/null); do
+		. $i $ROOTCD
+	done
+	cd $here
+}
+
 # Check if user is root.
 check_root()
 {
@@ -124,8 +135,8 @@ check_root()
 # Check for the rootfs tree.
 check_rootfs()
 {
-	if [ ! -d "$ROOTFS" ] ; then
-		echo -e "\nUnable to find a distro rootfs to check.\n"
+	if [ ! -d "$ROOTFS/etc" ] ; then
+		echo -e "\nUnable to find a distro rootfs...\n"
 		exit 0
 	fi
 }
@@ -142,6 +153,8 @@ verify_rootcd()
 # Gen a new ISO image using isolinux.
 gen_livecd_isolinux()
 {
+	# Some packages may want to alter iso
+	genisohooks iso
 	if [ ! -f "$ROOTCD/boot/isolinux/isolinux.bin" ] ; then
 		echo -e "\nUnable to find isolinux binary.\n"
 		exit 0
@@ -160,6 +173,8 @@ gen_livecd_isolinux()
 # Gen a new initramfs from the root file system.
 gen_initramfs()
 {
+	# Some packages may want to alter rootfs
+	genisohooks rootfs
 	cd $ROOTFS
 	echo ""
 	# Use lzma if installed
