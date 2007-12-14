@@ -121,6 +121,33 @@ genisohooks()
 	cd $here
 }
 
+# echo the package name if the tazpkg is already installed
+installed_package_name()
+{
+	local tazpkg
+	local package
+	local VERSION
+	tazpkg=$1
+	# try du find package name and version to be able
+	# to repack it from installation
+	# a dash (-) can exist in name *and* in version
+	package=${tazpkg%-*}
+	i=$package
+	while true; do
+		VERSION=""
+		eval $(grep -s ^VERSION= $INSTALLED/$i/receipt)
+		if [ "$i-$VERSION" = "$tazpkg" ]; then
+			echo $i
+			break
+		fi
+		case "$i" in
+		*-*);;
+		*) break;;
+		esac
+		i=${i%-*}
+	done
+}
+
 # Check if user is root.
 check_root()
 {
@@ -423,7 +450,7 @@ Distro directory    : $DISTRO"
 			fi
 		fi
 		# Exit if no list name.
-		if [ "$LIST_NAME" = "" ] ; then
+		if [ ! -f "$LIST_NAME" ]; then
 			echo -e "\nNo packages list found or specified. Please read the doc.\n"
 			exit 0
 		fi
@@ -431,21 +458,40 @@ Distro directory    : $DISTRO"
 		echo ""
 		echo -e "\033[1mTazlito generating a distro\033[0m"
 		echo "================================================================================"
+		# Misc checks
+		[ -n "$PACKAGES_REPOSITORY" ] || PACKAGES_REPOSITORY="."
+		[ -d $PACKAGES_REPOSITORY ] || mkdir -p $PACKAGES_REPOSITORY
 		# Get the list of packages using cat for a file list.
 		LIST=`cat $LIST_NAME`
 		# Verify if all packages in list are presents in $PACKAGES_REPOSITORY.
+		REPACK=""
+		DOWNLOAD=""
 		for pkg in $LIST
 		do
 			pkg=${pkg%.tazpkg}
-			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ] ; then
-				echo -e "\nUnable to find $pkg in the repository."
-				echo -e "Path : $PACKAGES_REPOSITORY\n"
-				if [ -f $MIRROR ]; then
-					yesorno "Download packages from mirror (Y/n) ? "
-					[ "$answer" = "n" ] || break
-				fi
-				exit 1
+			[ -f $PACKAGES_REPOSITORY/$pkg.tazpkg ] && continue
+			PACKAGE=$(installed_package_name $pkg)
+			[ -n "$PACKAGE" -a "$REPACK" = "y" ] && continue
+			[ -z "$PACKAGE" -a -n "$DOWNLOAD" ] && continue
+			echo -e "\nUnable to find $pkg in the repository."
+			echo -e "Path : $PACKAGES_REPOSITORY\n"
+			if [ -n "$PACKAGE" -a -z "$REPACK" ]; then
+				yesorno "Repack packages from rootfs (y/N) ? "
+				REPACK="$answer"
+				[ "$answer" = "y" ] || REPACK="n"
+				[ "$DOWNLOAD" = "y" ] && break
 			fi
+			if [ -f $MIRROR -a -z "$DOWNLOAD" ]; then
+				yesorno "Download packages from mirror (Y/n) ? "
+				DOWNLOAD="$answer"
+				if [ "$answer" = "n" ]; then
+					[ -z "$PACKAGE" ] && exit 1
+				else
+					DOWNLOAD="y"
+					[ -n "$REPACK" ] && break
+				fi
+			fi
+			[ "$REPACK" = "n" -a "$DOWNLOAD" = "n" ] && exit 1
 		done
 		# Root fs stuff.
 		echo "Preparing the rootfs directory..."
@@ -455,15 +501,23 @@ Distro directory    : $DISTRO"
 		do
 			# First copy and extract the package in tmp dir.
 			pkg=${pkg%.tazpkg}
+			PACKAGE=$(installed_package_name $pkg)
 			mkdir -p $TMP_DIR
 			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
 				# look for package in cache
 				if [ -f $CACHE_DIR/$pkg.tazpkg ]; then
 					ln -s $CACHE_DIR/$pkg.tazpkg $PACKAGES_REPOSITORY
-				else
-				# get package from mirror
-					download $pkg.tazpkg && mv $pkg.tazpkg $PACKAGE_REPOSITORY
+				# look for package in running distribution
+				elif [ -n "$PACKAGE" -a "$REPACK" = "y" ]; then
+					tazpkg repack $PACKAGE && \
+					  mv $pkg.tazpkg $PACKAGES_REPOSITORY 
 				fi
+			fi
+			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
+				# get package from mirror
+				[ "$DOWNLOAD" = "y" ] && \
+				download $pkg.tazpkg && \
+				mv $pkg.tazpkg $PACKAGES_REPOSITORY
 			fi
 			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
 				echo "Missing package $pkg."
