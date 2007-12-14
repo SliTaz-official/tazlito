@@ -366,7 +366,11 @@ Distro directory    : $DISTRO"
 		mkdir -p $TARGET/rootfs
 		mkdir -p $TARGET/rootcd/boot
 		echo -n "Copying the Linux kernel..."
-		cp $TMP_DIR/boot/bzImage $TARGET/rootcd/boot
+		if cp $TMP_DIR/boot/vmlinuz* $TARGET/rootcd/boot 2> /dev/null; then
+			ln $TARGET/rootcd/vmlinuz* $TARGET/rootcd/bzImage
+		else
+			cp $TMP_DIR/boot/bzImage $TARGET/rootcd/boot
+		fi
 		status
 		echo -n "Copying isolinux files..."
 		cp -a $TMP_DIR/boot/isolinux $TARGET/rootcd/boot
