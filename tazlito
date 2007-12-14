@@ -453,7 +453,6 @@ Distro directory    : $DISTRO"
 		sleep 2
 		for pkg in $LIST
 		do
-			local here=`pwd`
 			# First copy and extract the package in tmp dir.
 			pkg=${pkg%.tazpkg}
 			mkdir -p $TMP_DIR
@@ -470,27 +469,7 @@ Distro directory    : $DISTRO"
 				echo "Missing package $pkg."
 				exit 1
 			fi
-			cp $PACKAGES_REPOSITORY/$pkg.tazpkg $TMP_DIR && cd $TMP_DIR
-			echo ""
-			echo -n "Installing $PACKAGE... "
-			cpio -id < $pkg.tazpkg && rm -f $pkg.tazpkg
-			echo -n "Extracting the file system... "
-			zcat fs.cpio.gz | cpio -id && rm fs.cpio.gz
-			# Copy all packages fs and receipt to the rootfs.
-			echo -n "Copying files to the rootfs..."
-			cp -a fs/* $ROOTFS
-			. $PWD/receipt
-			mkdir -p $ROOTFS$INSTALLED/$PACKAGE
-			# Copy the receipt, list of files and description if exist.
-			cp receipt $ROOTFS$INSTALLED/$PACKAGE
-			cp files.list $ROOTFS$INSTALLED/$PACKAGE
-			if [ -f "description.txt" ] ; then
-				cp description.txt $ROOTFS$INSTALLED/$PACKAGE
-			fi
-			status
-			cd $here
-			# Remove tmp dir to get a empty one for the next package.
-			rm -rf $TMP_DIR
+			yes "" | tazpkg install $PACKAGES_REPOSITORY/$pkg.tazpkg --root=$ROOTFS
 		done
 		echo ""
 		cd $DISTRO
