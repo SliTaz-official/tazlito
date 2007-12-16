@@ -17,6 +17,7 @@ VERSION=1.2
 COMMAND=$1
 LIST_NAME=$2
 TMP_DIR=/tmp/tazlito-$$-$RANDOM
+TMP_MNT=/media/tazlito-$$-$RANDOM
 TOP_DIR=`pwd`
 INITRAMFS=rootfs.gz
 LOCALSTATE=/var/lib/tazpkg
@@ -121,6 +122,15 @@ genisohooks()
 	cd $here
 }
 
+cleanup()
+{
+	if [ -d $TMP_MNT ]; then
+		umount $TMP_MNT
+		rmdir $TMP_MNT
+		rm -f /boot
+	fi
+}
+
 # echo the package name if the tazpkg is already installed
 installed_package_name()
 {
@@ -183,6 +193,7 @@ gen_livecd_isolinux()
 	genisohooks iso
 	if [ ! -f "$ROOTCD/boot/isolinux/isolinux.bin" ] ; then
 		echo -e "\nUnable to find isolinux binary.\n"
+		cleanup
 		exit 0
 	fi
 	cd $DISTRO
@@ -222,7 +233,7 @@ distro_stats()
 	echo -e "\033[1mDistro statistics\033[0m"
 	echo "================================================================================"
 	echo "Build date      : `date +%Y%m%d\ \at\ \%H:%M:%S`"
-	echo "Packages        : `ls -1 $ROOTFS/var/lib/tazpkg/installed | wc -l`"
+	echo "Packages        : `ls -1 $ROOTFS$INSTALLED | wc -l`"
 	echo "Rootfs size     : `du -sh $ROOTFS`"
 	echo "Initramfs size  : `du -sh $ROOTCD/boot/$INITRAMFS`"
 	echo "ISO image size  : `du -sh $ISO_NAME.iso`"
@@ -431,23 +442,33 @@ Distro directory    : $DISTRO"
 			echo -e "Please clean the distro tree or change directory path.\n"
 			exit 0
 		fi
-		# First check for the main packages list then
-		# for a distro-packages.list in the current directory
-		# if none, check if a package list was specified on cmdline.
-		if [ -f "/etc/slitaz-tools/distro-packages.list" ] ; then
-			LIST_NAME="distro-packages.list"
-		fi
-		if [ -f "distro-packages.list" ] ; then
-			LIST_NAME="distro-packages.list"
-		fi
-		if [ -n "$2" ] ; then
-			if [ ! -f "$2" ] ; then
-				echo -e "\nUnable to find the specified packages list."
-				echo -e "List name : $2\n"
-				exit 0
-			else
+		# Check if a package list was specified on cmdline.
+		LIST_NAME="distro-packages.list"
+		CDROM=""
+		while [ -n "$2" ]; do
+			case "$2" in
+			--iso=*)
+				CDROM="-o loop ${2#--iso=}"
+				;;
+			--cdrom)
+				CDROM="/dev/cdrom"
+				;;
+			*)	if [ ! -f "$2" ] ; then
+					echo -e "\nUnable to find the specified packages list."
+					echo -e "List name : $2\n"
+					exit 1
+				fi
 				LIST_NAME=$2
-			fi
+				;;
+			esac
+			shift
+		done
+		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
+		# Build list with installed packages
+			for i in $(ls $INSTALLED); do
+				eval $(grep ^VERSION= $INSTALLED/$i/receipt)
+				echo "$i-$VERSION" >> $LIST_NAME
+			done
 		fi
 		# Exit if no list name.
 		if [ ! -f "$LIST_NAME" ]; then
@@ -468,6 +489,7 @@ Distro directory    : $DISTRO"
 		DOWNLOAD=""
 		for pkg in $LIST
 		do
+			[ "$pkg" = "" ] && continue
 			pkg=${pkg%.tazpkg}
 			[ -f $PACKAGES_REPOSITORY/$pkg.tazpkg ] && continue
 			PACKAGE=$(installed_package_name $pkg)
@@ -493,12 +515,31 @@ Distro directory    : $DISTRO"
 			fi
 			[ "$REPACK" = "n" -a "$DOWNLOAD" = "n" ] && exit 1
 		done
+		
+		# mount cdrom to be able to repack boot-loader packages
+		if [ ! -e /boot -a -n "$CDROM" ]; then
+			mkdir $TMP_MNT
+			if mount -r /dev/cdrom $TMP_MNT 2> /dev/null; then
+				ln -s $TMP_MNT/boot /
+				if [ ! -d "$ADDFILES/rootcd" ] ; then
+					mkdir -p $ADDFILES/rootcd
+					for i in $(ls $TMP_MNT); do
+						[ "$i" = "boot" ] && continue
+						cp -a $TMP_MNT/$i $ADDFILES/rootcd
+					done
+				fi
+			else
+				rmdir $TMP_MNT
+			fi
+		fi
+
 		# Root fs stuff.
 		echo "Preparing the rootfs directory..."
 		mkdir -p $ROOTFS
 		sleep 2
 		for pkg in $LIST
 		do
+			[ "$pkg" = "" ] && continue
 			# First copy and extract the package in tmp dir.
 			pkg=${pkg%.tazpkg}
 			PACKAGE=$(installed_package_name $pkg)
@@ -521,10 +562,12 @@ Distro directory    : $DISTRO"
 			fi
 			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
 				echo "Missing package $pkg."
+				cleanup
 				exit 1
 			fi
 			yes "" | tazpkg install $PACKAGES_REPOSITORY/$pkg.tazpkg --root=$ROOTFS
 		done
+		cp $LIST_NAME $ROOTFS/etc/tazlito/distro-packages.list
 		echo ""
 		cd $DISTRO
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
@@ -558,6 +601,7 @@ Distro directory    : $DISTRO"
 		gen_initramfs
 		gen_livecd_isolinux
 		distro_stats
+		cleanup
 		;;
 	clean-distro)
 		# Remove old distro tree.
