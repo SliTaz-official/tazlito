@@ -405,7 +405,7 @@ Distro directory    : $DISTRO"
 		mkdir -p $TARGET/rootcd/boot
 		echo -n "Copying the Linux kernel..."
 		if cp $TMP_DIR/boot/vmlinuz* $TARGET/rootcd/boot 2> /dev/null; then
-			ln $TARGET/rootcd/vmlinuz* $TARGET/rootcd/bzImage
+			ln $TARGET/rootcd/boot/vmlinuz* $TARGET/rootcd/boot/bzImage
 		else
 			cp $TMP_DIR/boot/bzImage $TARGET/rootcd/boot
 		fi
@@ -519,7 +519,7 @@ Distro directory    : $DISTRO"
 		# mount cdrom to be able to repack boot-loader packages
 		if [ ! -e /boot -a -n "$CDROM" ]; then
 			mkdir $TMP_MNT
-			if mount -r /dev/cdrom $TMP_MNT 2> /dev/null; then
+			if mount -r $CDROM $TMP_MNT 2> /dev/null; then
 				ln -s $TMP_MNT/boot /
 				if [ ! -d "$ADDFILES/rootcd" ] ; then
 					mkdir -p $ADDFILES/rootcd
