@@ -36,7 +36,7 @@ Tazlito - SliTaz Live Tool.
 
 <h2>SYNTAXE</h2>
 <pre>
-tazlito [command] [list|iso] [dir]
+tazlito [command] [list|iso|flavor] [dir]
 </pre>
 
 <h2>DESCRIPTION</h2>
@@ -118,6 +118,44 @@ en cas de modifications sur les fichiers.
 <pre>
  # tazlito gen-initiso
 </pre>
+<h3><font color="#6c0023">list-flavors</font></h3>
+<p>
+La commande 'list-flavors' télécharge si nécessaire et affiche la liste des
+différentes saveurs disponibles. On peut forcer le téléchargement avec
+'--recharge'.
+</p>
+<pre>
+ # tazlito list-flavors
+ # tazlito list-flavors --recharge
+</pre>
+<h3><font color="#6c0023">get-flavor</font></h3>
+<p>
+La commande 'get-flavor' télécharge si nécessaire et prépare les fichiers
+nécessaires à 'gen-distro' pour refabriquer une saveur. 
+</p>
+<pre>
+ # tazlito get-flavor saveur-particuliere 
+</pre>
+<h3><font color="#6c0023">show-flavor</font></h3>
+<p>
+La commande 'show-flavor' affiche les caractéristiques d'une saveur et ses
+dimensions après refabrication. Les options '--brief' et '--noheader' réduisent
+l'affichage produit.
+</p>
+<pre>
+ # tazlito show-flavor saveur-particuliere 
+ # tazlito show-flavor saveur-particuliere --brief
+ # tazlito show-flavor saveur-particuliere --brief --noheader
+</pre>
+<h3><font color="#6c0023">gen-flavor</font></h3>
+<p>
+La commande 'gen-flavor' crée un fichier de description d'une nouvelle saveur
+à partir des résultats de fabrication de 'gen-distro'. Le fichier .flavor
+produit pourra être ensuite envoyé à slitaz.org.
+</p>
+<pre>
+ # tazlito gen-flavor nouvelle-saveur
+</pre>
 <h3><font color="#6c0023">extract-distro</font></h3>
 <p>
 La commande 'extract-iso' sert à extraire les fichiers d'une images ISO du
@@ -135,12 +173,19 @@ La commande <em>Generate Distribution</em> permet de générer la structure du
 système Live et une image ISO via une liste de paquets. Pour fonctionner, cette
 commande a besoin d'une liste de paquets, d'un répertoire contenant tous les
 paquets (.tazpkg) de la liste et d'un répertoire pour générer la distribution.
+La liste de paquets peut être extraite d'une saveur par la commande get-flavor.
+Si l'on utilise le Live-CD, les options --cdrom et --iso=<image-iso> permettent
+de refabriquer les packets qui placent des fichiers dans /boot sans être obligé
+de les télécharger et récupère les fichiers additionnels du Live-CD.
 Le chemin vers les différents répertoires sont à configurer dans le fichier de
 configuration utilisé et les paquets peuvent être téléchargés depuis les
 miroirs de SliTaz ou générés par Tazwok. Pour générer une distro :
 </p>
 <pre>
  # tazlito gen-distro
+ # tazlito gen-distro --cdrom
+ # tazlito gen-distro --iso=slitaz.iso
+ # tazlito gen-distro package-list
 </pre>
 <h3><font color="#6c0023">clean-distro</font></h3>
 <p>
