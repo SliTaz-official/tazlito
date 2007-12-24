@@ -10,7 +10,7 @@
 # (C) 2007 SliTaz - GNU General Public License.
 # Initial author : <pankso@slitaz.org>
 #
-VERSION=1.2
+VERSION=1.3
 
 # Tazlito configuration variables to be shorter
 # and to use words rater than numbers.
