@@ -853,7 +853,7 @@ Distro directory    : $DISTRO"
 			echo ""
 			echo "Starting Wodim to burn the iso..." && sleep 2
 			echo "================================================================================"
-			wodim speed=$DRIVE_SPEED dev=/dev/$DRIVE_NAME $DISTRO/$ISO_NAME.iso
+			wodim speed=$DRIVE_SPEED dev=/dev/$DRIVE_NAME $iso
 			echo "================================================================================"
 			echo "ISO image is burned to cdrom."
 		else
