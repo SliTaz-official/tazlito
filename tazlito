@@ -226,7 +226,7 @@ gen_initramfs()
 	# Use lzma if installed
 	if [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
-		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$INITRAMFS
+		find . -print | cpio -o -H newc | lzma e -si -so -d26 > $DISTRO/$INITRAMFS
 	else
 		echo -n "Generating gziped initramfs... "
 		find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
@@ -437,7 +437,7 @@ Distro directory    : $DISTRO"
 		cd $TARGET/rootfs
 		echo -n "Extracting the rootfs... "
 		( zcat ../rootcd/boot/rootfs.gz 2>/dev/null || \
-		  lzma d ../rootcd/boot/rootfs.?z -so ) | cpio -id
+		  unlzma -c ../rootcd/boot/rootfs.?z ) | cpio -id
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
 		cd ..
