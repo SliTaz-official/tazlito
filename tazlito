@@ -455,7 +455,11 @@ Distro directory    : $DISTRO"
 		if [ ! -s /etc/tazlito/flavors.list -o "$2" == "--recharge" ]; then
 			download flavors.list -O - > /etc/tazlito/flavors.list
 		fi
+		echo ""
+		echo -e "\033[1mList of flavors\033[0m"
+		echo "================================================================================"
 		cat /etc/tazlito/flavors.list
+		echo ""
 		;;
 	show-flavor)
 		# Show flavor description.
