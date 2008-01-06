@@ -7,10 +7,12 @@
 # and/or new ISO. Most commands must be run by root, expect the stats
 # and the configuration file manipulation.
 #
-# (C) 2007 SliTaz - GNU General Public License.
-# Initial author : <pankso@slitaz.org>
+# (C) 2007-2008 SliTaz - GNU General Public License.
 #
-VERSION=1.3
+# Authors : Christophe Lincoln <pankso@slitaz.org>
+#           Pascal Bellard <pascal.bellard@slitaz.org>
+#
+VERSION=1.4
 
 # Tazlito configuration variables to be shorter
 # and to use words rater than numbers.
