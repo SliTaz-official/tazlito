@@ -228,7 +228,7 @@ gen_initramfs()
 	# Use lzma if installed
 	if [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
-		find . -print | cpio -o -H newc | lzma e -si -so -d26 > $DISTRO/$INITRAMFS
+		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$INITRAMFS
 	else
 		echo -n "Generating gziped initramfs... "
 		find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
