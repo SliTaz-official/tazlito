@@ -432,14 +432,17 @@ Distro directory    : $DISTRO"
 		echo -n "Copying isolinux files..."
 		cp -a $TMP_DIR/boot/isolinux $TARGET/rootcd/boot
 		status
+		echo -n "Copying syslinux files..."
 		if [ -d $TMP_DIR/boot/syslinux ]; then
 			cp -a $TMP_DIR/boot/syslinux $TARGET/rootcd/boot
 			status
 		fi
+		echo -n "Copying extlinux files..."
 		if [ -d $TMP_DIR/boot/extlinux ]; then
 			cp -a $TMP_DIR/boot/extlinux $TARGET/rootcd/boot
 			status
 		fi
+		echo -n "Copying GRUB files..."
 		if [ -d $TMP_DIR/boot/grub ]; then
 			cp -a $TMP_DIR/boot/grub $TARGET/rootcd/boot
 			status
