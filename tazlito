@@ -228,7 +228,7 @@ gen_initramfs()
 	# Use lzma if installed
 	if [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
-		find . -print | cpio -o -H newc | lzma e -si -so -d26 > $DISTRO/$INITRAMFS
+		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$INITRAMFS
 	else
 		echo -n "Generating gziped initramfs... "
 		find . -print | cpio -o -H newc | gzip -9 > $DISTRO/$INITRAMFS
@@ -432,18 +432,18 @@ Distro directory    : $DISTRO"
 		echo -n "Copying isolinux files..."
 		cp -a $TMP_DIR/boot/isolinux $TARGET/rootcd/boot
 		status
-		echo -n "Copying syslinux files..."
 		if [ -d $TMP_DIR/boot/syslinux ]; then
+			echo -n "Copying syslinux files..."
 			cp -a $TMP_DIR/boot/syslinux $TARGET/rootcd/boot
 			status
 		fi
-		echo -n "Copying extlinux files..."
 		if [ -d $TMP_DIR/boot/extlinux ]; then
+			echo -n "Copying extlinux files..."
 			cp -a $TMP_DIR/boot/extlinux $TARGET/rootcd/boot
 			status
 		fi
-		echo -n "Copying GRUB files..."
 		if [ -d $TMP_DIR/boot/grub ]; then
+			echo -n "Copying GRUB files..."
 			cp -a $TMP_DIR/boot/grub $TARGET/rootcd/boot
 			status
 		fi
