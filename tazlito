@@ -226,7 +226,10 @@ gen_initramfs()
 	cd $ROOTFS
 	echo ""
 	# Use lzma if installed
-	if [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
+	if [ "$COMPRESSION" = "none" ]; then
+		echo -n "Generating uncompressed initramfs... "
+		find . -print | cpio -o -H newc > $DISTRO/$INITRAMFS
+	elif [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
 		find . -print | cpio -o -H newc | lzma e -si -so > $DISTRO/$INITRAMFS
 	else
