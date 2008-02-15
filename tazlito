@@ -202,10 +202,17 @@ gen_livecd_isolinux()
 {
 	# Some packages may want to alter iso
 	genisohooks iso
-	if [ ! -f "$ROOTCD/boot/isolinux/isolinux.bin" ] ; then
+	if [ ! -f "$ROOTCD/boot/isolinux/isolinux.bin" ]; then
 		echo -e "\nUnable to find isolinux binary.\n"
 		cleanup
 		exit 0
+	fi
+	# Set date for boot msg.
+	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.msg; then
+		DATE=`date +%Y%m%d`
+		echo -n "Setting build date to: $dATE..."
+		sed -i s/'XXXXXXXX'/"$DATE"/ $ROOTCD/boot/isolinux/isolinux.msg
+		status
 	fi
 	cd $DISTRO
 	echo ""
@@ -509,6 +516,9 @@ Distro directory    : $DISTRO"
 	gen-flavor)
 		# Generate a new flavor form then last iso image generation.
 		FLAVOR=$2
+		echo ""
+		echo -e "\033[1mFlavor generation\033[0m"
+		echo "================================================================================"
 		if [ -z "$FLAVOR" ]; then
 			echo -n "Flavor name : "
 			read FLAVOR
@@ -524,12 +534,14 @@ Distro directory    : $DISTRO"
 				  cpio -o -H newc 2> /dev/null | gzip -9 ) > $FLAVOR.$i
 			fi
 		done
+		status
 		answer=`grep -s ^Description $FLAVOR.desc`
 		answer=${answer#Description     : }
 		if [ -z "$answer" ]; then
-			echo -en "\nDescription : "
+			echo -n "Description : "
 			read answer
 		fi
+		echo -n "Compressing flavor $FLAVOR..."
 		echo "Flavor          : $FLAVOR" > $FLAVOR.desc
 		echo "Description     : $answer" >> $FLAVOR.desc
 		( cd $DISTRO; distro_sizes) >> $FLAVOR.desc
@@ -542,6 +554,9 @@ Distro directory    : $DISTRO"
 			gzip -9 > $FLAVOR.flavor
 		rm `echo -e $FILES`
 		status
+		echo "================================================================================"
+		echo "Flavor size : `du -sh $FLAVOR.flavor`"
+		echo ""
 		;;
 	get-flavor)
 		# Get a flavor's files and prepare for gen-distro.
@@ -782,7 +797,7 @@ Distro directory    : $DISTRO"
 		fi
 		# Go for echoing on configuration files if any hacker was found.
 		#
-		if [ ! "`cat $ROOTFS/etc/passwd | grep hacker`" ] ; then
+		if ! grep -q hacker $root/etc/passwd; then
 			echo -n "Configuring $ROOTFS/etc..."
 			echo 'hacker:x:500:500:Linux User,,,:/home/hacker:/bin/ash' >> $ROOTFS/etc/passwd
 			echo 'hacker::13646:0:99999:7:::' >> $ROOTFS/etc/shadow
@@ -794,17 +809,19 @@ Distro directory    : $DISTRO"
 		fi
 		# Hacker can listen to music
 		#
-		if grep -q audio $ROOTFS/etc/group; then
-			sed -i s/'audio:x:20:'/'audio:x:20:hacker'/ $ROOTFS/etc/group
+		if grep -q audio $root/etc/group; then
+			if ! grep -q "audio:x:20:hacker" $root/etc/group; then
+				sed -i s/'audio:x:20:'/'audio:x:20:hacker'/ $root/etc/group
+			fi
 		fi
-		# /home/hacker files.
+		# /home/hacker directories.
 		#
 		echo -n "Creating default directories... "
-		mkdir -p $ROOTFS/home/hacker/Documents \
-		$ROOTFS/home/hacker/Downloads \
-		$ROOTFS/home/hacker/Images \
-		$ROOTFS/home/hacker/Public \
-		$ROOTFS/home/hacker/Templates
+		mkdir -p $fs/home/hacker/Documents \
+			$fs/home/hacker/Downloads \
+			$fs/home/hacker/Templates \
+			$fs/home/hacker/.local/bin \
+			$fs/home/hacker/.local/share
 		status
 		# Change permissions.
 		#
