@@ -223,6 +223,8 @@ gen_livecd_isolinux()
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
 		-boot-info-table $ROOTCD
 	echo "================================================================================"
+	# Some packages may want to alter final iso
+	genisohooks final
 }
 
 # Gen a new initramfs from the root file system.
