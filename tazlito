@@ -300,7 +300,7 @@ ADDFILES="$DISTRO/addfiles"
 # Default answer for binary question (Y or N)
 DEFAULT_ANSWER="ASK"
 
-# Compression utility (lzma or gzip)
+# Compression utility (lzma, gzip or none)
 COMPRESSION="lzma"
 EOF
 }
@@ -467,7 +467,23 @@ Distro directory    : $DISTRO"
 		cd $TARGET/rootfs
 		echo -n "Extracting the rootfs... "
 		( zcat ../rootcd/boot/rootfs.gz 2>/dev/null || \
-		  unlzma -c ../rootcd/boot/rootfs.?z ) | cpio -id
+		  lzma d ../rootcd/boot/rootfs.?z -so 2>/dev/null || \
+		  cat ../rootcd/boot/rootfs.gz ) | cpio -id
+		# unpack /usr
+		if [ -f .usr.sqfs ]; then
+			echo -en "\nUnsquashfs'ing /usr... "
+			/sbin/unsquashfs .usr.sqfs
+			if [ -d squashfs-root/.moved ]; then
+				( cd squashfs-root/.moved ; find * -print ) | \
+				while read $file; do
+					rm -f $file
+					mv squashfs-root/.moved/$file $file
+				done
+				rmdir squashfs-root/.moved
+			fi
+			mv squashfs-root/* usr
+			rmdir squashfs-root
+		fi
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
 		cd ..
