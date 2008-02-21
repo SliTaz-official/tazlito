@@ -443,6 +443,10 @@ Distro directory    : $DISTRO"
 		status
 		echo -n "Copying isolinux files..."
 		cp -a $TMP_DIR/boot/isolinux $TARGET/rootcd/boot
+		for i in $(ls $TMP_DIR); do
+			[ "$i" = "boot" ] && continue
+			cp -a $TMP_DIR/$i $TARGET/rootcd
+		done
 		status
 		if [ -d $TMP_DIR/boot/syslinux ]; then
 			echo -n "Copying syslinux files..."
@@ -472,10 +476,12 @@ Distro directory    : $DISTRO"
 		# unpack /usr
 		if [ -f .usr.sqfs ]; then
 			echo -en "\nUnsquashfs'ing /usr... "
-			/sbin/unsquashfs .usr.sqfs
+			sbin/unsquashfs .usr.sqfs
+			rm .usr.sqfs
 			if [ -d squashfs-root/.moved ]; then
-				( cd squashfs-root/.moved ; find * -type f -print ) | \
-				while read $file; do
+				( cd squashfs-root/.moved ; find * -print ) | \
+				while read file; do
+					[ -L $file ] || continue
 					rm -f $file
 					mv squashfs-root/.moved/$file $file
 				done
