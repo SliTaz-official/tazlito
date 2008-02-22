@@ -480,13 +480,13 @@ Distro directory    : $DISTRO"
 		fi
 		[ -d cdrom ] && rmdir cdrom
 		# unpack /usr
-		$sqfs="../rootcd/usr.sqfs"
+		sqfs="../rootcd/usr.sqfs"
 		[ -f $sqfs ] || sqfs=".usr.sqfs"
 		if [ -f $sqfs ]; then
 			echo -en "\nUnsquashfs'ing /usr... "
 			rmdir usr
 			sbin/unsquashfs -d usr $sqfs
-			rm $sqfs
+			rm -f $sqfs
 		fi
 		if [ -d usr/.moved ]; then
 			echo -en "\nRestoring moved files from /usr... "
