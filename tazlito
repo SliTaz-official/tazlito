@@ -473,22 +473,30 @@ Distro directory    : $DISTRO"
 		( zcat ../rootcd/boot/rootfs.gz 2>/dev/null || \
 		  lzma d ../rootcd/boot/rootfs.?z -so 2>/dev/null || \
 		  cat ../rootcd/boot/rootfs.gz ) | cpio -id
+		# remove link to cdrom
+		if [ -L usr ]; then
+			rm usr
+			mv ../rootcd/usr .
+		fi
+		[ -d cdrom ] && rmdir cdrom
 		# unpack /usr
-		if [ -f .usr.sqfs ]; then
+		$sqfs="../rootcd/usr.sqfs"
+		[ -f $sqfs ] || sqfs=".usr.sqfs"
+		if [ -f $sqfs ]; then
 			echo -en "\nUnsquashfs'ing /usr... "
-			sbin/unsquashfs .usr.sqfs
-			rm .usr.sqfs
-			if [ -d squashfs-root/.moved ]; then
-				( cd squashfs-root/.moved ; find * -print ) | \
-				while read $file; do
-					[ -L "$file" ] || continue
-					rm -f "$file"
-					mv "squashfs-root/.moved/$file" "$file"
-				done
-				rm -rf squashfs-root/.moved
-			fi
-			mv squashfs-root/* usr
-			rmdir squashfs-root
+			rmdir usr
+			sbin/unsquashfs -d usr $sqfs
+			rm $sqfs
+		fi
+		if [ -d usr/.moved ]; then
+			echo -en "\nRestoring moved files from /usr... "
+			( cd usr/.moved ; find * -print ) | \
+			while read file; do
+				[ -L "$file" ] || continue
+				rm -f "$file"
+				mv "usr/.moved/$file" "$file"
+			done
+			rm -rf usr/.moved
 		fi
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
