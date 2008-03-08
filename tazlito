@@ -26,6 +26,7 @@ LOCALSTATE=/var/lib/tazpkg
 INSTALLED=$LOCALSTATE/installed
 CACHE_DIR=/var/cache/tazpkg
 MIRROR=$LOCALSTATE/mirror
+DEFAULT_MIRROR="http://download.tuxfamily.org/slitaz/packages/`cat /etc/slitaz-release`/"
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
@@ -45,6 +46,14 @@ else
 		echo "Unable to find any configuration file. Please read the doc"
 		echo "or run '`basename $0` gen-config' to get an empty config file."
 		exit 0
+	fi
+fi
+
+# While Tazpkg is not used the default mirror url file does not exist
+# and user can't recharge the list of flavors.
+if test $(id -u) = 0 ; then
+	if [ ! -f "$MIRROR" ]; then
+		echo "$DEFAULT_MIRROR" > $MIRROR
 	fi
 fi
 
