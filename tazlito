@@ -473,39 +473,10 @@ Distro directory    : $DISTRO"
 		( zcat ../rootcd/boot/rootfs.gz 2>/dev/null || \
 		  lzma d ../rootcd/boot/rootfs.?z -so 2>/dev/null || \
 		  cat ../rootcd/boot/rootfs.gz ) | cpio -id
-		# remove link to cdrom
-		if [ -L usr ]; then
-			rm usr
-			mv ../rootcd/usr .
-		fi
-		[ -d cdrom ] && rmdir cdrom
 		# unpack /usr
-		sqfs="../rootcd/usr.sqfs"
-		[ -f $sqfs ] || sqfs=".usr.sqfs"
-		if [ -f $sqfs ]; then
-			echo -en "\nUnsquashfs'ing /usr... "
-			rmdir usr
-			sbin/unsquashfs -d usr $sqfs
-			rm -f $sqfs
-		fi
-		cromfs="../rootcd/usr.cromfs"
-		[ -f $cromfs ] || cromfs=".usr.cromfs"
-		if [ -f $cromfs ]; then
-			echo -en "\nUnmkcromfs'ing /usr... "
-			rmdir usr
-			bin/unmkcromfs $cromfs usr
-			rm -f $cromfs
-		fi
-		if [ -d usr/.moved ]; then
-			echo -en "\nRestoring moved files from /usr... "
-			( cd usr/.moved ; find * -print ) | \
-			while read file; do
-				[ -L "$file" ] || continue
-				rm -f "$file"
-				mv "usr/.moved/$file" "$file"
-			done
-			rm -rf usr/.moved
-		fi
+		for i in etc/tazlito/*.extract; do
+			. $i ../rootcd
+		done
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
 		cd ..
