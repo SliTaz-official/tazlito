@@ -488,6 +488,14 @@ Distro directory    : $DISTRO"
 			sbin/unsquashfs -d usr $sqfs
 			rm -f $sqfs
 		fi
+		cromfs="../rootcd/usr.cromfs"
+		[ -f $cromfs ] || cromfs=".usr.cromfs"
+		if [ -f $cromfs ]; then
+			echo -en "\nUnmkcromfs'ing /usr... "
+			rmdir usr
+			bin/unmkcromfs $cromfs usr
+			rm -f $cromfs
+		fi
 		if [ -d usr/.moved ]; then
 			echo -en "\nRestoring moved files from /usr... "
 			( cd usr/.moved ; find * -print ) | \
