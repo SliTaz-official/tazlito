@@ -484,7 +484,7 @@ Distro directory    : $DISTRO"
 		  cat ../rootcd/boot/rootfs.gz ) | cpio -id
 		# unpack /usr
 		for i in etc/tazlito/*.extract; do
-			. $i ../rootcd
+			[ -f "$i" ] && . $i ../rootcd
 		done
 		# Umount and remove temp directory and cd to $TARGET to get stats.
 		umount $TMP_DIR && rm -rf $TMP_DIR
