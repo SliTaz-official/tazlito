@@ -235,6 +235,9 @@ gen_livecd_isolinux()
 		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
 		-boot-info-table $ROOTCD
+	echo -n "Creating the ISO md5sum..."
+	md5sum $ISO_NAME.iso > $ISO_NAME.md5
+	status
 	echo "================================================================================"
 	# Some packages may want to alter final iso
 	genisohooks final
