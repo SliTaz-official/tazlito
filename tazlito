@@ -223,6 +223,10 @@ gen_livecd_isolinux()
 		sed -i s/'XXXXXXXX'/"$DATE"/ $ROOTCD/boot/isolinux/isolinux.msg
 		status
 	fi
+	cd $ROOTCD
+	echo -n "Computing md5..."
+	find * -exec md5sum {} \; > md5sum
+	status
 	cd $DISTRO
 	echo ""
 	echo -e "\033[1mGenerating ISO image\033[0m"
