@@ -219,7 +219,7 @@ gen_livecd_isolinux()
 	# Set date for boot msg.
 	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.msg; then
 		DATE=`date +%Y%m%d`
-		echo -n "Setting build date to: $dATE..."
+		echo -n "Setting build date to: $DATE..."
 		sed -i s/'XXXXXXXX'/"$DATE"/ $ROOTCD/boot/isolinux/isolinux.msg
 		status
 	fi
@@ -246,6 +246,8 @@ gen_livecd_isolinux()
 # Gen a new initramfs from the root file system.
 gen_initramfs()
 {
+	# Just in case CTRL+c
+	rm -f $DISTRO/gen
 	# Some packages may want to alter rootfs
 	genisohooks rootfs
 	cd $ROOTFS
@@ -805,6 +807,7 @@ Distro directory    : $DISTRO"
 			fi
 			echo -n "Removing eventual ISO image..."
 			rm -f $DISTRO/$ISO_NAME.iso
+			rm -f $DISTRO/$ISO_NAME.md5
 			status
 		fi
 		echo "================================================================================"
