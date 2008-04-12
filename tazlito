@@ -252,6 +252,28 @@ gen_initramfs()
 	genisohooks rootfs
 	cd $ROOTFS
 	echo ""
+
+        # Link duplicate files
+        find . -type f -size +0c -exec stat -c '%s %a %u %g %Y %i %n' {} \; | \
+           sort | ( save=0; old_owner=""; old_group=""; old_size=""
+           old_time=""; old_perm=""; old_inode=""; old_file=""
+           while read size perm owner group time inode file; do
+               if [ "$size"  =  "$old_size"  -a "$perm" = "$old_perm"   -a \
+                    "$owner" =  "$old_owner" -a "$group" = "$old_group" -a \
+	            "$inode" != "$old_inode" ]; then
+                   if cmp "$file" "$old_file" >/dev/null; then
+                       rm -f "$file"
+                       ln "$old_file" "$file"
+                       inode="$old_inode"
+                       save="$(expr $save + $size)"
+                   fi
+               fi
+               old_size="$size"  ; old_perm="$perm"; old_owner="$owner"
+               old_group="$group"; old_time="$time"; old_inode="$inode"
+               old_file="$file"
+           done
+        echo "$save bytes saved in duplicate files."
+	
 	# Use lzma if installed
 	if [ "$COMPRESSION" = "none" ]; then
 		echo -n "Generating uncompressed initramfs... "
