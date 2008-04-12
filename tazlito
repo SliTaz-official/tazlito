@@ -271,7 +271,7 @@ gen_initramfs()
                old_size="$size"  ; old_perm="$perm"; old_owner="$owner"
                old_group="$group"; old_time="$time"; old_inode="$inode"
                old_file="$file"
-           done
+           done )
         echo "$save bytes saved in duplicate files."
 	
 	# Use lzma if installed
