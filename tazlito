@@ -80,6 +80,7 @@ usage ()
   gen-initiso     Generate a new initramfs and ISO from the distro tree.
   list-flavors    List all available package lists on the mirror.
   gen-flavor      Generate a new live-CD description.
+  gen-liveflavor  Generate a live-CD description from current system.
   show-flavor     Show live-CD description.
   get-flavor      Get a flavor's list of packages.
   extract-distro  Extract and ISO to a directory and rebuild LiveCD tree.
@@ -565,8 +566,51 @@ Distro directory    : $DISTRO"
 		fi
 		rm -Rf $TMP_DIR
 		;;
+	gen-liveflavor)
+		# Generate a new flavor form the live system.
+		FLAVOR=$2
+		DESC=""
+		case "$FLAVOR" in
+		'')	echo -n "Flavor name : "
+			read FLAVOR
+			[ -z "$FLAVOR" ] && exit 1;;
+		-?|-h*|--help) cat <<EOT
+
+SliTaz Live Tool - Version: $VERSION
+\033[1mUsage: \033[0m `basename $0` gen-liveflavor flavor-name [flavor-patch-file]
+\033[1mflavor-patch-file format: \033[0m
+code	data
++	package to add
+-	package to remove
+?	display message
+@	flavor description
+
+\033[1mExample: \033[0m
+@	Developper tools for slitaz maintainers
++	slitaz-toolchain
++	mercurial
+EOT
+			exit 1;;
+		esac
+		mv /etc/tazlito/distro-packages.list \
+		   /etc/tazlito/distro-packages.list.$$ 2> /dev/null
+		rm -f distro-packages.list non-free.list 2> /dev/null
+		tazpkg recharge
+		[ -n "$3" ] && while read action pkg; do
+			case "$action" in
+			+)	yes | tazpkg get-install $pkg;;
+			-)	yes | tazpkg remove $pkg;;
+			@)	DESC="$pkg";;
+			\?)	echo -en "$pkg"; read action;;
+			esac
+		done < $3
+		yes '' | tazlito gen-distro
+		echo "$DESC" | tazlito gen-flavor "$FLAVOR"
+		mv /etc/tazlito/distro-packages.list.$$ \
+		   /etc/tazlito/distro-packages.list 2> /dev/null
+		;;
 	gen-flavor)
-		# Generate a new flavor form then last iso image generation.
+		# Generate a new flavor from the last iso image generation.
 		FLAVOR=$2
 		echo ""
 		echo -e "\033[1mFlavor generation\033[0m"
@@ -602,8 +646,8 @@ Distro directory    : $DISTRO"
 			eval $(grep ^VERSION= $ROOTFS$INSTALLED/$i/receipt)
 			echo "$i-$VERSION" >> $FLAVOR.pkglist
 		done
-		echo -e "$FLAVOR.desc\n$FILES" | cpio -o -H newc 2>/dev/null | \
-			gzip -9 > $FLAVOR.flavor
+		ls $FLAVOR.desc $FILES 2>/dev/null | \
+			cpio -o -H newc 2>/dev/null | gzip -9 > $FLAVOR.flavor
 		rm `echo -e $FILES`
 		status
 		echo "================================================================================"
