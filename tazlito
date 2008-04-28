@@ -621,7 +621,7 @@ EOT
 			[ -z "$FLAVOR" ] && exit 1
 		fi
 		check_rootfs
-		FILES="$FLAVOR.pkglist"
+		FILES="$FLAVOR.pkglist $FLAVOR.nonfree"
 		echo -n "Creating file $FLAVOR.flavor..."
 		for i in rootcd rootfs; do
 			if [ -d "$ADDFILES/$i" ] ; then
@@ -644,7 +644,13 @@ EOT
 		\rm -f $FLAVOR.pkglist 2> /dev/null
 		for i in $(ls $ROOTFS$INSTALLED); do
 			eval $(grep ^VERSION= $ROOTFS$INSTALLED/$i/receipt)
-			echo "$i-$VERSION" >> $FLAVOR.pkglist
+			eval $(grep ^CATEGORY= $ROOTFS$INSTALLED/$i/receipt)
+			if [ "$CATEGORY" = "non-free" -a "${i%%-*}" != "get" ]
+			then
+				echo "$i" >> $FLAVOR.nonfree
+			else
+				echo "$i-$VERSION" >> $FLAVOR.pkglist
+			fi
 		done
 		ls $FLAVOR.desc $FILES 2>/dev/null | \
 			cpio -o -H newc 2>/dev/null | gzip -9 > $FLAVOR.flavor
@@ -666,6 +672,7 @@ EOT
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
 			echo -n "Create distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
+			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			status
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
@@ -818,6 +825,21 @@ EOT
 			yes "" | tazpkg install $PACKAGES_REPOSITORY/$pkg.tazpkg --root=$ROOTFS
 		done
 		cp $LIST_NAME $ROOTFS/etc/tazlito/distro-packages.list
+		if [ -f non-free.list ]; then
+			echo "Preparing non-free packages..."
+			cp non-free.list $ROOTFS/etc/tazlito/non-free.list
+			for pkg in $(cat non-free.list); do
+				if [ ! -d $INSTALLED/$pkg ]; then
+					if [ ! -d $INSTALLED/get-$pkg ]; then
+						tazpkg get-install get-$pkg
+					fi
+					get-$pkg
+				fi
+				tazpkg repack $pkg
+				yes "" | tazpkg install $pkg*.tazpkg --root=$ROOTFS
+				mv $pkg*.tazpkg $PACKAGES_REPOSITORY 
+			done
+		fi
 		echo ""
 		cd $DISTRO
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
