@@ -578,7 +578,7 @@ Distro directory    : $DISTRO"
 		'')	echo -n "Flavor name : "
 			read FLAVOR
 			[ -z "$FLAVOR" ] && exit 1;;
-		-?|-h*|--help) cat <<EOT
+		-?|-h*|--help) echo -e "
 
 SliTaz Live Tool - Version: $VERSION
 \033[1mUsage: \033[0m `basename $0` gen-liveflavor flavor-name [flavor-patch-file]
@@ -586,6 +586,7 @@ SliTaz Live Tool - Version: $VERSION
 code	data
 +	package to add
 -	package to remove
+!	non-free package to add
 ?	display message
 @	flavor description
 
@@ -593,7 +594,7 @@ code	data
 @	Developper tools for slitaz maintainers
 +	slitaz-toolchain
 +	mercurial
-EOT
+"
 			exit 1;;
 		esac
 		mv /etc/tazlito/distro-packages.list \
@@ -604,6 +605,7 @@ EOT
 			case "$action" in
 			+)	yes | tazpkg get-install $pkg;;
 			-)	yes | tazpkg remove $pkg;;
+			!)	echo $pkg >> non-free.list;;
 			@)	DESC="$pkg";;
 			\?)	echo -en "$pkg"; read action;;
 			esac
