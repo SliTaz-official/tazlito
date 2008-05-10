@@ -226,7 +226,7 @@ gen_livecd_isolinux()
 	fi
 	cd $ROOTCD
 	echo -n "Computing md5..."
-	find * ! -name md5sum -exec md5sum {} \; > md5sum
+	find * -type f ! -name md5sum -exec md5sum {} \; > md5sum
 	status
 	cd $DISTRO
 	echo ""
