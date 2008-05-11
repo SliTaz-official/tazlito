@@ -156,6 +156,26 @@ produit pourra être ensuite envoyé à slitaz.org.
 <pre>
  # tazlito gen-flavor nouvelle-saveur
 </pre>
+<h3><font color="#6c0023">gen-liveflavor</font></h3>
+<p>
+La commande 'gen-liveflavor' crée une image ISO et un fichier de description
+d'une nouvelle saveur à partir de la distribution courante. Un fichier texte
+optionnel permetde décrire les modifications à faire par rapport à la
+distribution courante. Le format de chacune de ses lignes est 
+[code][tabulation][caractères]. Les valeurs possibles de code sont +,-,@,! et ?
+pour ajouter un paquet, le retirer, décrire la saveur, ajouter un paquet non
+libre, et afficher un message à l'écran.
+</p>
+<pre>
+ # tazlito gen-liveflavor nouvelle-saveur
+ # tazlito gen-liveflavor autre-saveur mes-modifications
+ # cat mes-modifications
+ @      Developper tools and some non-free packages
+ +      slitaz-toolchain
+ +      mercurial
+ !	skype
+ !	flash-plugin
+</pre>
 <h3><font color="#6c0023">extract-distro</font></h3>
 <p>
 La commande 'extract-iso' sert à extraire les fichiers d'une images ISO du
