@@ -255,25 +255,35 @@ gen_initramfs()
 	echo ""
 
         # Link duplicate files
-        find . -type f -size +0c -exec stat -c '%s %a %u %g %Y %i %n' {} \; | \
-           sort | ( save=0; old_owner=""; old_group=""; old_size=""
-           old_time=""; old_perm=""; old_inode=""; old_file=""
-           while read size perm owner group time inode file; do
-               if [ "$size"  =  "$old_size"  -a "$perm" = "$old_perm"   -a \
-                    "$owner" =  "$old_owner" -a "$group" = "$old_group" -a \
-	            "$inode" != "$old_inode" ]; then
+        find . -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
+           sort | ( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
+           while read attr inode link file; do
+               if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
                    if cmp "$file" "$old_file" >/dev/null; then
                        rm -f "$file"
                        ln "$old_file" "$file"
-                       inode="$old_inode"
-                       save="$(expr $save + $size)"
+                       [ "$link" = "1" ] && save="$(expr $save + ${attr%%-*})"
                    fi
                fi
-               old_size="$size"  ; old_perm="$perm"; old_owner="$owner"
-               old_group="$group"; old_time="$time"; old_inode="$inode"
-               old_file="$file"
+               old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
            done
            echo "$save bytes saved in duplicate files."
+        )
+
+        # Link duplicate links
+        find . -type l -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
+           sort | ( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
+           while read attr inode link file; do
+               if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
+                   if [ "$(readlink $file)" = "$(readlink $old_file)" ]; then
+                       rm -f "$file"
+                       ln "$old_file" "$file"
+                       [ "$link" = "1" ] && save="$(expr $save + ${attr%%-*})"
+                   fi
+               fi
+               old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
+           done
+           echo "$save bytes saved in duplicate links."
         )
 	
 	# Use lzma if installed
