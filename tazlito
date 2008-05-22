@@ -627,7 +627,7 @@ code	data
 			[ -z "$FLAVOR" ] && exit 1
 		fi
 		check_rootfs
-		FILES="$FLAVOR.pkglist $FLAVOR.nonfree"
+		FILES="$FLAVOR.pkglist"
 		echo -n "Creating file $FLAVOR.flavor..."
 		for i in rootcd rootfs; do
 			if [ -d "$ADDFILES/$i" ] ; then
@@ -647,7 +647,7 @@ code	data
 		echo "Flavor          : $FLAVOR" > $FLAVOR.desc
 		echo "Description     : $answer" >> $FLAVOR.desc
 		( cd $DISTRO; distro_sizes) >> $FLAVOR.desc
-		\rm -f $FLAVOR.pkglist 2> /dev/null
+		\rm -f $FLAVOR.pkglist $FLAVOR.nonfree 2> /dev/null
 		for i in $(ls $ROOTFS$INSTALLED); do
 			eval $(grep ^VERSION= $ROOTFS$INSTALLED/$i/receipt)
 			eval $(grep ^CATEGORY= $ROOTFS$INSTALLED/$i/receipt)
@@ -658,8 +658,9 @@ code	data
 				echo "$i-$VERSION" >> $FLAVOR.pkglist
 			fi
 		done
-		ls $FLAVOR.desc $FILES 2>/dev/null | \
-			cpio -o -H newc 2>/dev/null | gzip -9 > $FLAVOR.flavor
+		[ -s $FLAVOR.nonfree ] && $FILES="$FILES\n$FLAVOR.nonfree"
+		echo -e "$FLAVOR.desc\n$FILES" | cpio -o -H newc 2>/dev/null | \
+			gzip -9 > $FLAVOR.flavor
 		rm `echo -e $FILES`
 		status
 		echo "================================================================================"
@@ -677,8 +678,8 @@ code	data
 			mkdir $TMP_DIR
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
 			echo -n "Create distro-packages.list..."
-			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
+			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
 			status
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
