@@ -271,23 +271,6 @@ gen_initramfs()
            echo "$save bytes saved in duplicate files."
         )
 
-        # Link duplicate links
-        find . -type l -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
-           sort | ( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
-           while read attr inode link file; do
-               if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
-                   if [ "$(readlink $file)" = "$(readlink $old_file)" ]; then
-                       rm -f "$file"
-                       ln "$old_file" "$file"
-                       inode="$old_inode"
-                       [ "$link" = "1" ] && save="$(expr $save + ${attr%%-*})"
-                   fi
-               fi
-               old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
-           done
-           echo "$save bytes saved in duplicate links."
-        )
-	
 	# Use lzma if installed
 	if [ "$COMPRESSION" = "none" ]; then
 		echo -n "Generating uncompressed initramfs... "
