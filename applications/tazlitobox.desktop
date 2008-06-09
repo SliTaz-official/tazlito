@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Tazlito LiveCD Tool
+Name[fr]=Créer un LiveCD à saveur
+GenericName=Gen a LiveCD flavor
+GenericName[fr]=Créer un LiveCD à saveur
+Comment=Generate you own LiveCD flavor
+Exec=subox tazlitobox
+Icon=tazlito.png
+Type=Application
+Categories=System;

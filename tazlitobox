@@ -1,0 +1,249 @@
+#! /bin/sh
+# 
+# Gtkdialog box for Tazlito - SliTaz Live Tool.
+#
+VERSION=20080306
+
+# Check if user is root.
+check_root()
+{
+	if test $(id -u) != 0 ; then
+		echo -e "
+You must be root to run `basename $0`. Please type 'su' and 
+root password to become super-user.\n"
+		exit 0
+	fi
+}
+
+# By default we go in the flavors dir to download or gen flavors.
+cd_flavors()
+{
+	mkdir -p /home/slitaz/flavors
+	cd /home/slitaz/flavors
+}
+
+export HELP='
+<window title="Tazlito Box - Help" icon-name="media-cdrom">
+  <vbox>
+    <text use-markup="true">
+      <label>"
+<b>Tazlito Box - Help</b>"
+      </label>
+    </text>
+    
+    <frame Overview>
+      <text wrap="true" width-chars="52" use-markup="true">
+        <label>
+"
+Tazlito Box is a tiny interface to SliTaz Live Tool aka Tazlito.
+You can simply generate a LiveCD in a few minutes, using your
+own flavor or one from the SliTaz community. Tazlito can also 
+generate a LiveCD flavor using all the current installed packages
+selection. Tazlito commads are executed in a XTerm, you can
+then press ENTER or the mouse to close the window.
+"
+        </label>
+      </text>
+    </frame>
+    
+    <frame Default paths>
+      <text wrap="true" width-chars="50" use-markup="true">
+        <label>
+"
+Distro      : /home/slitaz/distro
+Flavors    : /home/slitaz/flavors
+Packages : /home/slitaz/packages
+"
+        </label>
+      </text>
+    </frame>
+    
+    <hbox>
+      <button>
+        <input file icon="exit"></input>
+        <action type="closewindow">HELP</action>
+      </button>
+    </hbox>
+    
+  </vbox>
+</window>
+'
+
+# Execute tazlito commands in a XTerm.
+#
+export MAIN_DIALOG='
+<window title="Tazlito Box" icon-name="media-cdrom">
+  <vbox>
+ 
+    <text use-markup="true">
+      <label>
+"
+<b>SliTaz Live Tool Box</b>"
+      </label>
+    </text>
+    <text wrap="true" width-chars="54" use-markup="true">
+      <label>
+"
+Generate a LiveCD flavor with Tazlito.
+"
+      </label>
+    </text>
+    
+    <notebook labels="System|Flavors|Configuration files">
+    
+    <frame Current packages selection>
+    
+      <text use-markup="true">
+        <label>
+"
+Gen distro will creat a LiveCD with all installed packages.
+"
+        </label>
+      </text>
+      
+      <hbox>
+        <button>
+          <label>Gen running distro</label>
+          <input file icon="forward"></input>
+          <action>cd /home/slitaz</action>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
+        </button>
+        <button>
+          <label>Clean distro</label>
+          <input file icon="edit-clear"></input>
+          <action>cd /home/slitaz</action>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
+        </button>
+      </hbox>
+
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>New flavor :</b>"</label>
+        </text>
+        <entry>
+          <default>home-made</default>
+          <variable>GEN_FLAVOR_NAME</variable>
+        </entry>
+      </hbox>
+      <hbox>
+      <button>
+          <label>Gen flavor</label>
+          <input file icon="forward"></input>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+        </button>
+      </hbox>
+    </frame>
+    
+    <frame Community and personnal flavors>
+      <text wrap="true" use-markup="true">
+        <label>
+"
+Flavors list can be recharged from SliTaz mirror.
+"
+        </label>
+      </text>
+	  
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>Flavor :</b>"</label>
+        </text>
+        <entry>
+          <default>core</default>
+          <variable>COMMUNITY_FLAVOR</variable>
+        </entry>
+      </hbox>
+
+      <hbox>
+        <button>
+		  <label>List flavors</label>
+		  <input file icon="media-cdrom"></input>
+		  <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "list-flavors" -e "tazlito list-flavors && echo -e \"----\nENTER to continue...\" && read close"</action>
+	    </button>
+	    <button>
+	      <label>Recharge list</label>
+		  <input file icon="reload"></input>
+		  <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "list-flavors --recharge" -e "tazlito list-flavors --recharge && echo -e \"----\nENTER to continue...\" && read close"</action>
+	    </button>
+      </hbox>
+      
+      <hbox>
+        <button>
+          <label>Get flavor</label>
+          <input file icon="forward"></input>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "get-flavor $COMMUNITY_FLAVOR" -e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"</action>
+        </button>
+        <button>
+          <label>Gen flavor distro</label>
+          <input file icon="forward"></input>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
+        </button>
+        <button>
+          <label>Clean distro</label>
+          <input file icon="edit-clear"></input>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
+        </button>
+      </hbox>
+    </frame>
+    
+    <frame Flavor config and packages list>
+      <text wrap="true" use-markup="true">
+        <label>
+"
+Before editing files you must have a flavor description.
+"
+        </label>
+      </text>
+      
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>Flavor config :</b>"</label>
+        </text>
+        <entry>
+          <default>/home/slitaz/flavors/tazlito.conf</default>
+          <variable>CONFIG_FILE</variable>
+        </entry>
+        <button>
+          <input file icon="accessories-text-editor"></input>
+          <action>leafpad $CONFIG_FILE</action>
+        </button>
+      </hbox>
+      
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>Packages list :</b>"</label>
+        </text>
+        <entry>
+          <default>/home/slitaz/flavors/distro-packages.list</default>
+          <variable>PKGS_LIST</variable>
+        </entry>
+        <button>
+          <input file icon="accessories-text-editor"></input>
+          <action>leafpad $PKGS_LIST</action>
+        </button>
+      </hbox>
+      
+    </frame>
+ 
+    </notebook>
+    
+    <hbox>
+      <button help>
+        <input file icon="help-browser"></input>
+	    <action type="launch">HELP</action>
+      </button>
+      <button>
+        <input file icon="exit"></input>
+        <action type="exit">Exit</action>
+      </button>
+    </hbox>
+  
+  </vbox>
+</window>
+'
+
+# Tazlitobox action
+check_root
+cd_flavors
+gtkdialog --center --program=MAIN_DIALOG
+
+exit 0
