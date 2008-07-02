@@ -158,6 +158,7 @@ installed_package_name()
 	local tazpkg
 	local package
 	local VERSION
+	local EXTRAVERSION
 	tazpkg=$1
 	# try du find package name and version to be able
 	# to repack it from installation
@@ -167,7 +168,9 @@ installed_package_name()
 	while true; do
 		VERSION=""
 		eval $(grep -s ^VERSION= $INSTALLED/$i/receipt)
-		if [ "$i-$VERSION" = "$tazpkg" ]; then
+		EXTRAVERSION=""
+		eval $(grep -s ^EXTRAVERSION= $INSTALLED/$i/receipt)
+		if [ "$i-$VERSION$EXTRAVERSION" = "$tazpkg" ]; then
 			echo $i
 			break
 		fi
@@ -641,12 +644,14 @@ code	data
 		\rm -f $FLAVOR.pkglist $FLAVOR.nonfree 2> /dev/null
 		for i in $(ls $ROOTFS$INSTALLED); do
 			eval $(grep ^VERSION= $ROOTFS$INSTALLED/$i/receipt)
+			EXTRAVERSION=""
+			eval $(grep ^EXTRAVERSION= $ROOTFS$INSTALLED/$i/receipt)
 			eval $(grep ^CATEGORY= $ROOTFS$INSTALLED/$i/receipt)
 			if [ "$CATEGORY" = "non-free" -a "${i%%-*}" != "get" ]
 			then
 				echo "$i" >> $FLAVOR.nonfree
 			else
-				echo "$i-$VERSION" >> $FLAVOR.pkglist
+				echo "$i-$VERSION$EXTRAVERSION" >> $FLAVOR.pkglist
 			fi
 		done
 		[ -s $FLAVOR.nonfree ] && $FILES="$FILES\n$FLAVOR.nonfree"
@@ -722,7 +727,9 @@ code	data
 		# Build list with installed packages
 			for i in $(ls $INSTALLED); do
 				eval $(grep ^VERSION= $INSTALLED/$i/receipt)
-				echo "$i-$VERSION" >> $LIST_NAME
+				EXTRAVERSION=""
+				eval $(grep ^EXTRAVERSION= $INSTALLED/$i/receipt)
+				echo "$i-$VERSION$EXTRAVERSION" >> $LIST_NAME
 			done
 		fi
 		# Exit if no list name.
