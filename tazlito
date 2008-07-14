@@ -827,9 +827,7 @@ code	data
 				cleanup
 				exit 1
 			fi
-			yes "" | tazpkg install $PACKAGES_REPOSITORY/$pkg.tazpkg --root=$ROOTFS
 		done
-		cp $LIST_NAME $ROOTFS/etc/tazlito/distro-packages.list
 		if [ -f non-free.list ]; then
 			echo "Preparing non-free packages..."
 			cp non-free.list $ROOTFS/etc/tazlito/non-free.list
@@ -841,11 +839,17 @@ code	data
 					get-$pkg
 				fi
 				tazpkg repack $pkg
-				yes "" | tazpkg install $pkg*.tazpkg --root=$ROOTFS
-				mv $pkg*.tazpkg $PACKAGES_REPOSITORY 
+				pkg=$(ls $pkg*.tazpkg)
+				grep -q "^$pkg$" $LIST_NAME || \
+					echo $pkg >>$LIST_NAME
+				mv $pkg $PACKAGES_REPOSITORY 
 			done
 		fi
 		echo ""
+		cp $LIST_NAME $ROOTFS/etc/tazlito/distro-packages.list
+		cd $PACKAGES_REPOSITORY
+		yes y | tazpkg install-list \
+			$ROOTFS/etc/tazlito/distro-packages.list --root=$ROOTFS
 		cd $DISTRO
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
 		if [ -d "$ADDFILES/rootfs" ] ; then
