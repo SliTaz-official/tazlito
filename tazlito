@@ -846,11 +846,13 @@ code	data
 			done
 		fi
 		echo ""
-		cp $LIST_NAME $ROOTFS/etc/tazlito/distro-packages.list
+		cp $LIST_NAME $DISTRO/distro-packages.list
+		sed 's/\(.*\)/\1.tazpkg/' < $DISTRO/distro-packages.list > $DISTRO/list-packages
 		cd $PACKAGES_REPOSITORY
 		yes y | tazpkg install-list \
-			$ROOTFS/etc/tazlito/distro-packages.list --root=$ROOTFS
+			$DISTRO/list-packages --root=$ROOTFS
 		cd $DISTRO
+		cp distro-packages.list $ROOTFS/etc/tazlito
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
 		if [ -d "$ADDFILES/rootfs" ] ; then
 			echo -n "Copying addfiles content to the rootfs... "
