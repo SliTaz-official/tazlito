@@ -1,5 +1,5 @@
 # Makefile for Tazlito.
-# Check the README for more informations.
+# Check the README for more information.
 #
 SBINDIR?=/sbin
 PREFIX?=/usr
