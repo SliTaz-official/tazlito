@@ -128,7 +128,7 @@ todomsg()
 download()
 {
 	for i in $(cat $MIRROR); do
-		wget $i$@
+		wget $i$@ && break
 	done
 }
 
@@ -461,14 +461,14 @@ Distro directory    : $DISTRO"
 			exit 0
 		fi
 		echo ""
-		echo -e "\033[1mTazlito extracting :\033[0m $ISO_IMAGE"
+		echo -e "\033[1mTazlito extracting :\033[0m `basename $ISO_IMAGE`"
 		echo "================================================================================"
 		# Start to mount the ISO.
 		echo ""
 		echo "Mounting ISO image..."
 		mkdir -p $TMP_DIR
 		# Get ISO file size.
-		isosize=`du -sh $ISO_IMAGE`
+		isosize=`du -sh $ISO_IMAGE | cut -f1`
 		mount -o loop $ISO_IMAGE $TMP_DIR
 		sleep 2
 		# Prepare target dir, copy the kernel and the rootfs.
@@ -522,7 +522,7 @@ Distro directory    : $DISTRO"
 		cd ..
 		echo ""
 		echo "================================================================================"
-		echo "Extracted       : $ISO_IMAGE ($isosize)"
+		echo "Extracted       : `basename $ISO_IMAGE` ($isosize)"
 		echo "Distro tree     : `pwd`"
 		echo "Rootfs size     : `du -sh rootfs`"
 		echo "Rootcd size     : `du -sh rootcd`"
