@@ -26,7 +26,7 @@ LOCALSTATE=/var/lib/tazpkg
 INSTALLED=$LOCALSTATE/installed
 CACHE_DIR=/var/cache/tazpkg
 MIRROR=$LOCALSTATE/mirror
-DEFAULT_MIRROR="http://download.tuxfamily.org/slitaz/packages/`cat /etc/slitaz-release`/"
+DEFAULT_MIRROR="http://mirror.slitaz.org/packages/`cat /etc/slitaz-release`/"
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
