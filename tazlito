@@ -124,11 +124,27 @@ todomsg()
 	echo -e "\\033[70G[ \\033[1;31mTODO\\033[0;39m ]"
 }
 
-# Download a file trying each mirror
+# Download a file from this mirror
+download_from()
+{
+	local i
+	local mirrors
+	mirrors="$1"
+	shift
+	for i in $mirrors; do
+		case "$i" in
+		http://*|ftp://*) wget -c $i$@ && break;;
+		*) cp $i/$1 . && break;;
+		esac
+	done
+}
+
+# Download a file trying all mirrors
 download()
 {
-	for i in $(cat $MIRROR); do
-		wget $i$@ && break
+	local i
+	for i in $(cat $MIRROR $LOCALSTATE/undigest/*/mirror 2> /dev/null); do
+		download_from "$i" "$@" && break
 	done
 }
 
