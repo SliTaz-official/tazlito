@@ -39,7 +39,7 @@ Tazlito Box is a tiny interface to SliTaz Live Tool aka Tazlito.
 You can simply generate a LiveCD in a few minutes, using your
 own flavor or one from the SliTaz community. Tazlito can also 
 generate a LiveCD flavor using all the current installed packages
-selection. Tazlito commads are executed in a XTerm, you can
+selection. Tazlito commands are executed in a XTerm, you can
 then press ENTER or the mouse to close the window.
 "
         </label>
@@ -96,7 +96,7 @@ Generate a LiveCD flavor with Tazlito.
       <text use-markup="true">
         <label>
 "
-Gen distro will creat a LiveCD with all installed packages.
+Gen distro will create a LiveCD with all installed packages.
 "
         </label>
       </text>
