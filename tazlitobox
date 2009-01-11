@@ -35,12 +35,12 @@ export HELP='
       <text wrap="true" width-chars="52" use-markup="true">
         <label>
 "
-Tazlito Box is a tiny interface to SliTaz Live Tool aka Tazlito.
+Tazlito Box is a tiny interface to the SliTaz Live Tool aka Tazlito.
 You can simply generate a LiveCD in a few minutes, using your
 own flavor or one from the SliTaz community. Tazlito can also 
-generate a LiveCD flavor using all the current installed packages
-selection. Tazlito commands are executed in a XTerm, you can
-then press ENTER or the mouse to close the window.
+generate a LiveCD flavor using all of the currently installed 
+packages. Tazlito commands are executed in a XTerm, you can 
+press ENTER or the mouse to close the window.
 "
         </label>
       </text>
@@ -89,24 +89,24 @@ Generate a LiveCD flavor with Tazlito.
       </label>
     </text>
     
-    <notebook labels="System|Flavors|Configuration files">
+    <notebook labels="System|Gen Flavor|Flavors|Configuration files">
     
     <frame Current packages selection>
     
       <text use-markup="true">
         <label>
 "
-Gen distro will create a LiveCD with all installed packages.
+Gen distro will create a LiveCD based on all the currently installed packages.
 "
         </label>
       </text>
       
       <hbox>
         <button>
-          <label>Gen running distro</label>
+          <label>Gen distro</label>
           <input file icon="forward"></input>
           <action>cd /home/slitaz</action>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
           <label>Clean distro</label>
@@ -115,6 +115,27 @@ Gen distro will create a LiveCD with all installed packages.
           <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
         </button>
       </hbox>
+       <hbox>
+        <text use-markup="true">
+          <label>"<b>Name :</b>"</label>
+        </text>
+        <entry>
+          <default>current-packages.iso</default>
+          <variable>GEN_LIVEFLAVOR_NAME</variable>
+        </entry>
+      </hbox>
+     </frame>
+     
+     <frame Gen Flavor>
+    
+      <text use-markup="true">
+        <label>
+"
+Gen Flavor will generate a new flavor file based on rootfs in 
+home/slitaz/distro.
+"
+        </label>
+      </text>
 
       <hbox>
         <text use-markup="true">
@@ -127,14 +148,14 @@ Gen distro will create a LiveCD with all installed packages.
       </hbox>
       <hbox>
       <button>
-          <label>Gen flavor</label>
+          <label>Gen new flavor</label>
           <input file icon="forward"></input>
           <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
       </hbox>
     </frame>
     
-    <frame Community and personnal flavors>
+    <frame Community and personal flavors>
       <text wrap="true" use-markup="true">
         <label>
 "
@@ -173,7 +194,7 @@ Flavors list can be recharged from SliTaz mirror.
           <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "get-flavor $COMMUNITY_FLAVOR" -e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
-          <label>Gen flavor distro</label>
+          <label>Gen distro</label>
           <input file icon="forward"></input>
           <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
