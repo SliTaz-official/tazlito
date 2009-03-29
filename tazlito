@@ -314,10 +314,11 @@ distro_sizes()
 {
 	echo "Build date      : `date +%Y%m%d\ \at\ \%H:%M:%S`"
 	echo "Packages        : `ls -1 $ROOTFS$INSTALLED | wc -l`"
-	echo "Rootfs size     : `du -sh $ROOTFS`"
-	echo "Initramfs size  : `du -sh $ROOTCD/boot/$INITRAMFS`"
-	echo "ISO image size  : `du -sh $ISO_NAME.iso`"
+	echo "Rootfs size     : `du -sh $ROOTFS | awk '{ print $1 }'`"
+	echo "Initramfs size  : `du -sh $ROOTCD/boot/$INITRAMFS | awk '{ print $1 }'`"
+	echo "ISO image size  : `du -sh $ISO_NAME.iso | awk '{ print $1 }'`"
 	echo "================================================================================"
+	echo "Image is ready: $ISO_NAME.iso"
 	echo ""
 }
 
@@ -325,7 +326,7 @@ distro_sizes()
 distro_stats()
 {
 	echo ""
-	echo -e "\033[1mDistro statistics\033[0m"
+	echo -e "\033[1mDistro statistics\033[0m ($DISTRO)"
 	echo "================================================================================"
 	distro_sizes
 }
@@ -919,6 +920,13 @@ code	data
 			echo -n "Copying addfiles content to the rootcd... "
 			cp -a $ADDFILES/rootcd/* $ROOTCD
 			status
+		fi
+		# Execute the distro script (used to perform tasks in the rootfs
+		# before compression. Give rootfs path in arg
+		[ -z $DISTRO_SCRIPT ] && DISTRO_SCRIPT=$TOP_DIR/distro.sh
+		if [ -x $DISTRO_SCRIPT ]; then
+			echo "Executing distro script..."
+			sh $DISTRO_SCRIPT $DISTRO
 		fi
 		# Initramfs and ISO image stuff.
 		gen_initramfs
