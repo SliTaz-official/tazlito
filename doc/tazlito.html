@@ -63,6 +63,7 @@ du LiveCD, via le livre de cuisine (Cookbook) de SliTaz
 </p>
 
 <h2>COMMANDES</h2>
+<a name="usage"></a>
 <h3><font color="#6c0023">usage</font></h3>
 <p>
 La commande 'usage' affiche une liste des commandes disponibles avec une
@@ -71,6 +72,7 @@ courte description :
 <pre>
  # tazlito usage
 </pre>
+<a name="stats"></a>
 <h3><font color="#6c0023">stats</font></h3>
 <p>
 Stats affiche les variables de configuration, le chemin vers les différents
@@ -79,6 +81,7 @@ fichiers et répertoires et les informations sur l'image ISO :
 <pre>
  # tazlito stats
 </pre>
+<a name="gen-config"></a>
 <h3><font color="#6c0023">gen-config</font></h3>
 <p>
 La commande 'gen-config' vous permet de générer une fichier de configuration
@@ -89,6 +92,7 @@ et peut aussi l'être dans un autre répertoire si spécifié :
  # tazlito gen-config
  # tazlito gen-config /path/to/distro
 </pre>
+<a name="configure"></a>
 <h3><font color="#6c0023">configure</font></h3>
 <p>
 La commande configure permet de configurer le fichier de configuration
@@ -97,6 +101,7 @@ système ou celui trouvé dans le répertoire courant :
 <pre>
  # tazlito configure
 </pre>
+<a name="gen-iso"></a>
 <h3><font color="#6c0023">gen-iso</font></h3>
 <p>
 La commande 'gen-iso' pour <em>Generate ISO</em> permet de générer une nouvelle
@@ -108,6 +113,7 @@ construite avec la commande 'extract-distro', modifiée et reconstruite via :
 <pre>
  # tazlito gen-iso
 </pre>
+<a name="gen-initiso"></a>
 <h3><font color="#6c0023">gen-initiso</font></h3>
 <p>
 La commande 'gen-initiso' va faire le même travail que 'gen-iso' mais en
@@ -118,6 +124,7 @@ en cas de modifications sur les fichiers.
 <pre>
  # tazlito gen-initiso
 </pre>
+<a name="list-flavors"></a>
 <h3><font color="#6c0023">list-flavors</font></h3>
 <p>
 La commande 'list-flavors' télécharge si nécessaire et affiche la liste des
@@ -128,6 +135,7 @@ différentes saveurs disponibles. On peut forcer le téléchargement avec
  # tazlito list-flavors
  # tazlito list-flavors --recharge
 </pre>
+<a name="get-flavor"></a>
 <h3><font color="#6c0023">get-flavor</font></h3>
 <p>
 La commande 'get-flavor' télécharge si nécessaire et prépare les fichiers
@@ -136,6 +144,7 @@ nécessaires à 'gen-distro' pour refabriquer une saveur.
 <pre>
  # tazlito get-flavor saveur-particuliere 
 </pre>
+<a name="show-flavor"></a>
 <h3><font color="#6c0023">show-flavor</font></h3>
 <p>
 La commande 'show-flavor' affiche les caractéristiques d'une saveur et ses
@@ -147,6 +156,7 @@ l'affichage produit.
  # tazlito show-flavor saveur-particuliere --brief
  # tazlito show-flavor saveur-particuliere --brief --noheader
 </pre>
+<a name="gen-flavor"></a>
 <h3><font color="#6c0023">gen-flavor</font></h3>
 <p>
 La commande 'gen-flavor' crée un fichier de description d'une nouvelle saveur
@@ -156,6 +166,7 @@ produit pourra être ensuite envoyé à slitaz.org.
 <pre>
  # tazlito gen-flavor nouvelle-saveur
 </pre>
+<a name="gen-liveflavor"></a>
 <h3><font color="#6c0023">gen-liveflavor</font></h3>
 <p>
 La commande 'gen-liveflavor' crée une image ISO et un fichier de description
@@ -176,6 +187,7 @@ libre, et afficher un message à l'écran.
  !	skype
  !	flash-plugin
 </pre>
+<a name="extract-distro"></a>
 <h3><font color="#6c0023">extract-distro</font></h3>
 <p>
 La commande 'extract-iso' sert à extraire les fichiers d'une images ISO du
@@ -187,6 +199,7 @@ d'utilisation :
 <pre>
  # tazlito extract-distro slitaz-cooking.iso
 </pre>
+<a name="gen-distro"></a>
 <h3><font color="#6c0023">gen-distro</font></h3>
 <p>
 La commande <em>Generate Distribution</em> permet de générer la structure du
@@ -207,6 +220,7 @@ miroirs de SliTaz ou générés par Tazwok. Pour générer une distro :
  # tazlito gen-distro --iso=slitaz.iso
  # tazlito gen-distro package-list
 </pre>
+<a name="clean-distro"></a>
 <h3><font color="#6c0023">clean-distro</font></h3>
 <p>
 Supprime tous les fichiers générés ou extraits de la structure du LiveCD :
@@ -214,6 +228,7 @@ Supprime tous les fichiers générés ou extraits de la structure du LiveCD :
 <pre>
  # tazlito clean-distro
 </pre>
+<a name="check-distro"></a>
 <h3><font color="#6c0023">check-distro</font></h3>
 <p>
 Cette commande permet simplement de vérifier si les fichiers non installés par
@@ -222,6 +237,7 @@ des paquets, sont bien présents dans la distro :
 <pre>
  # tazlito check-distro
 </pre>
+<a name="burn-iso"></a>
 <h3><font color="#6c0023">burn-iso</font></h3>
 <p>
 Burn ISO va deviner le périphérique de cdrom, sa vitesse de gravure et lancer
