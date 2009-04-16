@@ -2,7 +2,7 @@
 # 
 # Gtkdialog box for Tazlito - SliTaz Live Tool.
 #
-VERSION=20080306
+VERSION=2.0
 
 # Check if user is root.
 check_root()
