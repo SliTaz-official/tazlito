@@ -738,11 +738,7 @@ code	data
 		# Generate a live distro tree with a set of packages.
 		#
 		check_root
-		if [ -d $ROOTFS ] ; then
-			echo -e "\nA rootfs exists in : $DISTRO"
-			echo -e "Please clean the distro tree or change directory path.\n"
-			exit 0
-		fi
+		
 		# Check if a package list was specified on cmdline.
 		LIST_NAME="distro-packages.list"
 		CDROM=""
@@ -754,6 +750,9 @@ code	data
 			--cdrom)
 				CDROM="/dev/cdrom"
 				;;
+			--force)
+				DELETE_ROOTFS="true"
+				;;
 			*)	if [ ! -f "$2" ] ; then
 					echo -e "\nUnable to find the specified packages list."
 					echo -e "List name : $2\n"
@@ -764,6 +763,18 @@ code	data
 			esac
 			shift
 		done
+		 
+		if [ -d $ROOTFS ] ; then
+			# Delete $ROOTFS if --force is set on command line
+			if [ ! -z $DELETE_ROOTFS ]; then
+				rm -rf $ROOTFS
+				unset $DELETE_ROOTFS
+			else
+				echo -e "\nA rootfs exists in : $DISTRO"
+				echo -e "Please clean the distro tree or change directory path.\n"
+				exit 0
+			fi
+		fi
 		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
 		# Build list with installed packages
 			for i in $(ls $INSTALLED); do
