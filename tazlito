@@ -276,6 +276,19 @@ gen_livecd_isolinux()
 	genisohooks final
 }
 
+lzma_history_bits()
+{
+	local n
+	local sz
+	n=20	# 1Mb
+	sz=$(du -sk $1 | cut -f1)
+	while [ $sz -gt 1024 -a $n -lt 28 ]; do
+		n=$(( $n + 1 ))
+		sz=$(( $sz / 2 ))
+	done
+	echo $n
+}
+
 # Pack rootfs
 pack_rootfs()
 {
@@ -285,7 +298,7 @@ pack_rootfs()
 		cat > $2
 	elif [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
-		lzma e -si -so -d24 > $2
+		lzma e -si -so -d$(lzma_history_bits $1) > $2
 	else
 		echo -n "Generating gziped initramfs... "
 		gzip -9 > $2
@@ -1257,13 +1270,8 @@ EOT
 			echo -n "Repack $(basename $i)"
 			(zcat $i || unlzma -c $i || cat $i) \
 				2>/dev/null > $TMP_DIR/rootfs
-			n=20	# 1Mb
-			sz=$(stat -c %s $TMP_DIR/rootfs)
-			while [ $sz -gt 1048576 ]; do
-				n=$(( $n + 1 ))
-				sz=$(( $sz / 2 ))
-			done
-			lzma e $TMP_DIR/rootfs $i -d$n
+			lzma e $TMP_DIR/rootfs $i \
+				-d$(lzma_history_bits $TMP_DIR/rootfs)
 			status
 		done
 		
