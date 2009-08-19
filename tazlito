@@ -83,6 +83,7 @@ usage ()
   gen-liveflavor  Generate a live-CD description from current system.
   show-flavor     Show live-CD description.
   get-flavor      Get a flavor's list of packages.
+  upgrade-flavor  Update package list to the latest available versions.
   check-list      Check a distro-packages.list for updates.
   extract-distro  Extract an ISO to a directory and rebuild LiveCD tree.
   gen-distro      Generate a Live distro and ISO from a list of packages.
@@ -755,6 +756,39 @@ code	data
 		echo "================================================================================"
 		echo "Flavor size : `du -sh $FLAVOR.flavor`"
 		echo ""
+		;;
+	upgrade-flavor)
+		# Update package list to the lastest versions available.
+		FLAVOR=$2
+		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
+			mkdir $TMP_DIR
+			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
+			echo -n "Update $FLAVOR package list..."
+			sed -i -e 's/size\( *:\) \(.*\)/size\1 unknown/' \
+			       -e 's/is ready/not built yet/' \
+			       -e 's/date\( *:\) \(.*\)/date\1 not built yet/' \
+					$TMP_DIR/$FLAVOR.desc
+			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			while read org; do
+				i=0
+				pkg=$org
+				while ! grep -q ^$pkg /var/lib/tazpkg/packages.list; do
+					pkg=${pkg%-*}
+					i=$(($i + 1))
+					[ $i -gt 5 ] && break;
+				done
+				for i in $(grep ^$pkg /var/lib/tazpkg/packages.list); do
+					echo $i
+					break
+				done
+			done <  $TMP_DIR/$FLAVOR.pkglist \
+			     > $TMP_DIR/$FLAVOR.pkglist.$$
+			mv -f $TMP_DIR/$FLAVOR.pkglist.$$ $TMP_DIR/$FLAVOR.pkglist
+			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
+				$FLAVOR.flavor
+			status
+			rm -Rf $TMP_DIR
+		fi
 		;;
 	get-flavor)
 		# Get a flavor's files and prepare for gen-distro.
