@@ -444,6 +444,37 @@ cleanup_merge()
 	exit 1
 }
 
+human2cent()
+{
+case "$1" in
+*k) echo $1 | sed 's/\(.*\).\(.\)k/\1\2/';;
+*M) echo $(( $(echo $1 | sed 's/\(.*\).\(.\)M/\1\2/') * 1024));;
+*G) echo $(( $(echo $1 | sed 's/\(.*\).\(.\)G/\1\2/') * 1024 * 1024));;
+esac
+}
+
+cent2human()
+{
+if [ $1 -lt 10000 ]; then
+  echo "$(($1 / 10)).$(($1 % 10))k"
+elif [ $1 -lt 10000000 ]; then
+  echo "$(($1 / 10240)).$(( ($1/1024) % 10))M"
+else
+  echo "$(($1 / 10485760)).$(( ($1/1048576) % 10))G"
+fi
+}
+
+get_size()
+{
+awk "{ \
+if (/^$(echo $1 | sed 's/[$+.\]/\\&/g')$/) get=1; \
+if (/installed/ && get) { print ; get=0 } \
+}" < /var/lib/tazpkg/packages.txt  | \
+sed 's/ *\(.*\) .\(.*\) installed./\1 \2/' | while read packed unpacked; do
+  echo "$(human2cent $packed) $(human2cent $unpacked)"
+done
+}
+
 ####################
 # Tazlito commands #
 ####################
@@ -767,11 +798,8 @@ code	data
 			mkdir $TMP_DIR
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			echo -n "Update $FLAVOR package list..."
-			sed -i -e 's/size\( *:\) \(.*\)/size\1 unknown/' \
-			       -e 's/is ready/not built yet/' \
-			       -e 's/date\( *:\) \(.*\)/date\1 not built yet/' \
-					$TMP_DIR/$FLAVOR.desc
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			packed_size=0; unpacked_size=0
 			while read org; do
 				i=0
 				pkg=$org
@@ -780,6 +808,9 @@ code	data
 					i=$(($i + 1))
 					[ $i -gt 5 ] && break;
 				done
+				set -- $(get_size $pkg)
+				packed_size=$(( $packed_size + $1 ))
+				unpacked_size=$(( $unpacked_size + $2 ))
 				for i in $(grep ^$pkg /var/lib/tazpkg/packages.list); do
 					echo $i
 					break
@@ -787,6 +818,25 @@ code	data
 			done <  $TMP_DIR/$FLAVOR.pkglist \
 			     > $TMP_DIR/$FLAVOR.pkglist.$$
 			mv -f $TMP_DIR/$FLAVOR.pkglist.$$ $TMP_DIR/$FLAVOR.pkglist
+			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
+				packed_size=$(($packed_size \
+					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+				unpacked_size=$(($unpacked_size \
+					+ $(zcat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+			fi
+			# Estimate lzma
+			packed_size=$(($packed_size * 2 / 3))
+			iso_size=$(( $packed_size + 26000 ))
+			if [ -s $TMP_DIR/$FLAVOR.rootcd ]; then
+				iso_size=$(($iso_size \
+					+ $(zcat $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
+			fi
+			sed -i -e '/Image is ready/d' \
+			       -e "s/Rootfs size\( *:\) \(.*\)/Rootfs size\1 $(cent2human $unpacked_size) (estimated)/" \
+			       -e "s/Initramfs size\( *:\) \(.*\)/Initramfs size\1 $(cent2human $packed_size) (estimated)/" \
+			       -e "s/ISO image size\( *:\) \(.*\)/ISO image size\1 $(cent2human $iso_size) (estimated)/" \
+			       -e "s/date\( *:\) \(.*\)/date\1 $(date +%Y%m%d\ \at\ \%H:%M:%S)/" \
+					$TMP_DIR/$FLAVOR.desc
 			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
 				$FLAVOR.flavor
 			status
@@ -834,35 +884,56 @@ code	data
 		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/desc.txt ]; then
 			mkdir $TMP_DIR
 			echo -n "Create $FLAVOR..."
-			cat > $TMP_DIR/$FLAVOR.desc <<EOT
-Flavor          : $FLAVOR
-Description     : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/desc.txt)
-Build date      : $(date +%Y%m%d\ \at\ \%H:%M:%S)
-Packages        : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt | wc -l)
-Rootfs size     : unknown
-Initramfs size  : unknown
-ISO image size  : unknown
-================================================================================
-
-EOT
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
-			grep -v ^#  $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt | \
+			packed_size=0; unpacked_size=0
+			grep -v ^#  $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt > \
+				$TMP_DIR/$FLAVOR.pkg
 			while read pkg; do
+				set -- $(get_size $pkg)
+				packed_size=$(( $packed_size + $1 ))
+				unpacked_size=$(( $unpacked_size + $2 ))
 				for i in $(grep ^$pkg /var/lib/tazpkg/packages.list); do
 					echo $i
 					break
 				done
-			done > $TMP_DIR/$FLAVOR.pkglist
+			done > $TMP_DIR/$FLAVOR.pkglist < $TMP_DIR/$FLAVOR.pkg
+			rm -f $TMP_DIR/$FLAVOR.pkg
 			for i in rootcd rootfs; do
 				[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] || \
 					continue
 				( cd $FLAVORS_REPOSITORY/$FLAVOR/$i ; find . | \
 				cpio -o -H newc ) | gzip -9 >$TMP_DIR/$FLAVOR.$i
 			done
+			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
+				packed_size=$(($packed_size \
+					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+				unpacked_size=$(($unpacked_size \
+					+ $(zcat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+			fi
+			# Estimate lzma
+			packed_size=$(($packed_size * 2 / 3))
+			iso_size=$(( $packed_size + 26000 ))
+			if [ -s $TMP_DIR/$FLAVOR.rootcd ]; then
+				iso_size=$(($iso_size \
+					+ $(zcat $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
+			fi
+			cat > $TMP_DIR/$FLAVOR.desc <<EOT
+Flavor          : $FLAVOR
+Description     : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/desc.txt)
+Build date      : $(date +%Y%m%d\ \at\ \%H:%M:%S)
+Packages        : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt | wc -l)
+Rootfs size     : $(cent2human $unpacked_size) (estimated)
+Initramfs size  : $(cent2human $packed_size) (estimated)
+ISO image size  : $(cent2human $iso_size) (estimated)
+================================================================================
+
+EOT
 			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
 				$FLAVOR.flavor
 			status
 			rm -Rf $TMP_DIR
+		else
+			echo "No $FLAVOR flavor in $FLAVORS_REPOSITORY."
 		fi
 		;;
 	get-flavor)
