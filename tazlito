@@ -61,6 +61,7 @@ fi
 # configuration variable.
 ROOTFS=$DISTRO/rootfs
 ROOTCD=$DISTRO/rootcd
+FLAVORS_REPOSITORY=/home/slitaz/flavors
 
 #####################
 # Tazlito functions #
@@ -84,6 +85,8 @@ usage ()
   show-flavor     Show live-CD description.
   get-flavor      Get a flavor's list of packages.
   upgrade-flavor  Update package list to the latest available versions.
+  extract-flavor  Extract a (*.flavor) flavor into $FLAVORS_REPOSITORY.
+  pack-flavor     Pack (and update) a flavor from $FLAVORS_REPOSITORY.
   check-list      Check a distro-packages.list for updates.
   extract-distro  Extract an ISO to a directory and rebuild LiveCD tree.
   gen-distro      Generate a Live distro and ISO from a list of packages.
@@ -636,7 +639,7 @@ Distro directory    : $DISTRO"
 		;;
 	show-flavor)
 		# Show flavor description.
-		FLAVOR=$2
+		FLAVOR=${2%.flavor}
 		if [ ! -f "$FLAVOR.flavor" ]; then
 			echo "File $FLAVOR.flavor not found."
 			exit 1
@@ -660,7 +663,7 @@ Distro directory    : $DISTRO"
 		;;
 	gen-liveflavor)
 		# Generate a new flavor form the live system.
-		FLAVOR=$2
+		FLAVOR=${2%.flavor}
 		DESC=""
 		case "$FLAVOR" in
 		'')	echo -n "Flavor name : "
@@ -705,7 +708,7 @@ code	data
 		;;
 	gen-flavor)
 		# Generate a new flavor from the last iso image generated.
-		FLAVOR=$2
+		FLAVOR=${2%.flavor}
 		echo ""
 		echo -e "\033[1mFlavor generation\033[0m"
 		echo "================================================================================"
@@ -759,10 +762,10 @@ code	data
 		;;
 	upgrade-flavor)
 		# Update package list to the lastest versions available.
-		FLAVOR=$2
+		FLAVOR=${2%.flavor}
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			mkdir $TMP_DIR
-			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
+			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			echo -n "Update $FLAVOR package list..."
 			sed -i -e 's/size\( *:\) \(.*\)/size\1 unknown/' \
 			       -e 's/is ready/not built yet/' \
@@ -772,7 +775,7 @@ code	data
 			while read org; do
 				i=0
 				pkg=$org
-				while ! grep -q ^$pkg /var/lib/tazpkg/packages.list; do
+				while ! grep -q ^$pkg$ /var/lib/tazpkg/packages.txt; do
 					pkg=${pkg%-*}
 					i=$(($i + 1))
 					[ $i -gt 5 ] && break;
@@ -790,9 +793,81 @@ code	data
 			rm -Rf $TMP_DIR
 		fi
 		;;
+	extract-flavor)
+		# Extract a flavor into $FLAVORS_REPOSITORY.
+		FLAVOR=${2%.flavor}
+		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
+			mkdir $TMP_DIR
+			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
+			echo -n "Extract $FLAVOR..."
+			rm -rf $FLAVORS_REPOSITORY/$FLAVOR 2> /dev/null
+			mkdir -p $FLAVORS_REPOSITORY/$FLAVOR
+			grep ^Description $TMP_DIR/$FLAVOR.desc | \
+				sed 's/.*: \(.*\)$/\1/' > \
+				$FLAVORS_REPOSITORY/$FLAVOR/desc.txt
+			for i in rootcd rootfs; do
+				[ -f $TMP_DIR/$FLAVOR.$i ] || continue
+				mkdir $FLAVORS_REPOSITORY/$FLAVOR/$i
+				zcat $TMP_DIR/$FLAVOR.$i | \
+				  (cd $FLAVORS_REPOSITORY/$FLAVOR/$i; \
+				   cpio -idm > /dev/null)
+			done
+			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			while read org; do
+				i=0
+				pkg=$org
+				while ! grep -q ^$pkg$ /var/lib/tazpkg/packages.txt; do
+					pkg=${pkg%-*}
+					i=$(($i + 1))
+					[ $i -gt 5 ] && break;
+				done
+				echo $pkg
+			done <  $TMP_DIR/$FLAVOR.pkglist \
+			     > $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt
+			status
+			rm -Rf $TMP_DIR
+		fi
+		;;
+	pack-flavor)
+		# Create a flavor from $FLAVORS_REPOSITORY.
+		FLAVOR=${2%.flavor}
+		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/desc.txt ]; then
+			mkdir $TMP_DIR
+			echo -n "Create $FLAVOR..."
+			cat > $TMP_DIR/$FLAVOR.desc <<EOT
+Flavor          : $FLAVOR
+Description     : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/desc.txt)
+Build date      : $(date +%Y%m%d\ \at\ \%H:%M:%S)
+Packages        : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt | wc -l)
+Rootfs size     : unknown
+Initramfs size  : unknown
+ISO image size  : unknown
+================================================================================
+
+EOT
+			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			grep -v ^#  $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt | \
+			while read pkg; do
+				for i in $(grep ^$pkg /var/lib/tazpkg/packages.list); do
+					echo $i
+					break
+				done
+			done > $TMP_DIR/$FLAVOR.pkglist
+			for i in rootcd rootfs; do
+				[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] || \
+					continue
+				( cd $FLAVORS_REPOSITORY/$FLAVOR/$i ; find . | \
+				cpio -o -H newc ) | gzip -9 >$TMP_DIR/$FLAVOR.$i
+			done
+			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
+				$FLAVOR.flavor
+			status
+			rm -Rf $TMP_DIR
+		fi
+		;;
 	get-flavor)
 		# Get a flavor's files and prepare for gen-distro.
-		FLAVOR=$2
+		FLAVOR=${2%.flavor}
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			echo -n "Cleaning $DISTRO..."
 			rm -R $DISTRO 2> /dev/null
