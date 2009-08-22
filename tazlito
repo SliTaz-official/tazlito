@@ -676,13 +676,13 @@ Distro directory    : $DISTRO"
 			exit 1
 		fi
 		mkdir $TMP_DIR
-		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2> /dev/null )
+		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i > /dev/null )
 		if [ "$3" = "--brief" ]; then
 			if [ "$4" != "--noheader" ]; then
-				echo "Name            Sizes        Description"
+				echo "Name              ISO   Rootfs  Description"
 				echo "================================================================================"
 			fi
-			printf "%-15.15s %5.5s/%5.5s %-51s\n" "$FLAVOR" \
+			printf "%-16.16s %6.6s %6.6s %s\n" "$FLAVOR" \
 				"$(field ISO $TMP_DIR/$FLAVOR.desc)" \
 				"$(field Rootfs $TMP_DIR/$FLAVOR.desc)" \
 				"$(grep ^Description $TMP_DIR/$FLAVOR.desc | cut -d: -f2)"
@@ -832,9 +832,9 @@ code	data
 					+ $(zcat $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
 			fi
 			sed -i -e '/Image is ready/d' \
-			       -e "s/Rootfs size\( *:\) \(.*\)/Rootfs size\1 $(cent2human $unpacked_size) (estimated)/" \
-			       -e "s/Initramfs size\( *:\) \(.*\)/Initramfs size\1 $(cent2human $packed_size) (estimated)/" \
-			       -e "s/ISO image size\( *:\) \(.*\)/ISO image size\1 $(cent2human $iso_size) (estimated)/" \
+			       -e "s/Rootfs size\( *:\) \(.*\)/Rootfs size\1 $(cent2human $unpacked_size)  (estimated)/" \
+			       -e "s/Initramfs size\( *:\) \(.*\)/Initramfs size\1 $(cent2human $packed_size)  (estimated)/" \
+			       -e "s/ISO image size\( *:\) \(.*\)/ISO image size\1 $(cent2human $iso_size)  (estimated)/" \
 			       -e "s/date\( *:\) \(.*\)/date\1 $(date +%Y%m%d\ \at\ \%H:%M:%S)/" \
 					$TMP_DIR/$FLAVOR.desc
 			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
@@ -852,9 +852,19 @@ code	data
 			echo -n "Extract $FLAVOR..."
 			rm -rf $FLAVORS_REPOSITORY/$FLAVOR 2> /dev/null
 			mkdir -p $FLAVORS_REPOSITORY/$FLAVOR
+			echo "FLAVOR=\"$FLAVOR\"" > $FLAVORS_REPOSITORY/$FLAVOR/receipt
 			grep ^Description $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/\1/' > \
-				$FLAVORS_REPOSITORY/$FLAVOR/desc.txt
+				sed 's/.*: \(.*\)$/SHORT_DESC="\1"/' >> \
+				$FLAVORS_REPOSITORY/$FLAVOR/receipt
+			grep ^Rootfs $TMP_DIR/$FLAVOR.desc | \
+				sed 's/.*: \(.*\)$/ROOTFS_SIZE="\1"/' >> \
+				$FLAVORS_REPOSITORY/$FLAVOR/receipt
+			grep ^Initramfs $TMP_DIR/$FLAVOR.desc | \
+				sed 's/.*: \(.*\)$/INITRAMFS_SIZE="\1"/' >> \
+				$FLAVORS_REPOSITORY/$FLAVOR/receipt
+			grep ^ISO $TMP_DIR/$FLAVOR.desc | \
+				sed 's/.*: \(.*\)$/ISO_SIZE="\1"/' >> \
+				$FLAVORS_REPOSITORY/$FLAVOR/receipt
 			for i in rootcd rootfs; do
 				[ -f $TMP_DIR/$FLAVOR.$i ] || continue
 				mkdir $FLAVORS_REPOSITORY/$FLAVOR/$i
@@ -873,7 +883,7 @@ code	data
 				done
 				echo $pkg
 			done <  $TMP_DIR/$FLAVOR.pkglist \
-			     > $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt
+			     > $FLAVORS_REPOSITORY/$FLAVOR/packages.list
 			status
 			rm -Rf $TMP_DIR
 		fi
@@ -881,12 +891,12 @@ code	data
 	pack-flavor)
 		# Create a flavor from $FLAVORS_REPOSITORY.
 		FLAVOR=${2%.flavor}
-		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/desc.txt ]; then
+		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
 			mkdir $TMP_DIR
 			echo -n "Create $FLAVOR..."
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
 			packed_size=0; unpacked_size=0
-			grep -v ^#  $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt > \
+			grep -v ^#  $FLAVORS_REPOSITORY/$FLAVOR/packages.list > \
 				$TMP_DIR/$FLAVOR.pkg
 			while read pkg; do
 				set -- $(get_size $pkg)
@@ -917,14 +927,31 @@ code	data
 				iso_size=$(($iso_size \
 					+ $(zcat $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
 			fi
+			VERSION=""
+			MAINTAINER=""
+			ROOTFS_SIZE="$(cent2human $unpacked_size) (estimated)"
+			INITRAMFS_SIZE="$(cent2human $packed_size) (estimated)"
+			ISO_SIZE="$(cent2human $iso_size) (estimated)"
+			. $FLAVORS_REPOSITORY/$FLAVOR/receipt
 			cat > $TMP_DIR/$FLAVOR.desc <<EOT
 Flavor          : $FLAVOR
-Description     : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/desc.txt)
+Description     : $SHORT_DESC
+EOT
+			[ -n "$VERSION" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
+Version         : $VERSION
+EOT
+			[ -n "$MAINTAINER" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
+Maintainer      : $MAINTAINER
+EOT
+			[ -n "$FRUGAL_RAM" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
+LiveCD RAM size : $FRUGAL_RAM
+EOT
+			cat >> $TMP_DIR/$FLAVOR.desc <<EOT
 Build date      : $(date +%Y%m%d\ \at\ \%H:%M:%S)
-Packages        : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/pkglist.txt | wc -l)
-Rootfs size     : $(cent2human $unpacked_size) (estimated)
-Initramfs size  : $(cent2human $packed_size) (estimated)
-ISO image size  : $(cent2human $iso_size) (estimated)
+Packages        : $(grep -v ^# $FLAVORS_REPOSITORY/$FLAVOR/packages.list | wc -l)
+Rootfs size     : $ROOTFS_SIZE
+Initramfs size  : $INITRAMFS_SIZE
+ISO image size  : $ISO_SIZE
 ================================================================================
 
 EOT
