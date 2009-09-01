@@ -783,6 +783,10 @@ code	data
 			fi
 		done
 		[ -s $FLAVOR.nonfree ] && $FILES="$FILES\n$FLAVOR.nonfree"
+		for i in $LOCALSTATE/undigest/*/mirror ; do
+			[ -s $i ] && cat $i >> $FLAVOR.mirrors
+		done
+		[ -s $FLAVOR.mirrors ] && $FILES="$FILES\n$FLAVOR.mirrors"
 		echo -e "$FLAVOR.desc\n$FILES" | cpio -o -H newc 2>/dev/null | \
 			gzip -9 > $FLAVOR.flavor
 		rm `echo -e $FILES`
@@ -872,6 +876,9 @@ code	data
 				  (cd $FLAVORS_REPOSITORY/$FLAVOR/$i; \
 				   cpio -idm > /dev/null)
 			done
+			[ -s $TMP_DIR/$FLAVOR.mirrors ] &&
+				cp $TMP_DIR/$FLAVOR.mirrors \
+					$FLAVORS_REPOSITORY/$FLAVOR/mirrors
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
 			while read org; do
 				i=0
@@ -895,6 +902,9 @@ code	data
 			mkdir $TMP_DIR
 			echo -n "Create $FLAVOR..."
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			[ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ] &&
+				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
+					$TMP_DIR/$FLAVOR.mirrors
 			packed_size=0; unpacked_size=0
 			grep -v ^#  $FLAVORS_REPOSITORY/$FLAVOR/packages.list > \
 				$TMP_DIR/$FLAVOR.pkg
@@ -979,11 +989,22 @@ EOT
 			status
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
+					echo -n "Add $i..."
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id 2> /dev/null)
+					status
 				fi
 			done
+			if [ -s $TMP_DIR/$FLAVOR.mirrors ]; then
+				n=""
+				while read line; do
+					mkdir -p $LOCALSTATE/undigest/$FLAVOR$n
+					echo "$line" > $LOCALSTATE/undigest/$FLAVOR$n/mirror
+					n=$(( $n + 1 ))
+				done < $TMP_DIR/$FLAVOR.mirrors
+				tazpkg recharge
+			fi
 			echo -n "Update tazlito.conf..."
 			[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
 			cat tazlito.conf | grep -v "^#VOLUM_NAME" | \
