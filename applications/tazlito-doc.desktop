@@ -4,6 +4,6 @@ Name[fr]=Manuel de Tazlito
 Comment=SliTaz LiveCD generator and editor
 Comment[fr]=Manuel de l'outil de génération et édition de LiveCD
 Exec=browser /usr/share/doc/tazlito/tazlito.html
-Icon=/usr/share/icons/SliTaz/16x16/mimetypes/text-html.png
+Icon=text-html
 Type=Application
 Categories=Documentation;
