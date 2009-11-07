@@ -474,10 +474,11 @@ fi
 
 get_size()
 {
-awk "{ \
+cat /var/lib/tazpkg/packages.list $TMP_DIR/packages.list 2>/dev/null | awk "{ \
 if (/^$(echo $1 | sed 's/[$+.\]/\\&/g')$/) get=1; \
-if (/installed/ && get) { print ; get=0 } \
-}" < /var/lib/tazpkg/packages.txt  | \
+if (/installed/ && get == 1) { print ; get++ } \
+}
+END { if (get < 2) print \" 0.0k  (0.0k installed)\" }" | \
 sed 's/ *\(.*\) .\(.*\) installed./\1 \2/' | while read packed unpacked; do
   echo "$(human2cent $packed) $(human2cent $unpacked)"
 done
@@ -766,7 +767,7 @@ Distro directory    : $DISTRO"
 			exit 1
 		fi
 		mkdir $TMP_DIR
-		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i > /dev/null )
+		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2> /dev/null)
 		if [ "$3" = "--brief" ]; then
 			if [ "$4" != "--noheader" ]; then
 				echo "Name              ISO   Rootfs  Description"
@@ -774,7 +775,7 @@ Distro directory    : $DISTRO"
 			fi
 			printf "%-16.16s %6.6s %6.6s %s\n" "$FLAVOR" \
 				"$(field ISO $TMP_DIR/$FLAVOR.desc)" \
-				"$(field Rootfs $TMP_DIR/$FLAVOR.desc)" \
+				"$(field 'Rootfs size' $TMP_DIR/$FLAVOR.desc)" \
 				"$(grep ^Description $TMP_DIR/$FLAVOR.desc | cut -d: -f2)"
 		else
 			echo "================================================================================"
@@ -994,7 +995,7 @@ code	data
 		FLAVOR=${2%.flavor}
 		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
 			mkdir $TMP_DIR
-			echo -n "Create $FLAVOR..."
+			echo -n "Create flavor $FLAVOR..."
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
@@ -1018,7 +1019,8 @@ code	data
 				[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] || \
 					continue
 				( cd $FLAVORS_REPOSITORY/$FLAVOR/$i ; find . | \
-				cpio -o -H newc ) | gzip -9 >$TMP_DIR/$FLAVOR.$i
+				cpio -o -H newc 2> /dev/null ) | \
+				gzip -9 >$TMP_DIR/$FLAVOR.$i
 			done
 			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
 				packed_size=$(($packed_size \
@@ -1066,8 +1068,8 @@ ISO image size  : $ISO_SIZE
 
 EOT
 			rm -f $TMP_DIR/packages.list
-			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
-				$FLAVOR.flavor
+			( cd $TMP_DIR ; ls | cpio -o -H newc 2> /dev/null) | \
+				gzip -9 > $FLAVOR.flavor
 			status
 			rm -Rf $TMP_DIR
 		else
