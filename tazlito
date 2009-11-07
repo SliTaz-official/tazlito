@@ -492,7 +492,8 @@ while read pkg; do
 	set -- $(get_size $pkg)
 	packed_size=$(( $packed_size + $1 ))
 	unpacked_size=$(( $unpacked_size + $2 ))
-	for i in $(grep ^$pkg /var/lib/tazpkg/packages.list); do
+	for i in $(grep -hs ^$pkg /var/lib/tazpkg/packages.list \
+				  $TMP_DIR/packages.list); do
 		echo $i
 		break
 	done
@@ -995,9 +996,13 @@ code	data
 			mkdir $TMP_DIR
 			echo -n "Create $FLAVOR..."
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
-			[ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ] &&
+			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
 					$TMP_DIR/$FLAVOR.mirrors
+				for i in $(cat $TMP_DIR/$FLAVOR.mirrors); do
+					wget -O - $i/packages.list >> $TMP_DIR/packages.list
+				done
+			fi
 			[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] &&
 			get_pkglist $FLAVOR > $TMP_DIR/$FLAVOR.pkglist
 			if grep -q ^ROOTFS_SELECTION \
@@ -1060,6 +1065,7 @@ ISO image size  : $ISO_SIZE
 ================================================================================
 
 EOT
+			rm -f $TMP_DIR/packages.list
 			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
 				$FLAVOR.flavor
 			status
