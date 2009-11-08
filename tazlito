@@ -159,7 +159,7 @@ download()
 genisohooks()
 {
 	local here=`pwd`
-	for i in $(ls etc/tazlito/*.$1 2> /dev/null); do
+	for i in $(ls $ROOTFS/etc/tazlito/*.$1 2> /dev/null); do
 		cd $ROOTFS
 		. $i $ROOTCD
 	done
