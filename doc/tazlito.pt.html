@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="pt" lang="pt">
+<head>
+    <title>Manual Tazlito - Ferramenta Live do SliTaz</title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
+    <meta name="description" content="" />
+    <meta name="expires" content="never" />
+    <meta name="modified" content="2008-07-18 14:00:00" />
+    <style type="text/css"><!--
+    body { font: 90% sans-serif, vernada, arial; margin: 0; }
+    #header { background: #f0ba08; color: black; height: 50px;
+        border-top: 1px solid black; border-bottom: 1px solid black; }
+    #content { margin: 0px 50px 26px 50px; }
+    h1 { margin: 14px 0px 0px 16px; }
+    li { line-height: 1.4em; }
+    pre { padding: 5px; color: black; background: #e1e0b0; }
+    pre.script { padding: 10px; color: black; background: #e8e8e8;
+        border: 1px inset #333333; }
+    code { font-size: 100%; color: #669900; background: transparent; }
+    hr { color: white; background: white; height: 1px; border: 0; }
+    --></style>
+</head>
+<body bgcolor="#ffffff">
+<div id="header">
+<h1><font color="#3e1220">Manual Tazlito</font></h1>
+</div>
+<hr />
+<!-- Start content -->
+<div id="content">
+
+<h2>NOME</h2>
+<p>
+Tazlito - SliTaz Live Tool.
+</p>
+
+<h2>SINTAXE</h2>
+<pre>
+tazlito [command] [list|iso|flavor] [dir]
+</pre>
+
+<h2>DESCRIÇÃO</h2>
+<p>
+Tazlito é um pequeno utilitário que extrai um LiveCD, reconstrói a imagem ISO
+e regenera o sistema de arquivos root do LiveCD. Tazlito também pode gerar
+uma distribuição a partir de uma lista de pacotes previamente baixados. Para
+rodar, o Tazlito usa o arquivo de configuração /etc/slitaz-tools/tazlito.conf
+ou o tazlito.conf gerado pelo Tazlito no diretório atual. Este arquivo especifica
+o nome da ISO, volume, mantenedor, os caminhos dos pacotes a serem incluidos e
+da ISO a ser gerada. Tazlito também pode ser usado para configurar um diretório
+contendo arquivos adicionais que serão copiados para o LiveCD na geração da
+distribuição.
+</p>
+<p>
+Tazlito é distribuído sobre a licença livre GNU GPL V3, istalada por padrão no
+SliTaz e instalada/testada com sucesso no Debian GNU/Linux. Você irá encontrar
+informações adicionais sobre a criação de um LiveCD no Manual SliTaz.
+</p>
+
+<h2>COMANDOS</h2>
+<a name="usage"></a>
+<h3><font color="#6c0023">usage</font></h3>
+<p>
+O comando "usage" mostra um resumo dos comandos disponíveis com uma pequena
+descrição:
+</p>
+<pre>
+ # tazlito usage
+</pre>
+<a name="stats"></a>
+<h3><font color="#6c0023">stats</font></h3>
+<p>
+"Stats" mostra as variáveis da configuração, os caminhos para os vários arquivos
+e diretórios e informações sobre a imagem ISO:
+</p>
+<pre>
+ # tazlito stats
+</pre>
+<a name="gen-config"></a>
+<h3><font color="#6c0023">gen-config</font></h3>
+<p>
+O comando "gen-config" permite a geração do arquivo de configuração pronto para
+ser editado. Por padrão o arquivo é criado no diretório atual, mas também pode
+ser em outro diretório informado na linha de comando:
+</p>
+<pre>
+ # tazlito gen-config
+ # tazlito gen-config /path/to/distro
+</pre>
+<a name="configure"></a>
+<h3><font color="#6c0023">configure</font></h3>
+<p>
+Este comando pode configurar o arquivo de configuração do sistema ou o encontrado
+no diretório atual:
+</p>
+<pre>
+ # tazlito configure
+</pre>
+<a name="gen-iso"></a>
+<h3><font color="#6c0023">gen-iso</font></h3>
+<p>
+O comando "gen-iso" pode gerar uma nova imagem do LiveCD a partir de modificações
+e adições ao sistema de arquivos root do cdrom. Para funcionar, este comando
+precisa de um diretório que contenha a "árvore" da distribuição do sistema Live.
+Esta "árvore" pode ser facilmente gerada com o comando "extract-distro", modificada
+ou reconstruida via:
+</p>
+<pre>
+ # tazlito gen-iso
+</pre>
+<a name="gen-initiso"></a>
+<h3><font color="#6c0023">gen-initiso</font></h3>
+<p>
+O comando "gen-initiso" faz o mesmo que o "gen-iso", mas antes ele reconstrói o 
+sistema comprimido initramfs. O initramfs contem o sistema de arquivos root e
+deve ser reconstruído se modificado:
+</p>
+<pre>
+ # tazlito gen-initiso
+</pre>
+<a name="list-flavors"></a>
+<h3><font color="#6c0023">list-flavors</font></h3>
+<p>
+Este comando baixa (se necessário) e mostra a lista de diferentes variantes
+disponíveis. Pode-se forçar o download com a opção --recharge:
+</p>
+<pre>
+ # tazlito list-flavors
+ # tazlito list-flavors --recharge
+</pre>
+<a name="get-flavor"></a>
+<h3><font color="#6c0023">get-flavor</font></h3>
+<p>
+O comando "get-flavor" baixa (se necessário) e prepara os arquivos para que o
+comando "gen-distro" gere uma variante:
+</p>
+<pre>
+ # tazlito get-flavor particular-flavor
+</pre>
+<a name="show-flavor"></a>
+<h3><font color="#6c0023">show-flavor</font></h3>
+<p>
+Este comando mostra a descrição da variante e seu tamanho após a regeneração.
+As opções --brief e --hoheader reduzem a saida do comando:
+</p>
+<pre>
+ # tazlito show-flavor particular-flavor 
+ # tazlito show-flavor particular-flavor --brief
+ # tazlito show-flavor particular-flavor --brief --noheader
+</pre>
+<a name="gen-flavor"></a>
+<h3><font color="#6c0023">gen-flavor</font></h3>
+<p>
+O comando "gen-flavor" cria um arquivo de descrição de uma nova variante a partir
+dos resultados da regeneração da distro (gen-distro). O arquivo .flavor pode
+ser enviado ao slitaz.org:
+</p>
+<pre>
+ # tazlito gen-flavor new-flavor
+</pre>
+<a name="gen-liveflavor"></a>
+<h3><font color="#6c0023">gen-liveflavor</font></h3>
+<p>
+Este comando cria um arquivo de descrição de uma nova variante a partir
+dos resultados de geração da distro baseada no sistema atual. A opção
+--help mostra mais informações
+</p>
+<pre> # tazlito gen-liveflavor
+ # tazlito gen-liveflavor --help
+</pre>
+<a name="extract-distro"></a>
+<h3><font color="#6c0023">extract-distro</font></h3>
+<p>
+Este comando é usado para extrair uma imagem ISO do LiveCD e reconstruir a 
+estrutura do cdrom e sistema root. Isto possibilita fazer as mudanças desejadas,
+adições e reconstruções da imagem ISO por meio do comando "gen-iso" ou 
+"gen-initiso". Exemplo de uso:
+</p>
+<pre>
+ # tazlito extract-distro slitaz-cooking.iso
+</pre>
+<a name="gen-distro"></a>
+<h3><font color="#6c0023">gen-distro</font></h3>
+<p>
+O comando para <em>Geração de Distribuição</em> pode gerar a árvore da distribuição
+e a imagem ISO por meio de uma lista de pacotes. Para funcionar, este comando
+precisa da lista de pacotes, um diretório contendo todos os pacotes .tazpgk
+especificados na lista e um diretório para gerar a distribuição. A lista de 
+pacotes pode ser extraida de uma variante pelo comando "get-flavor". Ao se 
+utilizar o LiveCD, as opções --cdrom e --iso= permitem a regeneração dos 
+pacotes que adicionam arquivos ao diretório /boot sem que seja necessário o
+download dos mesmos e recuperam os arquivos adicionais do LiveCD. O caminho
+para os vários diretórios é informado no arquivo de configuração e os pacotes
+podem ser baixados dos mirrors do SliTaz ou gerados pelo Tazwok. Para gerar uma
+distribuição:
+</p>
+<pre>
+ # tazlito gen-distro
+ # tazlito gen-distro --cdrom
+ # tazlito gen-distro --iso=slitaz.iso
+ # tazlito gen-distro package-list
+</pre>
+<a name="clean-distro"></a>
+<h3><font color="#6c0023">clean-distro</font></h3>
+<p>
+Remove todos os arquivos gerados ou extraidos da estrutura do LiveCD:
+</p>
+<pre>
+ # tazlito clean-distro
+</pre>
+<a name="addhacker"></a>
+<h3><font color="#6c0023">addhacker</font></h3>
+<p>
+Este comando permite a adição do usuário "hacker" à distribuição - o que permite
+a utilização de uma conta de usuário sem a necessidade de uma senha. Note que
+este comando muda as permissões de todos os arquivos em <code>/home/hacker/</code>:
+</p>
+<pre>
+ # tazlito addhacker
+</pre>
+<a name="check-distro"></a>
+<h3><font color="#6c0023">check-distro</font></h3>
+<p>
+Este comando simplesmente verifica se os arquivos instalados pelos pacotes estão
+presentes no sistema:
+</p>
+<pre>
+ # tazlito check-distro
+</pre>
+<a name="burn-iso"></a>
+<h3><font color="#6c0023">burn-iso</font></h3>
+<p>
+O comando "burn-iso" obtém informações sobre o dispositivo de cd e as velocidades
+permitidas para gravação, e o wodim (parte do cdrkit) inicia para gravar a imagem
+ISO. A imagem ISo padrão é aquela especificada no arquivo de configuração, mas
+é possível especificar uma imagem diferente por meio da linha de comando:
+</p>
+<pre>
+ # tazlito burn-iso
+ # tazlito burn-iso slitaz-hacked.iso
+</pre>
+
+<h2>MANTENEDOR</h2>
+<p>
+Christophe Lincoln &lt;pankso at slitaz.org&gt;
+</p>
+
+<!-- End content -->
+</div>
+</body>
+</html>
+
