@@ -43,7 +43,7 @@ else
 	if [ "$COMMAND" = "gen-config" ] ; then
 		continue
 	else
-		echo "Unable to find any configuration file. Please read the doc"
+		echo "Unable to find any configuration file. Please read the docs"
 		echo "or run '`basename $0` gen-config' to get an empty config file."
 		exit 0
 	fi
@@ -241,7 +241,7 @@ create_iso()
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
 		-boot-info-table $2
 	if [ -x /usr/bin/isohybrid ]; then
-		echo -n "Create hybrid ISO..."
+		echo -n "Creating hybrid ISO..."
 		/usr/bin/isohybrid $1 2> /dev/null
 		status
 	fi
@@ -506,7 +506,7 @@ rm -f $TMP_DIR/flavor.pkg
 # Update isolinux config files for multiple rootfs
 update_bootconfig()	
 {
-	echo -n "Update boot config files"
+	echo -n "Updating boot config files..."
 	grep -l 'include common' $1/*.cfg | \
 	while read file ; do
 			awk -v n=$(echo $2 | awk '{ print NF/2 }') '{
@@ -893,7 +893,7 @@ code	data
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			mkdir $TMP_DIR
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
-			echo -n "Update $FLAVOR package list..."
+			echo -n "Updating $FLAVOR package list..."
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
 			packed_size=0; unpacked_size=0
 			while read org; do
@@ -945,7 +945,7 @@ code	data
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			mkdir $TMP_DIR
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
-			echo -n "Extract $FLAVOR..."
+			echo -n "Extracting $FLAVOR..."
 			rm -rf $FLAVORS_REPOSITORY/$FLAVOR 2> /dev/null
 			mkdir -p $FLAVORS_REPOSITORY/$FLAVOR
 			echo "FLAVOR=\"$FLAVOR\"" > $FLAVORS_REPOSITORY/$FLAVOR/receipt
@@ -996,7 +996,7 @@ code	data
 		FLAVOR=${2%.flavor}
 		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
 			mkdir $TMP_DIR
-			echo -n "Create flavor $FLAVOR..."
+			echo -n "Creating flavor $FLAVOR..."
 			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
@@ -1087,13 +1087,13 @@ EOT
 			status
 			mkdir $TMP_DIR
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
-			echo -n "Create distro-packages.list..."
+			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
 			status
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
-					echo -n "Add $i..."
+					echo -n "Adding $i..."
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id 2> /dev/null)
@@ -1113,7 +1113,7 @@ EOT
 			grep -q '^Rootfs list' $TMP_DIR/$FLAVOR.desc &&
 				grep '^Rootfs list' $TMP_DIR/$FLAVOR.desc | \
 				sed 's/.*: \(.*\)$/\1/' > /etc/tazlito/rootfs.list
-			echo -n "Update tazlito.conf..."
+			echo -n "Updating tazlito.conf..."
 			[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
 			cat tazlito.conf | grep -v "^#VOLUM_NAME" | \
 			sed "s/^VOLUM_NA/VOLUM_NAME=\"SliTaz $FLAVOR\"\\n#VOLUM_NA/" \
@@ -1439,7 +1439,7 @@ EOT
 			echo -n "Mirror URL   : Missing /var/lib/tazpkg/mirror"
 			todomsg
 		else
-			echo -n "Mirror configuration exist..."
+			echo -n "Mirror configuration exists..."
 			status
 		fi
 		# Isolinux msg	
@@ -1518,7 +1518,7 @@ EOT
 
 		ISO=$1.merged
 		# Extract filesystems
-		echo -n "Mount $1"
+		echo -n "Mounting $1"
 		mount -o loop,ro $1 $TMP_DIR/mnt 2> /dev/null
 		status || cleanup_merge
 		cp -a $TMP_DIR/mnt $TMP_DIR/iso
@@ -1526,7 +1526,7 @@ EOT
 		ln $TMP_DIR/iso/boot/vmlinuz* $TMP_DIR/iso/boot/bzImage
 		umount -d $TMP_DIR/mnt
 		if [ -f $TMP_DIR/iso/boot/rootfs1.gz ]; then
-			echo "$1 is already a merged iso. Abort."
+			echo "$1 is already a merged iso. Aborting."
 			cleanup_merge
 		fi
 		if [ ! -f $TMP_DIR/iso/boot/isolinux/ifmem.c32 ]; then
@@ -1541,7 +1541,7 @@ EOT
 			cp /boot/isolinux/ifmem.c32 $TMP_DIR/iso/boot/isolinux
 		fi
 		
-		echo -n "Extract iso/rootfs.gz"
+		echo -n "Extracting iso/rootfs.gz"
 		extract_rootfs $TMP_DIR/iso/boot/rootfs.gz $TMP_DIR/rootfs1 &&
 		[ -d $TMP_DIR/rootfs1/etc ]
 		status || cleanup_merge
@@ -1553,21 +1553,21 @@ EOT
 			append="$append $1 slitaz$n"
 			shift	# skip size N
 			mkdir -p $TMP_DIR/rootfs$n
-			echo -n "Extract $1"
+			echo -n "Extracting $1"
 			extract_rootfs $1 $TMP_DIR/rootfs$n &&
 			[ -d $TMP_DIR/rootfs$n/etc ]
 			status || cleanup_merge
 			mergefs $TMP_DIR/rootfs$n $TMP_DIR/rootfs$p
-			echo "Create rootfs$p.gz"
+			echo "Creating rootfs$p.gz"
 			pack_rootfs $TMP_DIR/rootfs$p $TMP_DIR/iso/boot/rootfs$p.gz
 			status
 		done
-		echo "Create rootfs$n.gz"
+		echo "Creating rootfs$n.gz"
 		pack_rootfs $TMP_DIR/rootfs$n $TMP_DIR/iso/boot/rootfs$n.gz
 		status
 		rm -f $TMP_DIR/iso/boot/rootfs.gz
 		update_bootconfig $TMP_DIR/iso/boot/isolinux "$append"
-		echo "Generate $ISO"
+		echo "Generating $ISO"
 		create_iso $ISO $TMP_DIR/iso
 		rm -rf $TMP_DIR
 		;;
@@ -1580,14 +1580,14 @@ EOT
 
 		mkdir -p $TMP_DIR/mnt
 		# Extract filesystems
-		echo -n "Mount $ISO"
+		echo -n "Mounting $ISO"
 		mount -o loop,ro $ISO $TMP_DIR/mnt 2> /dev/null
 		status || cleanup_merge
 		cp -a $TMP_DIR/mnt $TMP_DIR/iso
 		umount -d $TMP_DIR/mnt
 		
 		for i in $TMP_DIR/iso/boot/rootfs* ; do
-			echo -n "Repack $(basename $i)"
+			echo -n "Repacking $(basename $i)"
 			(zcat $i || unlzma -c $i || cat $i) \
 				2>/dev/null > $TMP_DIR/rootfs
 			lzma e $TMP_DIR/rootfs $i \
@@ -1595,7 +1595,7 @@ EOT
 			status
 		done
 		
-		echo "Generate $ISO"
+		echo "Generating $ISO"
 		create_iso $ISO $TMP_DIR/iso
 		rm -rf $TMP_DIR
 		;;
