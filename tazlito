@@ -7,7 +7,7 @@
 # and/or a new ISO. Most commands must be run by root, except the stats
 # and the configuration file manipulation.
 #
-# (C) 2007-2009 SliTaz - GNU General Public License.
+# (C) 2007-2010 SliTaz - GNU General Public License.
 #
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
@@ -1598,15 +1598,31 @@ EOT
 		create_iso $ISO $TMP_DIR/iso
 		rm -rf $TMP_DIR
 		;;
+	
+	emu-iso)
+		# Emulate an ISO image with Qemu.
+		if [ -n "$2" ] ; then
+			iso=$2
+		else
+			iso=$DISTRO/$ISO_NAME.iso
+		fi
+		if [ ! -f "$iso" ]; then
+			echo -e "\nUnable to find ISO : $iso\n"
+			exit 0
+		fi
+		if [ ! -x "/usr/bin/qemu" ]; then
+			echo -e "\nUnable to find Qemu binary. Please install: qemu\n"
+			exit 0
+		fi
+		echo -e "\nStarting Qemu emulator:\n"
+		echo -e "qemu $QEMU_OPTS $iso\n"
+		qemu $QEMU_OPTS $iso ;;
 
 	usage|*)
 		# Clear and print usage also for all unknown commands.
 		#
 		clear
-		usage
-		;;
-
+		usage ;;
 esac
 
 exit 0
-
