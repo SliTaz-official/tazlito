@@ -94,6 +94,7 @@ usage ()
   check-distro    Help to check if distro is ready to release.
   merge           Merge multiple rootfs into one iso.
   repack          Recompress rootfs into iso with maximum ratio.
+  emu-iso         Emulate an ISO image with Qemu.
   burn-iso        Burn ISO image to a cdrom using Wodim.\n"
 }
 
