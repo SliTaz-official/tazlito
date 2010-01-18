@@ -49,7 +49,7 @@ previously downloaded. To run, Tazlito uses the configuration file
 current directory that can be easily generated. 
 It specifies the name of the ISO, volume, maintainer and 
 the paths of the packages to distribute and the generated ISO. 
-Tazlito can also set up a directory containing additional files, 
+Tazlito can also set up a directory containing additional files 
 which will be copied to the LiveCD when generating the distribution.
 </p>
 <p>
@@ -238,6 +238,17 @@ by the packages are present on the system:
 </p>
 <pre>
  # tazlito check-distro
+</pre>
+<a name="emu-iso"></a>
+<h3><font color="#6c0023">emu-iso</font></h3>
+<p>
+The emu-iso command uses the Qemu emulator to start and run SliTaz.
+Qemu is used to test the newly built ISO image without burning to a
+cdrom or booting into frugal mode. 
+</p>
+<pre>
+ # tazlito emu-iso
+ # tazlito emu-iso path/to/image.iso
 </pre>
 <a name="burn-iso"></a>
 <h3><font color="#6c0023">burn-iso</font></h3>
