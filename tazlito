@@ -590,6 +590,12 @@ Distro directory    : $DISTRO"
 		echo "================================================================================"
 		echo ""
 	    ;;
+	list-addfiles)
+		# Simple list of additonal files in the rootfs
+		echo ""
+		cd $ADDFILES
+		find rootfs -type f
+		echo "" ;;
 	gen-config)
 		# Generate a new config file in the current dir or the specified
 		# directory by $2.
