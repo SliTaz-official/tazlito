@@ -106,7 +106,7 @@ Gen distro will create a LiveCD based on all the currently installed packages.
           <label>Gen distro</label>
           <input file icon="forward"></input>
           <action>cd /home/slitaz</action>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor $GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
           <label>Clean distro</label>
