@@ -120,7 +120,7 @@ Gen distro will create a LiveCD based on all the currently installed packages.
           <label>"<b>Name :</b>"</label>
         </text>
         <entry>
-          <default>current-packages.iso</default>
+          <default>slitaz</default>
           <variable>GEN_LIVEFLAVOR_NAME</variable>
         </entry>
       </hbox>
@@ -142,7 +142,7 @@ home/slitaz/distro.
           <label>"<b>New flavor :</b>"</label>
         </text>
         <entry>
-          <default>home-made</default>
+          <default>slitaz</default>
           <variable>GEN_FLAVOR_NAME</variable>
         </entry>
       </hbox>
