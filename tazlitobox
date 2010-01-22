@@ -15,11 +15,11 @@ root password to become super-user.\n"
 	fi
 }
 
-# By default we go in the flavors dir to download or gen flavors.
+# By default we go in /home/slitaz to download or gen flavors.
 cd_flavors()
 {
 	mkdir -p /home/slitaz/flavors
-	cd /home/slitaz/flavors
+	cd /home/slitaz
 }
 
 export HELP='
@@ -70,42 +70,91 @@ Packages : /home/slitaz/packages
 '
 
 # Execute tazlito commands in a XTerm.
-#
+# tab-pos="GTK_POS_LEFT"
 export MAIN_DIALOG='
 <window title="Tazlito Box" icon-name="media-cdrom">
   <vbox>
  
+  <hbox>
     <text use-markup="true">
-      <label>
-"
-<b>SliTaz Live Tool Box</b>"
-      </label>
+      <label>"<b>SliTaz Live Tool</b>"</label>
+      
     </text>
-    <text wrap="true" width-chars="54" use-markup="true">
-      <label>
-"
-Generate a LiveCD flavor with Tazlito.
-"
-      </label>
-    </text>
+    <pixmap>
+			<input file>/usr/share/pixmaps/tazlito.png</input>
+</pixmap>
+
+</hbox>
+
+    <notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Configuration files">
     
-    <notebook labels="System|Gen Flavor|Flavors|Configuration files">
+    <frame Filesystem to ISO>
     
-    <frame Current packages selection>
-    
-      <text use-markup="true">
+      <text wrap="true" width-chars="60" use-markup="true">
         <label>
 "
-Gen distro will create a LiveCD based on all the currently installed packages.
+Writeiso will generate an ISO image of the current filesystem as
+it, including the /home direcory. It is an easy way to remaster
+SliTaz Live system, you just have to: boot, modify, writeiso.
 "
         </label>
       </text>
+
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>Compression :</b> (gzip,lzma,none)"</label>
+        </text>
+        <entry>
+          <default>gzip</default>
+          <variable>COMPRESSION</variable>
+        </entry>
+      </hbox>
+      
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>ISO image name :</b>                    "</label>
+        </text>
+        <entry>
+          <default>slitaz</default>
+          <variable>WRITEISO_NAME</variable>
+        </entry>
+      </hbox>
+      <hbox>
+      <button>
+          <label>Writeiso</label>
+          <input file icon="forward"></input>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "writeiso" -e "tazlito writeiso $COMPRESSION $WRITEISO_NAME"</action>
+        </button>
+      </hbox>
+    </frame>
+    
+    <frame Current packages selection>
+      <text wrap="true" width-chars="60" use-markup="true">
+        <label>
+"
+Gen Live flavor will create a LiveCD based on all the currently
+installed packages. To build the rootfs and ISO image it will use
+original SliTaz packages.
+"
+        </label>
+      </text>
+      
+       <hbox>
+        <text use-markup="true">
+          <label>"<b>Flavor name :</b>"</label>
+        </text>
+        <entry>
+          <default>slitaz</default>
+          <variable>GEN_LIVEFLAVOR_NAME</variable>
+        </entry>
+      </hbox>
       
       <hbox>
         <button>
           <label>Gen distro</label>
           <input file icon="forward"></input>
           <action>cd /home/slitaz</action>
+          <action>sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$GEN_LIVEFLAVOR_NAME\"/" /etc/tazlito/tazlito.conf</action>
           <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor $GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
@@ -115,51 +164,15 @@ Gen distro will create a LiveCD based on all the currently installed packages.
           <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
         </button>
       </hbox>
-       <hbox>
-        <text use-markup="true">
-          <label>"<b>Name :</b>"</label>
-        </text>
-        <entry>
-          <default>slitaz</default>
-          <variable>GEN_LIVEFLAVOR_NAME</variable>
-        </entry>
-      </hbox>
+      
      </frame>
      
-     <frame Gen Flavor>
-    
-      <text use-markup="true">
+         <frame Community and personal flavors>
+      <text wrap="true" width-chars="60" use-markup="true">
         <label>
 "
-Gen Flavor will generate a new flavor file based on rootfs in 
-home/slitaz/distro.
-"
-        </label>
-      </text>
-
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>New flavor :</b>"</label>
-        </text>
-        <entry>
-          <default>slitaz</default>
-          <variable>GEN_FLAVOR_NAME</variable>
-        </entry>
-      </hbox>
-      <hbox>
-      <button>
-          <label>Gen new flavor</label>
-          <input file icon="forward"></input>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
-        </button>
-      </hbox>
-    </frame>
-    
-    <frame Community and personal flavors>
-      <text wrap="true" use-markup="true">
-        <label>
-"
-Flavors list can be recharged from SliTaz mirror.
+Get and build preconfigured flavors from the community. Flavors
+list can be recharged from SliTaz mirror.
 "
         </label>
       </text>
@@ -205,9 +218,38 @@ Flavors list can be recharged from SliTaz mirror.
         </button>
       </hbox>
     </frame>
+     
+     <frame Generate a flavor>
+    
+      <text wrap="true" width-chars="60" use-markup="true">
+        <label>
+"
+Gen Flavor will generate a new flavor file based on rootfs in 
+home/slitaz/distro.
+"
+        </label>
+      </text>
+
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>New flavor :</b>"</label>
+        </text>
+        <entry>
+          <default>slitaz</default>
+          <variable>GEN_FLAVOR_NAME</variable>
+        </entry>
+      </hbox>
+      <hbox>
+      <button>
+          <label>Gen new flavor</label>
+          <input file icon="forward"></input>
+          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+        </button>
+      </hbox>
+    </frame>
     
     <frame Flavor config and packages list>
-      <text wrap="true" use-markup="true">
+      <text wrap="true" width-chars="60" use-markup="true">
         <label>
 "
 Before editing files you must have a flavor description.
@@ -253,6 +295,7 @@ Before editing files you must have a flavor description.
 	    <action type="launch">HELP</action>
       </button>
       <button>
+		<label>Exit</label>
         <input file icon="exit"></input>
         <action type="exit">Exit</action>
       </button>
