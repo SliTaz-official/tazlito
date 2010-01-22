@@ -220,7 +220,7 @@ Before editing files you must have a flavor description.
           <label>"<b>Flavor config :</b>"</label>
         </text>
         <entry>
-          <default>/home/slitaz/flavors/tazlito.conf</default>
+          <default>/home/slitaz/tazlito.conf</default>
           <variable>CONFIG_FILE</variable>
         </entry>
         <button>
@@ -234,7 +234,7 @@ Before editing files you must have a flavor description.
           <label>"<b>Packages list :</b>"</label>
         </text>
         <entry>
-          <default>/home/slitaz/flavors/distro-packages.list</default>
+          <default>/home/slitaz/distro-packages.list</default>
           <variable>PKGS_LIST</variable>
         </entry>
         <button>
