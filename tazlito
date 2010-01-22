@@ -95,6 +95,7 @@ usage ()
   writeiso        Use running system to generate a bootable ISO (with /home).
   merge           Merge multiple rootfs into one iso.
   repack          Recompress rootfs into iso with maximum ratio.
+  frugal-install  Frugal install in /boot/frugal from a distro or ISO
   emu-iso         Emulate an ISO image with Qemu.
   burn-iso        Burn ISO image to a cdrom using Wodim.\n"
 }
@@ -1739,8 +1740,39 @@ EOT
 		
 		echo "Generating $ISO"
 		create_iso $ISO $TMP_DIR/iso
-		rm -rf $TMP_DIR
-		;;
+		rm -rf $TMP_DIR ;;
+	
+	frugal-install|-fi)
+		ISO_IMAGE="$2"
+		echo ""
+		mkdir -p /boot/frugal
+		if [ -f "$ISO_IMAGE" ]; then
+			echo "Using ISO image: $ISO_IMAGE"
+			mkdir -p /tmp/iso && mount -o loop $ISO_IMAGE /tmp/iso
+			echo "Installing the Kernel and rootfs..."
+			cp -a /tmp/iso/boot/bzImage /boot/frugal
+			cp -a /tmp/iso/boot/rootfs.gz /boot/frugal
+			umount /tmp/iso
+		else
+			echo "Using distro: $DISTRO"
+			cd $DISTRO
+			echo "Installing the Kernel and rootfs..."
+			cp -a $DISTRO/rootcd/boot/bzImage /boot/frugal
+			cp -a $DISTRO/rootcd/boot/rootfs.gz /boot/frugal
+		fi
+		# Grub entry
+		if ! grep -q "^kernel /boot/frugal/bzImage" /boot/grub/menu.lst; then
+			echo "Configuring GRUB menu list..."
+			cat >> /boot/grub/menu.lst << EOT
+title SliTaz GNU/Linux (frugal)
+root (hd0,0)
+kernel /boot/frugal/bzImage root=/dev/null
+initrd /boot/frugal/rootfs.gz
+EOT
+		else
+			echo "GRUB menu list is up-to-date."
+		fi
+		echo "" ;;
 	
 	emu-iso)
 		# Emulate an ISO image with Qemu.
