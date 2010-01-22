@@ -60,6 +60,7 @@ about creating a LiveCD in the Handbook.
 </p>
 
 <h2>COMMANDS</h2>
+
 <a name="usage"></a>
 <h3><font color="#6c0023">usage</font></h3>
 <p>
@@ -69,6 +70,7 @@ with a short description:
 <pre>
  # tazlito usage
 </pre>
+
 <a name="stats"></a>
 <h3><font color="#6c0023">stats</font></h3>
 <p>
@@ -78,6 +80,7 @@ various files and directories, and information on the ISO image:
 <pre>
  # tazlito stats
 </pre>
+
 <a name="gen-config"></a>
 <h3><font color="#6c0023">gen-config</font></h3>
 <p>
@@ -90,6 +93,7 @@ if specified via the command line:
  # tazlito gen-config
  # tazlito gen-config /path/to/distro
 </pre>
+
 <a name="configure"></a>
 <h3><font color="#6c0023">configure</font></h3>
 <p>
@@ -99,6 +103,7 @@ file or one found in the current directory:
 <pre>
  # tazlito configure
 </pre>
+
 <a name="gen-iso"></a>
 <h3><font color="#6c0023">gen-iso</font></h3>
 <p>
@@ -112,6 +117,7 @@ modified and rebuilt via:
 <pre>
  # tazlito gen-iso
 </pre>
+
 <a name="gen-initiso"></a>
 <h3><font color="#6c0023">gen-initiso</font></h3>
 <p>
@@ -123,6 +129,7 @@ must be rebuilt if modified:
 <pre>
  # tazlito gen-initiso
 </pre>
+
 <a name="list-flavors"></a>
 <h3><font color="#6c0023">list-flavors</font></h3>
 <p>
@@ -134,6 +141,7 @@ download with the --recharge option:
  # tazlito list-flavors
  # tazlito list-flavors --recharge
 </pre>
+
 <a name="get-flavors"></a>
 <h3><font color="#6c0023">get-flavor</font></h3>
 <p>
@@ -143,6 +151,7 @@ files for 'gen-distro' to generate a flavor:
 <pre>
  # tazlito get-flavor particular-flavor
 </pre>
+
 <a name="show-flavors"></a>
 <h3><font color="#6c0023">show-flavor</font></h3>
 <p>
@@ -155,6 +164,7 @@ flavor and its size after regeneration. The options
  # tazlito show-flavor particular-flavor --brief
  # tazlito show-flavor particular-flavor --brief --noheader
 </pre>
+
 <a name="gen-flavor"></a>
 <h3><font color="#6c0023">gen-flavor</font></h3>
 <p>
@@ -165,6 +175,7 @@ The .flavor file can then be sent to slitaz.org:
 <pre>
  # tazlito gen-flavor new-flavor
 </pre>
+
 <a name="gen-liveflavor"></a>
 <h3><font color="#6c0023">gen-liveflavor</font></h3>
 <p>
@@ -175,6 +186,7 @@ current system. The --help option provides more information:
 <pre> # tazlito gen-liveflavor
  # tazlito gen-liveflavor --help
 </pre>
+
 <a name="extract-distro"></a>
 <h3><font color="#6c0023">extract-distro</font></h3>
 <p>
@@ -187,6 +199,7 @@ or additions and rebuild the ISO image via 'gen-iso' or
 <pre>
  # tazlito extract-distro slitaz-cooking.iso
 </pre>
+
 <a name="gen-distro"></a>
 <h3><font color="#6c0023">gen-distro</font></h3>
 <p>
@@ -210,6 +223,7 @@ a distribution:
  # tazlito gen-distro --iso=slitaz.iso
  # tazlito gen-distro package-list
 </pre>
+
 <a name="clean-distro"></a>
 <h3><font color="#6c0023">clean-distro</font></h3>
 <p>
@@ -219,17 +233,7 @@ of the LiveCD:
 <pre>
  # tazlito clean-distro
 </pre>
-<a name="addhacker"></a>
-<h3><font color="#6c0023">addhacker</font></h3>
-<p>
-The 'addhacker' command allows the addition of the user 
-hacker to the distribution - it helps to have a user account
-without a password. Note that this command changes permissions
-on all files in <code>/home/hacker</code>:
-</p>
-<pre>
- # tazlito addhacker
-</pre>
+
 <a name="check-distro"></a>
 <h3><font color="#6c0023">check-distro</font></h3>
 <p>
@@ -239,6 +243,35 @@ by the packages are present on the system:
 <pre>
  # tazlito check-distro
 </pre>
+
+<a name="writeiso"></a>
+<h3><font color="#6c0023">writeiso</font></h3>
+<p>
+This command will write all the current filesystem to a cpio archive
+(rootfs.gz) and then generate a bootable ISO image. Writeiso can be use in
+live mode or HD install and will also archive your current /home direcory.
+This command let you easily remaster and build your own LiveCD image, just
+boot, modify whatever you want and then:
+</p>
+<pre>
+ # tazlito writeiso [gzip|lzma|none]
+ # tazlito writeiso gzip
+ # tazlito writeiso gzip image-name
+</pre>
+
+<a name="frugal-install"></a>
+<h3><font color="#6c0023">Fragal install</font></h3>
+<p>
+Perfom a Frugal installation into /boot/frugal and add GRUB entry if needed.
+Frugal mode will make SliTaz work all in memory (RAM), useful to test distro
+without burning ISO or to have a rescue system ready to use when computer power
+on. To install all needed files from a distro tree or an ISO image:
+</p>
+<pre>
+ # tazlito frugal-install
+ # tazlito -fi slitaz.iso
+</pre>
+
 <a name="emu-iso"></a>
 <h3><font color="#6c0023">emu-iso</font></h3>
 <p>
@@ -250,6 +283,7 @@ cdrom or booting into frugal mode.
  # tazlito emu-iso
  # tazlito emu-iso path/to/image.iso
 </pre>
+
 <a name="burn-iso"></a>
 <h3><font color="#6c0023">burn-iso</font></h3>
 <p>
