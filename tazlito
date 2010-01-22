@@ -1747,22 +1747,25 @@ EOT
 		echo ""
 		mkdir -p /boot/frugal
 		if [ -f "$ISO_IMAGE" ]; then
-			echo "Using ISO image: $ISO_IMAGE"
+			echo -n "Using ISO image: $ISO_IMAGE"
 			mkdir -p /tmp/iso && mount -o loop $ISO_IMAGE /tmp/iso
-			echo "Installing the Kernel and rootfs..."
+			status
+			echo -n "Installing the Kernel and rootfs..."
 			cp -a /tmp/iso/boot/bzImage /boot/frugal
 			cp -a /tmp/iso/boot/rootfs.gz /boot/frugal
 			umount /tmp/iso
+			status
 		else
-			echo "Using distro: $DISTRO"
-			cd $DISTRO
-			echo "Installing the Kernel and rootfs..."
+			echo -n "Using distro: $DISTRO"
+			cd $DISTRO && status
+			echo -n "Installing the Kernel and rootfs..."
 			cp -a $DISTRO/rootcd/boot/bzImage /boot/frugal
 			cp -a $DISTRO/rootcd/boot/rootfs.gz /boot/frugal
+			status
 		fi
 		# Grub entry
 		if ! grep -q "^kernel /boot/frugal/bzImage" /boot/grub/menu.lst; then
-			echo "Configuring GRUB menu list..."
+			echo -n "Configuring GRUB menu list..."
 			cat >> /boot/grub/menu.lst << EOT
 title SliTaz GNU/Linux (frugal)
 root (hd0,0)
@@ -1770,8 +1773,9 @@ kernel /boot/frugal/bzImage root=/dev/null
 initrd /boot/frugal/rootfs.gz
 EOT
 		else
-			echo "GRUB menu list is up-to-date."
+			echo -n "GRUB menu list is up-to-date..."
 		fi
+		status
 		echo "" ;;
 	
 	emu-iso)
