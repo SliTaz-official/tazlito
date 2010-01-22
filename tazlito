@@ -1130,6 +1130,7 @@ EOT
 			cat tazlito.conf | grep -v "^#VOLUM_NAME" | \
 			sed "s/^VOLUM_NA/VOLUM_NAME=\"SliTaz $FLAVOR\"\\n#VOLUM_NA/" \
 				> tazlito.conf.$$ && mv tazlito.conf.$$ tazlito.conf
+			sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$FLAVOR\"/" tazlito.conf
 			status
 			rm -Rf $TMP_DIR
 		fi
