@@ -2,7 +2,9 @@
 # 
 # Gtkdialog box for Tazlito - SliTaz Live Tool.
 #
-VERSION=2.0
+VERSION=2.2
+
+export BIN=$0
 
 # Check if user is root.
 check_root()
@@ -22,18 +24,46 @@ cd_flavors()
 	cd /home/slitaz
 }
 
+# We need to parse flavors.list for GTK tree.
+list_flavors()
+{
+	tazlito list-flavors | grep ^[a-z] | while read line
+	do		
+		info=`echo -n $line | awk '{print $1 " " $2 " " $3}'`
+		printinfo=`echo -n $line | awk '{print $1 "|" $2 "|" $3}'`
+		echo "$printinfo|`echo $line | sed s/\"$info\"//`"
+	done
+}
+
+recharge_list()
+{
+	xterm -geometry 90x14 \
+		-title "list-flavors --recharge" \
+		-e "tazlito list-flavors --recharge | grep ^[a-z] && sleep 2"
+}
+
+# When using gen-liveflavor, gen-flavor or gen-distro, user can put some
+# addfiles copied into the rootfs.
+addfiles_action()
+{
+	cd /home/slitaz
+	mkdir -p distro/addfiles/rootfs
+	mkdir -p distro/addfiles/rootcd
+	file-manager distro/addfiles &
+}
+
 export HELP='
 <window title="Tazlito Box - Help" icon-name="media-cdrom">
-  <vbox>
-    <text use-markup="true">
-      <label>"
+<vbox>
+	<text use-markup="true">
+		<label>"
 <b>Tazlito Box - Help</b>"
-      </label>
-    </text>
-    
-    <frame Overview>
-      <text wrap="true" width-chars="52" use-markup="true">
-        <label>
+		</label>
+	</text>
+	
+	<frame Overview>
+		<text wrap="true" width-chars="52" use-markup="true">
+			<label>
 "
 Tazlito Box is a tiny interface to the SliTaz Live Tool aka Tazlito.
 You can simply generate a LiveCD in a few minutes, using your
@@ -42,36 +72,61 @@ generate a LiveCD flavor using all of the currently installed
 packages. Tazlito commands are executed in a XTerm, you can 
 press ENTER or the mouse to close the window.
 "
-        </label>
-      </text>
-    </frame>
-    
-    <frame Default paths>
-      <text wrap="true" width-chars="50" use-markup="true">
-        <label>
+			</label>
+		</text>
+	</frame>
+	
+	<frame Default paths>
+		<text wrap="true" width-chars="50" use-markup="true">
+			<label>
 "
 Distro      : /home/slitaz/distro
 Flavors    : /home/slitaz/flavors
 Packages : /home/slitaz/packages
 "
-        </label>
-      </text>
-    </frame>
-    
-    <hbox>
-      <button>
-        <input file icon="exit"></input>
-        <action type="closewindow">HELP</action>
-      </button>
-    </hbox>
-    
-  </vbox>
+			</label>
+		</text>
+	</frame>
+	
+	<hbox>
+		<button>
+			<input file icon="exit"></input>
+			<action type="closewindow">HELP</action>
+		</button>
+	</hbox>
+
+</vbox>
 </window>
 '
 
-# Execute tazlito commands in a XTerm.
-# tab-pos="GTK_POS_LEFT"
-export MAIN_DIALOG='
+# List all flavors on the mirror.
+export LIST_FLAVORS_BOX='
+<window title="Community flavors list" icon-name="tazlito">
+<vbox>
+	<tree>
+		<width>500</width><height>200</height>
+		<variable>COMMUNITY_FLAVOR</variable>
+		<label>Name|ISO|Rootfs|Description</label>
+		<input exported_column="0">$BIN list_flavors</input>
+	</tree>
+	<hbox>
+		<button>
+			<label>Recharge list</label>
+			<input file icon="reload"></input>
+			<action>$BIN recharge_list</action>
+			<action>refresh:COMMUNITY_FLAVOR</action>
+		</button>
+		<button>
+			<label>Exit</label>
+			<input file icon="exit"></input>
+			<action type="closewindow">LIST_FLAVORS_BOX</action>
+		</button>
+	</hbox>
+</vbox>
+</window>'
+
+# Execute tazlito commands in a XTerm. Notebook: tab-pos="GTK_POS_LEFT"
+export TAZLITO_BOX='
 <window title="Tazlito Box" icon-name="media-cdrom">
   <vbox>
  
@@ -111,19 +166,10 @@ SliTaz Live system, you just have to: boot, modify, writeiso.
       </hbox>
       
       <hbox>
-        <text use-markup="true">
-          <label>"<b>ISO image name :</b>                    "</label>
-        </text>
-        <entry>
-          <default>slitaz</default>
-          <variable>WRITEISO_NAME</variable>
-        </entry>
-      </hbox>
-      <hbox>
       <button>
           <label>Writeiso</label>
           <input file icon="forward"></input>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "writeiso" -e "tazlito writeiso $COMPRESSION $WRITEISO_NAME"</action>
+          <action>xterm -geometry 80x16 -title "writeiso" -e "tazlito writeiso $COMPRESSION"</action>
         </button>
       </hbox>
     </frame>
@@ -134,7 +180,8 @@ SliTaz Live system, you just have to: boot, modify, writeiso.
 "
 Gen Live flavor will create a LiveCD based on all the currently
 installed packages. To build the rootfs and ISO image it will use
-original SliTaz packages.
+original SliTaz packages. Some addfiles can be copied before gen
+distro.
 "
         </label>
       </text>
@@ -151,17 +198,22 @@ original SliTaz packages.
       
       <hbox>
         <button>
+          <label>Addfiles</label>
+          <input file icon="gtk-open"></input>
+          <action>$BIN addfiles_action</action>
+        </button>
+        <button>
           <label>Gen distro</label>
           <input file icon="forward"></input>
           <action>cd /home/slitaz</action>
           <action>sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$GEN_LIVEFLAVOR_NAME\"/" /etc/tazlito/tazlito.conf</action>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor $GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>xterm -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor $GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
           <label>Clean distro</label>
           <input file icon="edit-clear"></input>
           <action>cd /home/slitaz</action>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
+          <action>xterm -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
         </button>
       </hbox>
       
@@ -185,18 +237,10 @@ list can be recharged from SliTaz mirror.
           <default>core</default>
           <variable>COMMUNITY_FLAVOR</variable>
         </entry>
-      </hbox>
-
-      <hbox>
         <button>
 		  <label>List flavors</label>
 		  <input file icon="media-cdrom"></input>
-		  <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "list-flavors" -e "tazlito list-flavors && echo -e \"----\nENTER to continue...\" && read close"</action>
-	    </button>
-	    <button>
-	      <label>Recharge list</label>
-		  <input file icon="reload"></input>
-		  <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "list-flavors --recharge" -e "tazlito list-flavors --recharge && echo -e \"----\nENTER to continue...\" && read close"</action>
+		  <action type="launch">LIST_FLAVORS_BOX</action>
 	    </button>
       </hbox>
       
@@ -204,17 +248,17 @@ list can be recharged from SliTaz mirror.
         <button>
           <label>Get flavor</label>
           <input file icon="forward"></input>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "get-flavor $COMMUNITY_FLAVOR" -e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>xterm -geometry 80x16 -title "get-flavor $COMMUNITY_FLAVOR" -e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
           <label>Gen distro</label>
           <input file icon="forward"></input>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>xterm -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
           <label>Clean distro</label>
           <input file icon="edit-clear"></input>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
+          <action>xterm -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
         </button>
       </hbox>
     </frame>
@@ -225,7 +269,7 @@ list can be recharged from SliTaz mirror.
         <label>
 "
 Gen Flavor will generate a new flavor file based on rootfs in 
-home/slitaz/distro.
+home/slitaz/distro. All addfiles will be include in the flavor file.
 "
         </label>
       </text>
@@ -241,9 +285,14 @@ home/slitaz/distro.
       </hbox>
       <hbox>
       <button>
+          <label>Addfiles</label>
+          <input file icon="gtk-open"></input>
+          <action>$BIN addfiles_action</action>
+        </button>
+      <button>
           <label>Gen new flavor</label>
           <input file icon="forward"></input>
-          <action>xterm -fa MiscFixed -fs 11 -bg gray93 -fg black -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>xterm -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
       </hbox>
     </frame>
@@ -267,7 +316,7 @@ Before editing files you must have a flavor description.
         </entry>
         <button>
           <input file icon="accessories-text-editor"></input>
-          <action>leafpad $CONFIG_FILE</action>
+          <action>editor $CONFIG_FILE</action>
         </button>
       </hbox>
       
@@ -281,7 +330,7 @@ Before editing files you must have a flavor description.
         </entry>
         <button>
           <input file icon="accessories-text-editor"></input>
-          <action>leafpad $PKGS_LIST</action>
+          <action>editor $PKGS_LIST</action>
         </button>
       </hbox>
       
@@ -305,9 +354,15 @@ Before editing files you must have a flavor description.
 </window>
 '
 
-# Tazlitobox action
-check_root
-cd_flavors
-gtkdialog --center --program=MAIN_DIALOG
+case $1 in
+	*_*)
+		# Exec all function called by args (must have an underscore).
+		$1 ;;
+	*)
+		# Tazlitobox action
+		check_root
+		cd_flavors
+		gtkdialog --center --program=TAZLITO_BOX ;;
+esac
 
 exit 0
