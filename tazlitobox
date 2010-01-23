@@ -45,6 +45,8 @@ addfiles_action()
 	file-manager distro/addfiles &
 }
 
+# All actions
+
 writeiso_action()
 {
 	xterm -geometry 80x16 \
@@ -69,6 +71,39 @@ clean_distro_action()
 		-title "clean-distro" \
 		-e "tazlito clean-distro && sleep 1"
 }
+
+get_flavor_action()
+{
+	cd /home/slitaz
+	xterm -geometry 80x16 \
+		-title "get-flavor $COMMUNITY_FLAVOR" \
+		-e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"
+}
+
+gen_distro_action()
+{
+	cd /home/slitaz
+	xterm -geometry 80x16 \
+		-title "gen-distro" \
+		-e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"
+}
+
+gen_flavor_action()
+{
+	cd /home/slitaz
+	xterm -geometry 80x16 \
+		-title "gen-flavor $GEN_FLAVOR_NAME" \
+		-e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"
+}
+
+edit_distro_script()
+{
+	[ ! -f $DISTRO_SCRIPT ] && echo "#!/bin/sh" > $DISTRO_SCRIPT
+	chmod +x $DISTRO_SCRIPT
+	editor $DISTRO_SCRIPT
+}
+
+# Boxes
 
 export HELP='
 <window title="Tazlito Box - Help" icon-name="media-cdrom">
@@ -151,7 +186,6 @@ export TAZLITO_BOX='
   <hbox>
     <text use-markup="true">
       <label>"<b>SliTaz Live Tool</b>"</label>
-      
     </text>
     <pixmap>
 			<input file>/usr/share/pixmaps/tazlito.png</input>
@@ -231,7 +265,6 @@ gen distro.
           <action>$BIN clean_distro_action</action>
         </button>
       </hbox>
-      
      </frame>
      
          <frame Community and personal flavors>
@@ -239,7 +272,7 @@ gen distro.
         <label>
 "
 Get and build preconfigured flavors from the community. Flavors
-list can be recharged from SliTaz mirror. Some addfiles can be
+llist can be recharged from SliTaz mirror. Some addfiles can be
 copied before generating the distro.
 "
         </label>
@@ -264,8 +297,7 @@ copied before generating the distro.
         <button>
           <label>Get flavor</label>
           <input file icon="forward"></input>
-          <action>cd /home/slitaz</action>
-          <action>xterm -geometry 80x16 -title "get-flavor $COMMUNITY_FLAVOR" -e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>$BIN get_flavor_action</action>
         </button>
         <button>
           <label>Addfiles</label>
@@ -275,8 +307,7 @@ copied before generating the distro.
         <button>
           <label>Gen distro</label>
           <input file icon="forward"></input>
-          <action>cd /home/slitaz</action>
-          <action>xterm -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>$BIN gen_distro_action</action>
         </button>
         <button>
           <label>Clean distro</label>
@@ -315,8 +346,7 @@ Gen Flavor will generate a new flavor file based on rootfs in
       <button>
           <label>Gen new flavor</label>
           <input file icon="forward"></input>
-          <action>cd /home/slitaz</action>
-          <action>xterm -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>$BIN gen_flavor_action</action>
         </button>
       </hbox>
     </frame>
@@ -370,9 +400,7 @@ compression.
         </entry>
         <button>
           <input file icon="accessories-text-editor"></input>
-          <action>[ ! -f $DISTRO_SCRIPT ] && echo "#!/bin/sh" > $DISTRO_SCRIPT</action>
-          <action>chmod +x $DISTRO_SCRIPT</action>
-          <action>editor $DISTRO_SCRIPT</action>
+          <action>$BIN edit_distro_script</action>
         </button>
       </hbox>
       
