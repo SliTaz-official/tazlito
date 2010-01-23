@@ -239,7 +239,7 @@ gen distro.
         <label>
 "
 Get and build preconfigured flavors from the community. Flavors
-list can be recharged from SliTaz mirror. Somme addfiles can be
+list can be recharged from SliTaz mirror. Some addfiles can be
 copied before generating the distro.
 "
         </label>
@@ -326,7 +326,7 @@ Gen Flavor will generate a new flavor file based on rootfs in
         <label>
 "
 Before editing files you must have a flavor description. Distro
-script can be used to perform action into the rootfs before
+script can be used to perform actions into the rootfs before
 compression.
 "
         </label>
