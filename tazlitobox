@@ -52,6 +52,24 @@ writeiso_action()
 		-e "tazlito writeiso $COMPRESSION"
 }
 
+gen_liveflavor_action()
+{
+	cd /home/slitaz
+	sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$GEN_LIVEFLAVOR_NAME\"/" \
+		/etc/tazlito/tazlito.conf
+	xterm -geometry 80x16 \
+		-title "gen-liveflavor" \
+		-e "tazlito gen-liveflavor $GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"
+}
+
+clean_distro_action()
+{
+	cd /home/slitaz
+	xterm -geometry 80x16 \
+		-title "clean-distro" \
+		-e "tazlito clean-distro && sleep 1"
+}
+
 export HELP='
 <window title="Tazlito Box - Help" icon-name="media-cdrom">
 <vbox>
@@ -205,15 +223,12 @@ gen distro.
         <button>
           <label>Gen distro</label>
           <input file icon="forward"></input>
-          <action>cd /home/slitaz</action>
-          <action>sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$GEN_LIVEFLAVOR_NAME\"/" /etc/tazlito/tazlito.conf</action>
-          <action>xterm -geometry 80x16 -title "gen-liveflavor" -e "tazlito gen-liveflavor $GEN_LIVEFLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
+          <action>$BIN gen_liveflavor_action</action>
         </button>
         <button>
           <label>Clean distro</label>
           <input file icon="edit-clear"></input>
-          <action>cd /home/slitaz</action>
-          <action>xterm -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
+          <action>$BIN clean_distro_action</action>
         </button>
       </hbox>
       
@@ -266,7 +281,7 @@ copied before generating the distro.
         <button>
           <label>Clean distro</label>
           <input file icon="edit-clear"></input>
-          <action>xterm -geometry 80x16 -title "clean-distro" -e "tazlito clean-distro && sleep 1"</action>
+          <action>$BIN clean_distro_action</action>
         </button>
       </hbox>
     </frame>
