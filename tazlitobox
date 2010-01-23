@@ -17,13 +17,6 @@ root password to become super-user.\n"
 	fi
 }
 
-# By default we go in /home/slitaz to download or gen flavors.
-cd_flavors()
-{
-	mkdir -p /home/slitaz/flavors
-	cd /home/slitaz
-}
-
 # We need to parse flavors.list for GTK tree.
 list_flavors()
 {
@@ -47,9 +40,16 @@ recharge_list()
 addfiles_action()
 {
 	cd /home/slitaz
-	mkdir -p distro/addfiles/rootfs
+	mkdir -p distro/addfiles/rootfs/usr/share/images
 	mkdir -p distro/addfiles/rootcd
 	file-manager distro/addfiles &
+}
+
+writeiso_action()
+{
+	xterm -geometry 80x16 \
+		-title "writeiso" \
+		-e "tazlito writeiso $COMPRESSION"
 }
 
 export HELP='
@@ -141,7 +141,7 @@ export TAZLITO_BOX='
 
 </hbox>
 
-    <notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Configuration files">
+    <notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Configuration">
     
     <frame Filesystem to ISO>
     
@@ -157,7 +157,7 @@ SliTaz Live system, you just have to: boot, modify, writeiso.
 
       <hbox>
         <text use-markup="true">
-          <label>"<b>Compression :</b> (gzip,lzma,none)"</label>
+          <label>"<b>Compression (gzip,lzma,none):</b>"</label>
         </text>
         <entry>
           <default>gzip</default>
@@ -169,7 +169,7 @@ SliTaz Live system, you just have to: boot, modify, writeiso.
       <button>
           <label>Writeiso</label>
           <input file icon="forward"></input>
-          <action>xterm -geometry 80x16 -title "writeiso" -e "tazlito writeiso $COMPRESSION"</action>
+          <action>$BIN writeiso_action</action>
         </button>
       </hbox>
     </frame>
@@ -224,7 +224,8 @@ gen distro.
         <label>
 "
 Get and build preconfigured flavors from the community. Flavors
-list can be recharged from SliTaz mirror.
+list can be recharged from SliTaz mirror. Somme addfiles can be
+copied before generating the distro.
 "
         </label>
       </text>
@@ -248,11 +249,18 @@ list can be recharged from SliTaz mirror.
         <button>
           <label>Get flavor</label>
           <input file icon="forward"></input>
+          <action>cd /home/slitaz</action>
           <action>xterm -geometry 80x16 -title "get-flavor $COMMUNITY_FLAVOR" -e "tazlito get-flavor $COMMUNITY_FLAVOR && echo -e \"----\nENTER to continue...\" && read close"</action>
+        </button>
+        <button>
+          <label>Addfiles</label>
+          <input file icon="gtk-open"></input>
+          <action>$BIN addfiles_action</action>
         </button>
         <button>
           <label>Gen distro</label>
           <input file icon="forward"></input>
+          <action>cd /home/slitaz</action>
           <action>xterm -geometry 80x16 -title "gen-distro" -e "tazlito gen-distro && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
         <button>
@@ -269,7 +277,7 @@ list can be recharged from SliTaz mirror.
         <label>
 "
 Gen Flavor will generate a new flavor file based on rootfs in 
-home/slitaz/distro. All addfiles will be included in the flavor file.
+/home/slitaz/distro. All addfiles will be included in the flavor file.
 "
         </label>
       </text>
@@ -292,6 +300,7 @@ home/slitaz/distro. All addfiles will be included in the flavor file.
       <button>
           <label>Gen new flavor</label>
           <input file icon="forward"></input>
+          <action>cd /home/slitaz</action>
           <action>xterm -geometry 80x16 -title "gen-flavor $GEN_FLAVOR_NAME" -e "tazlito gen-flavor $GEN_FLAVOR_NAME && echo -e \"----\nENTER to continue...\" && read close"</action>
         </button>
       </hbox>
@@ -301,7 +310,9 @@ home/slitaz/distro. All addfiles will be included in the flavor file.
       <text wrap="true" width-chars="60" use-markup="true">
         <label>
 "
-Before editing files you must have a flavor description.
+Before editing files you must have a flavor description. Distro
+script can be used to perform action into the rootfs before
+compression.
 "
         </label>
       </text>
@@ -334,6 +345,22 @@ Before editing files you must have a flavor description.
         </button>
       </hbox>
       
+      <hbox>
+        <text use-markup="true">
+          <label>"<b>Distro script :</b> "</label>
+        </text>
+        <entry>
+          <default>/home/slitaz/distro.sh</default>
+          <variable>DISTRO_SCRIPT</variable>
+        </entry>
+        <button>
+          <input file icon="accessories-text-editor"></input>
+          <action>[ ! -f $DISTRO_SCRIPT ] && echo "#!/bin/sh" > $DISTRO_SCRIPT</action>
+          <action>chmod +x $DISTRO_SCRIPT</action>
+          <action>editor $DISTRO_SCRIPT</action>
+        </button>
+      </hbox>
+      
     </frame>
  
     </notebook>
@@ -359,9 +386,8 @@ case $1 in
 		# Exec all function called by args (must have an underscore).
 		$1 ;;
 	*)
-		# Tazlitobox action
+		# Tazlitobox action.
 		check_root
-		cd_flavors
 		gtkdialog --center --program=TAZLITO_BOX ;;
 esac
 
