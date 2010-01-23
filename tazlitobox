@@ -149,7 +149,7 @@ export TAZLITO_BOX='
         <label>
 "
 Writeiso will generate an ISO image of the current filesystem as
-it, including the /home direcory. It is an easy way to remaster
+is, including the /home directory. It is an easy way to remaster a
 SliTaz Live system, you just have to: boot, modify, writeiso.
 "
         </label>
@@ -180,8 +180,8 @@ SliTaz Live system, you just have to: boot, modify, writeiso.
 "
 Gen Live flavor will create a LiveCD based on all the currently
 installed packages. To build the rootfs and ISO image it will use
-original SliTaz packages. Some addfiles can be copied before gen
-distro.
+original SliTaz packages. Some addfiles can be copied before
+gen distro.
 "
         </label>
       </text>
@@ -269,7 +269,7 @@ list can be recharged from SliTaz mirror.
         <label>
 "
 Gen Flavor will generate a new flavor file based on rootfs in 
-home/slitaz/distro. All addfiles will be include in the flavor file.
+home/slitaz/distro. All addfiles will be included in the flavor file.
 "
         </label>
       </text>

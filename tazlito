@@ -1470,7 +1470,7 @@ EOT
 	writeiso)
 		# Writefs to ISO image including /home unlike gen-distro we dont use
 		# packages to generate a rootfs, we build a compressed rootfs with all 
-		# current filesystem similar to 'tazusb writefs'.
+		# the current filesystem similar to 'tazusb writefs'.
 		#
 		DISTRO="/home/slitaz/distro"
 		ROOTCD="$DISTRO/rootcd"
@@ -1489,7 +1489,7 @@ EOT
 		echo ""
 		echo -e "\033[1mWrite filesystem to ISO\033[0m
 ===============================================================================
-The command writeiso will write all the current filesystem into a suitable cpio 
+The command writeiso will write the current filesystem into a suitable cpio 
 archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso). 
 
 Archive compression: $COMPRESSION"
@@ -1574,7 +1574,7 @@ Archive compression: $COMPRESSION"
 		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-V "SliTaz" -input-charset iso8859-1 -boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
-			echo -n "Create hybrid ISO..."
+			echo -n "Creating hybrid ISO..."
 			/usr/bin/isohybrid $ISO_NAME.iso 2> /dev/null
 			status
 		fi
