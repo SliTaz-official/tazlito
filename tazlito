@@ -1132,7 +1132,7 @@ EOT
 			status
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
-					echo "Adding $i..."
+					echo -n "Adding $i..."
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id 2> /dev/null)
