@@ -1496,7 +1496,7 @@ EOT
 		echo ""
 		;;
 	writeiso)
-				# Writefs to ISO image including /home unlike gen-distro we dont use
+		# Writefs to ISO image including /home unlike gen-distro we dont use
 		# packages to generate a rootfs, we build a compressed rootfs with all 
 		# the current filesystem similar to 'tazusb writefs'.
 		#
@@ -1528,20 +1528,20 @@ Archive compression: $COMPRESSION"
 		rm -rf /home/slitaz/distro
 
 		# Optionally remove sound card selection and screen resolution.
-		echo "Do you wish to remove the sound card and screen config ? "
-		echo -n "Press ENTER to keep or anser (No|yes|exit): "
+		echo "Do you wish to remove the sound card and screen configs ? "
+		echo -n "Press ENTER to keep or answer (No|yes|exit): "
 		read anser
 		case $anser in
 			e|E|"exit"|Exit)
 				exit 0 ;;
 			y|Y|yes|Yes)
-				echo -n "Removing current sound card and screen configuration..."
+				echo -n "Removing current sound card and screen configurations..."
 				rm -f /var/lib/sound-card-driver
 				rm -f /etc/asound.state
 				rm -f /etc/X11/screen.conf 
 				rm -f /etc/X11/xorg.conf ;;
 			*)
-				echo -n "Keeping current sound card and screen configuration..." ;;
+				echo -n "Keeping current sound card and screen configurations..." ;;
 		esac
 		status
 		
@@ -1554,7 +1554,7 @@ Archive compression: $COMPRESSION"
 			echo $dir >>/tmp/list
 		done
 
-		# Generate initramfs with specified compression and display rootf
+		# Generate initramfs with specified compression and display rootfs
 		# size in realtime.
 		rm -f /tmp/rootfs
 		write_initramfs &
@@ -1579,8 +1579,9 @@ Archive compression: $COMPRESSION"
 		else
 			echo -e "
 Unable to mount the cdrom to copy the Kernel and needed files. When SliTaz
-is running in RAM the kernel and bootloader files are keeped on the cdrom.
-Please insert a LiveCD or unmount curent cdrom to let Tazlito handle the media.\n"
+is running in RAM the kernel and bootloader files are kept on the cdrom.
+Please insert a LiveCD or unmount the current cdrom to let Tazlito handle 
+the media.\n"
 			echo -en "----\nENTER to continue..."; read i
 			exit 1
 		fi
