@@ -1,9 +1,7 @@
 [Desktop Entry]
 Name=Tazlito manual
 Name[fr]=Manuel de Tazlito
-Comment=SliTaz LiveCD generator and editor
-Comment[fr]=Manuel de l'outil de génération et édition de LiveCD
-Exec=browser /usr/share/doc/tazlito/tazlito.html
+Exec=browser file:///usr/share/doc/tazlito/tazlito.html
 Icon=text-html
 Type=Application
 Categories=Documentation;
