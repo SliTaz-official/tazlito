@@ -1113,12 +1113,14 @@ EOT
 	get-flavor)
 		# Get a flavor's files and prepare for gen-distro.
 		FLAVOR=${2%.flavor}
+		echo ""
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			echo -n "Cleaning $DISTRO..."
 			rm -R $DISTRO 2> /dev/null
 			mkdir -p $DISTRO
 			status
 			mkdir $TMP_DIR
+			echo -n "Extracting flavor $FLAVOR.flavor... "
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
 			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
@@ -1126,7 +1128,7 @@ EOT
 			status
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
-					echo -n "Adding $i..."
+					echo -n "Adding $i... "
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id 2> /dev/null)
@@ -1155,6 +1157,7 @@ EOT
 			status
 			rm -Rf $TMP_DIR
 		fi
+		echo ""
 		;;
 	check-list)
 		# Use current packages list in $PWD by default.
