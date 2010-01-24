@@ -374,7 +374,7 @@ gen_initramfs()
 	while [ ! -f /tmp/rootfs ]
 	do
 		sleep 1
-		echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
+		echo -en "\\033[18G`du -sh $DISTRO/rootfs.gz | awk '{print $1}'`    "
 	done
 	echo -e "\n"
 	cd $DISTRO
