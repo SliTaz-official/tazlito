@@ -1,6 +1,10 @@
-#! /bin/sh
+#!/bin/sh
 # 
 # Gtkdialog box for Tazlito - SliTaz Live Tool.
+# Tabs are used for ident ans all action should go into functions to
+# separate GUI and commands.
+#
+# (C) GNU gpl v3 - SliTaz GNU/Linux 2010.
 #
 VERSION=2.2
 
@@ -44,8 +48,6 @@ addfiles_action()
 	mkdir -p distro/addfiles/rootcd
 	file-manager distro/addfiles &
 }
-
-# All actions
 
 writeiso_action()
 {
@@ -181,246 +183,252 @@ export LIST_FLAVORS_BOX='
 # Execute tazlito commands in a XTerm. Notebook: tab-pos="GTK_POS_LEFT"
 export TAZLITO_BOX='
 <window title="Tazlito Box" icon-name="media-cdrom">
-  <vbox>
- 
-  <hbox>
-    <text use-markup="true">
-      <label>"<b>SliTaz Live Tool</b>"</label>
-    </text>
-    <pixmap>
-			<input file>/usr/share/pixmaps/tazlito.png</input>
-</pixmap>
+<vbox>
 
-</hbox>
+	<hbox>
+	<text use-markup="true">
+		<label>"<b>SliTaz Live Tool</b>"</label>
+	</text>
+	<pixmap>
+		<input file>/usr/share/pixmaps/tazlito.png</input>
+	</pixmap>
+	</hbox>
 
-    <notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Configuration">
-    
-    <frame Filesystem to ISO>
-    
-      <text wrap="true" width-chars="60" use-markup="true">
-        <label>
+	<notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Configuration">
+
+	<frame Filesystem to ISO>
+
+	<text wrap="true" width-chars="60" use-markup="true">
+		<label>
 "
 Writeiso will generate an ISO image of the current filesystem as
 is, including the /home directory. It is an easy way to remaster a
 SliTaz Live system, you just have to: boot, modify, writeiso.
 "
-        </label>
-      </text>
+		</label>
+	</text>
 
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>Compression (gzip,lzma,none):</b>"</label>
-        </text>
-        <entry>
-          <default>gzip</default>
-          <variable>COMPRESSION</variable>
-        </entry>
-      </hbox>
-      
-      <hbox>
-      <button>
-          <label>Writeiso</label>
-          <input file icon="forward"></input>
-          <action>$BIN writeiso_action</action>
-        </button>
-      </hbox>
-    </frame>
-    
-    <frame Current packages selection>
-      <text wrap="true" width-chars="60" use-markup="true">
-        <label>
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>Compression (gzip,lzma,none):</b>"</label>
+		</text>
+		<entry>
+			<default>gzip</default>
+			<variable>COMPRESSION</variable>
+		</entry>
+	</hbox>
+
+	<hbox>
+		<button>
+			<label>Writeiso</label>
+			<input file icon="forward"></input>
+			<action>$BIN writeiso_action</action>
+		</button>
+	</hbox>
+	
+	</frame>
+	
+	<frame Current packages selection>
+	
+	<text wrap="true" width-chars="60" use-markup="true">
+		<label>
 "
 Gen Live flavor will create a LiveCD based on all the currently
 installed packages. To build the rootfs and ISO image it will use
 original SliTaz packages. Some addfiles can be copied before
 gen distro.
 "
-        </label>
-      </text>
-      
-       <hbox>
-        <text use-markup="true">
-          <label>"<b>Flavor name :</b>"</label>
-        </text>
-        <entry>
-          <default>slitaz</default>
-          <variable>GEN_LIVEFLAVOR_NAME</variable>
-        </entry>
-      </hbox>
-      
-      <hbox>
-        <button>
-          <label>Addfiles</label>
-          <input file icon="gtk-open"></input>
-          <action>$BIN addfiles_action</action>
-        </button>
-        <button>
-          <label>Gen distro</label>
-          <input file icon="forward"></input>
-          <action>$BIN gen_liveflavor_action</action>
-        </button>
-        <button>
-          <label>Clean distro</label>
-          <input file icon="edit-clear"></input>
-          <action>$BIN clean_distro_action</action>
-        </button>
-      </hbox>
-     </frame>
-     
-         <frame Community and personal flavors>
-      <text wrap="true" width-chars="60" use-markup="true">
-        <label>
+		</label>
+	</text>
+
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>Flavor name :</b>"</label>
+		</text>
+		<entry>
+			<default>slitaz</default>
+			<variable>GEN_LIVEFLAVOR_NAME</variable>
+		</entry>
+	</hbox>
+
+	<hbox>
+		<button>
+			<label>Addfiles</label>
+			<input file icon="gtk-open"></input>
+			<action>$BIN addfiles_action</action>
+		</button>
+		<button>
+			<label>Gen distro</label>
+			<input file icon="forward"></input>
+			<action>$BIN gen_liveflavor_action</action>
+		</button>
+		<button>
+			<label>Clean distro</label>
+			<input file icon="edit-clear"></input>
+			<action>$BIN clean_distro_action</action>
+		</button>
+	</hbox>
+
+	</frame>
+	
+	<frame Community and personal flavors>
+	
+	<text wrap="true" width-chars="60" use-markup="true">
+		<label>
 "
 Get and build preconfigured flavors from the community. Flavors
 llist can be recharged from SliTaz mirror. Some addfiles can be
 copied before generating the distro.
 "
-        </label>
-      </text>
-	  
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>Flavor :</b>"</label>
-        </text>
-        <entry>
-          <default>core</default>
-          <variable>COMMUNITY_FLAVOR</variable>
-        </entry>
-        <button>
-		  <label>List flavors</label>
-		  <input file icon="media-cdrom"></input>
-		  <action type="launch">LIST_FLAVORS_BOX</action>
-	    </button>
-      </hbox>
-      
-      <hbox>
-        <button>
-          <label>Get flavor</label>
-          <input file icon="forward"></input>
-          <action>$BIN get_flavor_action</action>
-        </button>
-        <button>
-          <label>Addfiles</label>
-          <input file icon="gtk-open"></input>
-          <action>$BIN addfiles_action</action>
-        </button>
-        <button>
-          <label>Gen distro</label>
-          <input file icon="forward"></input>
-          <action>$BIN gen_distro_action</action>
-        </button>
-        <button>
-          <label>Clean distro</label>
-          <input file icon="edit-clear"></input>
-          <action>$BIN clean_distro_action</action>
-        </button>
-      </hbox>
-    </frame>
-     
-     <frame Generate a flavor>
-    
-      <text wrap="true" width-chars="60" use-markup="true">
-        <label>
+		</label>
+	</text>
+
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>Flavor :</b>"</label>
+		</text>
+		<entry>
+			<default>core</default>
+			<variable>COMMUNITY_FLAVOR</variable>
+		</entry>
+		<button>
+			<label>List flavors</label>
+			<input file icon="media-cdrom"></input>
+			<action type="launch">LIST_FLAVORS_BOX</action>
+		</button>
+	</hbox>
+
+	<hbox>
+		<button>
+			<label>Get flavor</label>
+			<input file icon="forward"></input>
+			<action>$BIN get_flavor_action</action>
+		</button>
+		<button>
+			<label>Addfiles</label>
+			<input file icon="gtk-open"></input>
+			<action>$BIN addfiles_action</action>
+		</button>
+		<button>
+			<label>Gen distro</label>
+			<input file icon="forward"></input>
+			<action>$BIN gen_distro_action</action>
+		</button>
+		<button>
+			<label>Clean distro</label>
+			<input file icon="edit-clear"></input>
+			<action>$BIN clean_distro_action</action>
+		</button>
+	</hbox>
+
+	</frame>
+	<frame Generate a flavor>
+
+	<text wrap="true" width-chars="60" use-markup="true">
+		<label>
 "
 Gen Flavor will generate a new flavor file based on rootfs in 
 /home/slitaz/distro. All addfiles will be included in the flavor file.
 "
-        </label>
-      </text>
+		</label>
+	</text>
 
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>New flavor :</b>"</label>
-        </text>
-        <entry>
-          <default>slitaz</default>
-          <variable>GEN_FLAVOR_NAME</variable>
-        </entry>
-      </hbox>
-      <hbox>
-      <button>
-          <label>Addfiles</label>
-          <input file icon="gtk-open"></input>
-          <action>$BIN addfiles_action</action>
-        </button>
-      <button>
-          <label>Gen new flavor</label>
-          <input file icon="forward"></input>
-          <action>$BIN gen_flavor_action</action>
-        </button>
-      </hbox>
-    </frame>
-    
-    <frame Flavor config and packages list>
-      <text wrap="true" width-chars="60" use-markup="true">
-        <label>
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>New flavor :</b>"</label>
+		</text>
+		<entry>
+			<default>slitaz</default>
+			<variable>GEN_FLAVOR_NAME</variable>
+		</entry>
+	</hbox>
+	
+	<hbox>
+		<button>
+			<label>Addfiles</label>
+			<input file icon="gtk-open"></input>
+			<action>$BIN addfiles_action</action>
+		</button>
+		<button>
+			<label>Gen new flavor</label>
+			<input file icon="forward"></input>
+			<action>$BIN gen_flavor_action</action>
+		</button>
+	</hbox>
+
+	</frame>
+	
+	<frame Flavor config and packages list>
+
+	<text wrap="true" width-chars="60" use-markup="true">
+		<label>
 "
 Before editing files you must have a flavor description. Distro
 script can be used to perform actions into the rootfs before
 compression.
 "
-        </label>
-      </text>
-      
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>Flavor config :</b>"</label>
-        </text>
-        <entry>
-          <default>/home/slitaz/tazlito.conf</default>
-          <variable>CONFIG_FILE</variable>
-        </entry>
-        <button>
-          <input file icon="accessories-text-editor"></input>
-          <action>editor $CONFIG_FILE</action>
-        </button>
-      </hbox>
-      
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>Packages list :</b>"</label>
-        </text>
-        <entry>
-          <default>/home/slitaz/distro-packages.list</default>
-          <variable>PKGS_LIST</variable>
-        </entry>
-        <button>
-          <input file icon="accessories-text-editor"></input>
-          <action>editor $PKGS_LIST</action>
-        </button>
-      </hbox>
-      
-      <hbox>
-        <text use-markup="true">
-          <label>"<b>Distro script :</b> "</label>
-        </text>
-        <entry>
-          <default>/home/slitaz/distro.sh</default>
-          <variable>DISTRO_SCRIPT</variable>
-        </entry>
-        <button>
-          <input file icon="accessories-text-editor"></input>
-          <action>$BIN edit_distro_script</action>
-        </button>
-      </hbox>
-      
-    </frame>
- 
-    </notebook>
-    
-    <hbox>
-      <button help>
-        <input file icon="help-browser"></input>
-	    <action type="launch">HELP</action>
-      </button>
-      <button>
-		<label>Exit</label>
-        <input file icon="exit"></input>
-        <action type="exit">Exit</action>
-      </button>
-    </hbox>
-  
-  </vbox>
+		</label>
+	</text>
+
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>Flavor config :</b>"</label>
+		</text>
+		<entry>
+			<default>/home/slitaz/tazlito.conf</default>
+			<variable>CONFIG_FILE</variable>
+		</entry>
+		<button>
+			<input file icon="accessories-text-editor"></input>
+			<action>editor $CONFIG_FILE</action>
+		</button>
+	</hbox>
+
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>Packages list :</b>"</label>
+		</text>
+		<entry>
+			<default>/home/slitaz/distro-packages.list</default>
+			<variable>PKGS_LIST</variable>
+		</entry>
+		<button>
+			<input file icon="accessories-text-editor"></input>
+			<action>editor $PKGS_LIST</action>
+		</button>
+	</hbox>
+
+	<hbox>
+		<text use-markup="true">
+			<label>"<b>Distro script :</b> "</label>
+		</text>
+		<entry>
+			<default>/home/slitaz/distro.sh</default>
+			<variable>DISTRO_SCRIPT</variable>
+		</entry>
+		<button>
+			<input file icon="accessories-text-editor"></input>
+			<action>$BIN edit_distro_script</action>
+		</button>
+	</hbox>
+
+	</frame>
+
+	</notebook>
+
+	<hbox>
+		<button help>
+			<input file icon="help-browser"></input>
+			<action type="launch">HELP</action>
+		</button>
+		<button>
+			<label>Exit</label>
+			<input file icon="exit"></input>
+			<action type="exit">Exit</action>
+		</button>
+	</hbox>
+
+</vbox>
 </window>
 '
 
