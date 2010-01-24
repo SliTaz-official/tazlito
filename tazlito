@@ -355,6 +355,26 @@ gen_initramfs()
 	mv $(basename $1).gz $ROOTCD/boot
 }
 
+# Compression functions for writeiso.
+write_lzma_initramfs()
+{
+	echo -n "Creating rootfs.gz with lzma compression... "
+	cat /tmp/list | cpio -o -H newc | lzma e -si -so > /rootfs.gz
+	echo 1 > /tmp/rootfs
+}
+write_gzip_initramfs()
+{
+	echo "Creating rootfs.gz with gzip compression... "
+	cat /tmp/list | cpio -o -H newc | gzip -9 > /rootfs.gz
+	echo 1 > /tmp/rootfs
+}
+write_initramfs()
+{
+	echo "Creating rootfs.gz without compression... "
+	cat /tmp/list | cpio -o -H newc > /rootfs.gz
+	echo 1 > /tmp/rootfs
+}
+
 distro_sizes()
 {
 	echo "Build date      : `date +%Y%m%d\ \at\ \%H:%M:%S`"
@@ -1468,7 +1488,7 @@ EOT
 		echo ""
 		;;
 	writeiso)
-		# Writefs to ISO image including /home unlike gen-distro we dont use
+				# Writefs to ISO image including /home unlike gen-distro we dont use
 		# packages to generate a rootfs, we build a compressed rootfs with all 
 		# the current filesystem similar to 'tazusb writefs'.
 		#
@@ -1499,33 +1519,21 @@ Archive compression: $COMPRESSION"
 		rm /var/cache/tazpkg/* -r -f
 		rm -rf /home/slitaz/distro
 
-		# Optionally remove sound card selection
-		echo -n "Do you wish to remove the sound card selection (No/yes/exit) ? "
+		# Optionally remove sound card selection and screen resolution.
+		echo "Do you wish to remove the sound card and screen config ? "
+		echo -n "Press ENTER to keep or anser (No|yes|exit): "
 		read anser
 		case $anser in
 			e|E|"exit"|Exit)
 				exit 0 ;;
 			y|Y|yes|Yes)
-				echo -n "Removing current sound card selection..."
+				echo -n "Removing current sound card and screen configuration..."
 				rm -f /var/lib/sound-card-driver
-				rm -f /etc/asound.state ;;
-			*)
-				echo -n "Keeping current sound card selection..." ;;
-		esac
-		status
-		
-		# Optionally remove screen resolution
-		echo -n "Do you wish to remove the screen resolution (No/yes/exit) ? "
-		read anser
-		case $anser in
-			e|E|"exit"|Exit)
-				exit 0 ;;
-			y|Y|yes|Yes)
-				echo -n "Removing current screen resolution..."
+				rm -f /etc/asound.state
 				rm -f /etc/X11/screen.conf 
 				rm -f /etc/X11/xorg.conf ;;
 			*)
-				echo -n "Keeping current screen resolution..." ;;
+				echo -n "Keeping current sound card and screen configuration..." ;;
 		esac
 		status
 		
@@ -1537,25 +1545,29 @@ Archive compression: $COMPRESSION"
 		do
 			echo $dir >>/tmp/list
 		done
+		rm -f /tmp/rootfs
 
-		# Generate initramfs with specified compression
+		# Generate initramfs with specified compression and display rootf
+		# size in realtime.
 		if [ "$COMPRESSION" = "lzma" ]; then
-			echo -n "Creating rootfs.gz with lzma compression... "
-			cat /tmp/list | cpio -o -H newc | lzma e -si -so > /rootfs.gz
-
+			write_lzma_initramfs &
 		elif [ "$COMPRESSION" = "gzip" ]; then
-			echo -n "Creating rootfs.gz with gzip compression... "
-			cat /tmp/list | cpio -o -H newc | gzip -9 > /rootfs.gz
-
+			write_gzip_initramfs &
 		else
-			echo -n "Creating rootfs.gz without compression... "
-			cat /tmp/list | cpio -o -H newc > /rootfs.gz
+			write_initramfs &
 		fi
-		status
+		sleep 2
+		echo -en "\nFilesystem size:"
+		while [ ! -f /tmp/rootfs ]
+		do
+			sleep 1
+			echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
+		done
+		echo -e "\n"
 
 		# Move freshly generated rootfs to the cdrom.
 		mkdir -p $ROOTCD/boot
-		mv /rootfs.gz $ROOTCD/boot
+		mv -f /rootfs.gz $ROOTCD/boot
 		
 		# Now we need the kernel and isolinux files.
 		if mount /dev/cdrom /media/cdrom 2>/dev/null; then
@@ -1563,7 +1575,11 @@ Archive compression: $COMPRESSION"
 			cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
 			umount /media/cdrom
 		else
-			echo -e "\nUnable to mount the cdrom to copy the Kernel and needed files.\n"
+			echo -e "
+Unable to mount the cdrom to copy the Kernel and needed files. When SliTaz
+is running in RAM the kernel and bootloader files are keeped on the cdrom.
+Please insert a LiveCD or unmount curent cdrom to let Tazlito handle the media.\n"
+			echo -en "----\nENTER to continue..."; read i
 			exit 1
 		fi
 		
