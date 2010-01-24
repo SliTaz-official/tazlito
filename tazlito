@@ -311,7 +311,7 @@ pack_rootfs()
 {
 	( cd $1 ; find . -print | cpio -o -H newc ) | \
 	if [ "$COMPRESSION" = "none" ]; then
-		echo "Generating uncompressed initramfs... "
+		echo -n "Generating uncompressed initramfs... "
 		cat > $2
 	elif [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
@@ -320,23 +320,6 @@ pack_rootfs()
 		echo -n "Generating gziped initramfs... "
 		gzip -9 > $2
 	fi
-	echo 1 > /tmp/rootfs
-}
-
-# Compression functions for writeiso.
-write_initramfs()
-{
-	if [ "$COMPRESSION" = "lzma" ]; then
-		echo -n "Creating rootfs.gz with lzma compression... "
-		cat /tmp/list | cpio -o -H newc | lzma e -si -so > /rootfs.gz
-	elif [ "$COMPRESSION" = "gzip" ]; then
-		echo "Creating rootfs.gz with gzip compression... "
-		cat /tmp/list | cpio -o -H newc | gzip -9 > /rootfs.gz
-	else
-		echo "Creating rootfs.gz without compression... "
-		cat /tmp/list | cpio -o -H newc > /rootfs.gz
-	fi
-	echo 1 > /tmp/rootfs
 }
 
 # Generate a new initramfs from the root filesystem.
@@ -366,19 +349,30 @@ gen_initramfs()
            echo "$save bytes saved in duplicate files."
         )
 
-	# Use lzma if installed. Display rootfs size in realtime.
-	rm -f /tmp/rootfs
-	pack_rootfs . $DISTRO/$(basename $1).gz &
-	sleep 2
-	echo -en "\nFilesystem size:"
-	while [ ! -f /tmp/rootfs ]
-	do
-		sleep 1
-		echo -en "\\033[18G`du -sh $DISTRO/rootfs.gz | awk '{print $1}'`    "
-	done
-	echo -e "\n"
+	# Use lzma if installed
+	pack_rootfs . $DISTRO/$(basename $1).gz
 	cd $DISTRO
 	mv $(basename $1).gz $ROOTCD/boot
+}
+
+# Compression functions for writeiso.
+write_lzma_initramfs()
+{
+	echo -n "Creating rootfs.gz with lzma compression... "
+	cat /tmp/list | cpio -o -H newc | lzma e -si -so > /rootfs.gz
+	echo 1 > /tmp/rootfs
+}
+write_gzip_initramfs()
+{
+	echo "Creating rootfs.gz with gzip compression... "
+	cat /tmp/list | cpio -o -H newc | gzip -9 > /rootfs.gz
+	echo 1 > /tmp/rootfs
+}
+write_initramfs()
+{
+	echo "Creating rootfs.gz without compression... "
+	cat /tmp/list | cpio -o -H newc > /rootfs.gz
+	echo 1 > /tmp/rootfs
 }
 
 distro_sizes()
@@ -1136,6 +1130,7 @@ EOT
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id 2> /dev/null)
+					status
 				fi
 			done
 			if [ -s $TMP_DIR/$FLAVOR.mirrors ]; then
@@ -1525,20 +1520,20 @@ Archive compression: $COMPRESSION"
 		rm -rf /home/slitaz/distro
 
 		# Optionally remove sound card selection and screen resolution.
-		echo "Do you wish to remove the sound card and screen config ? "
-		echo -n "Press ENTER to keep or anser (No|yes|exit): "
+		echo "Do you wish to remove the sound card and screen configs ? "
+		echo -n "Press ENTER to keep or answer (No|yes|exit): "
 		read anser
 		case $anser in
 			e|E|"exit"|Exit)
 				exit 0 ;;
 			y|Y|yes|Yes)
-				echo -n "Removing current sound card and screen configuration..."
+				echo -n "Removing current sound card and screen configurations..."
 				rm -f /var/lib/sound-card-driver
 				rm -f /etc/asound.state
 				rm -f /etc/X11/screen.conf 
 				rm -f /etc/X11/xorg.conf ;;
 			*)
-				echo -n "Keeping current sound card and screen configuration..." ;;
+				echo -n "Keeping current sound card and screen configurations..." ;;
 		esac
 		status
 		
@@ -1550,11 +1545,17 @@ Archive compression: $COMPRESSION"
 		do
 			echo $dir >>/tmp/list
 		done
-
-		# Generate initramfs with specified compression and display rootf
-		# size in realtime.
 		rm -f /tmp/rootfs
-		write_initramfs &
+
+		# Generate initramfs with specified compression and display rootfs
+		# size in realtime.
+		if [ "$COMPRESSION" = "lzma" ]; then
+			write_lzma_initramfs &
+		elif [ "$COMPRESSION" = "gzip" ]; then
+			write_gzip_initramfs &
+		else
+			write_initramfs &
+		fi
 		sleep 2
 		echo -en "\nFilesystem size:"
 		while [ ! -f /tmp/rootfs ]
@@ -1576,8 +1577,9 @@ Archive compression: $COMPRESSION"
 		else
 			echo -e "
 Unable to mount the cdrom to copy the Kernel and needed files. When SliTaz
-is running in RAM the kernel and bootloader files are keeped on the cdrom.
-Please insert a LiveCD or unmount curent cdrom to let Tazlito handle the media.\n"
+is running in RAM the kernel and bootloader files are kept on the cdrom.
+Please insert a LiveCD or unmount the current cdrom to let Tazlito handle 
+the media.\n"
 			echo -en "----\nENTER to continue..."; read i
 			exit 1
 		fi

@@ -277,7 +277,7 @@ gen distro.
 		<label>
 "
 Get and build preconfigured flavors from the community. Flavors
-llist can be recharged from SliTaz mirror. Some addfiles can be
+list can be recharged from SliTaz mirror. Some addfiles can be
 copied before generating the distro.
 "
 		</label>
