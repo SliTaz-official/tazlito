@@ -317,7 +317,7 @@ pack_rootfs()
 		echo -n "Generating lzma'ed initramfs... "
 		lzma e -si -so $(lzma_switches $1) > $2
 	else
-		echo -n "Generating gziped initramfs... "
+		echo "Generating gziped initramfs... "
 		gzip -9 > $2
 	fi
 	echo 1 > /tmp/rootfs
