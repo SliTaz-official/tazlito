@@ -95,7 +95,7 @@ usage ()
   writeiso        Use running system to generate a bootable ISO (with /home).
   merge           Merge multiple rootfs into one iso.
   repack          Recompress rootfs into iso with maximum ratio.
-  frugal-install  Frugal install in /boot/frugal from a distro or ISO
+  frugal-install  Frugal install in /boot/frugal from a distro or ISO.
   emu-iso         Emulate an ISO image with Qemu.
   burn-iso        Burn ISO image to a cdrom using Wodim.\n"
 }
@@ -286,7 +286,7 @@ gen_livecd_isolinux()
 lzma_history_bits()
 {
 	#
-	# This genertae ISO who boot with Qemu but give
+	# This generates an ISO which boots with Qemu but gives
 	# rootfs errors in frugal or liveUSB mode.
 	#
 	#local n
@@ -624,7 +624,7 @@ Distro directory    : $DISTRO"
 		echo ""
 	    ;;
 	list-addfiles)
-		# Simple list of additonal files in the rootfs
+		# Simple list of additional files in the rootfs
 		echo ""
 		cd $ADDFILES
 		find rootfs -type f
@@ -824,7 +824,7 @@ Distro directory    : $DISTRO"
 		rm -Rf $TMP_DIR
 		;;
 	gen-liveflavor)
-		# Generate a new flavor form the live system.
+		# Generate a new flavor from the live system.
 		FLAVOR=${2%.flavor}
 		DESC=""
 		case "$FLAVOR" in
@@ -927,7 +927,7 @@ code	data
 		echo ""
 		;;
 	upgrade-flavor)
-		# Update package list to the lastest versions available.
+		# Update package list to the latest versions available.
 		FLAVOR=${2%.flavor}
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			mkdir $TMP_DIR
@@ -1381,7 +1381,7 @@ EOT
 			cp -a $ADDFILES/rootcd/* $ROOTCD
 			status
 		fi
-		# Execute the distro script (used to perform tasks in the rootfs
+		# Execute the distro script used to perform tasks in the rootfs
 		# before compression. Give rootfs path in arg
 		[ -z $DISTRO_SCRIPT ] && DISTRO_SCRIPT=$TOP_DIR/distro.sh
 		if [ -x $DISTRO_SCRIPT ]; then
