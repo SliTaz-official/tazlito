@@ -247,11 +247,12 @@ by the packages are present on the system:
 <a name="writeiso"></a>
 <h3><font color="#6c0023">writeiso</font></h3>
 <p>
-This command will write all the current filesystem to a cpio archive
-(rootfs.gz) and then generate a bootable ISO image. Writeiso can be use in
-live mode or HD install and will also archive your current /home direcory.
-This command let you easily remaster and build your own LiveCD image, just
-boot, modify whatever you want and then:
+This command will write the current filesystem to a cpio archive 
+(rootfs.gz) and then generate a bootable ISO image. Writeiso can 
+be used in a HD install or in live mode and will also archive your 
+current /home directory. This command lets you easily remaster and 
+build your own LiveCD image, just boot, modify any files, and then: 
+
 </p>
 <pre>
  # tazlito writeiso [gzip|lzma|none]
@@ -260,12 +261,13 @@ boot, modify whatever you want and then:
 </pre>
 
 <a name="frugal-install"></a>
-<h3><font color="#6c0023">Fragal install</font></h3>
+<h3><font color="#6c0023">frugal-install</font></h3>
 <p>
-Perfom a Frugal installation into /boot/frugal and add GRUB entry if needed.
-Frugal mode will make SliTaz work all in memory (RAM), useful to test distro
-without burning ISO or to have a rescue system ready to use when computer power
-on. To install all needed files from a distro tree or an ISO image:
+Perfom a frugal installation into /boot/frugal and add a GRUB entry 
+if needed. Frugal mode will make SliTaz work completely in memory 
+(RAM) - useful to test a distro without burning an ISO or to have a 
+rescue system ready to use when the computer powers on. To install 
+all needed files from a distro tree or an ISO image: 
 </p>
 <pre>
  # tazlito frugal-install
