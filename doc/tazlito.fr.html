@@ -46,7 +46,7 @@ l'image ISO ou regénérer le système racine du LiveCD de SliTaz. Tazlito donne
 aussi la possibilité de générer une distribution depuis une liste de paquets
 préalablements téléchargés et stockés dans un répertoire. Pour fonctionner,
 l'application Tazlito utilise un fichier de configuration système
-/etc/slitaz-tools/tazlito.conf ou un fichier tazlito.conf se trouvant dans le
+/etc/tazlito/tazlito.conf ou un fichier tazlito.conf se trouvant dans le
 répertoire courant. Ce fichier de configuration peut facilement être généré
 automatiquement par Tazlito, il spécifie le nom de l'image ISO, le nom du
 volume, le préparateur, le chemin vers le repositoire des paquets et celui
@@ -215,61 +215,6 @@ La commande 'extract-flavor' convertit une saveur en une arborescence
 facilement modifiable dans /home/slitaz/flavors/<saveur> qui pourra être gérée
 avec Mercurial dans http://hg.slitaz.org/flavors.
 </p>
-<p>
-Cette arborescence comprend :
-</p>
-<ul>
-<li>
-Le fichier <b>receipt</b> décrit la saveur grâce aux variables&nbsp;:
-  <ul>
-  <li>
-  <i>FLAVOR</i> : le nom de la saveur.
-  </li>
-  <li>
-  <i>SHORT_DESC</i> : la description en une ligne.
-  </li>
-  <li>
-  <i>VERSION</i> : format libre.
-  </li>
-  <li>
-  <i>MAINTAINER</i> : adresse email.
-  </li>
-  <li>
-  <i>FRUGAL_RAM</i> : optionnel (peut être estimé), RAM minimum nécessaire.
-  </li>
-  <li>
-  <i>ROOTFS_SIZE</i> : optionnel (peut être estimé). Taille de rootfs.gz décompressé en RAM.
-  </li>
-  <li>
-  <i>INITRAMFS_SIZE</i> : optionnel (peut être estimé). Taille de rootfs.gz sur le CD-ROM.
-  </li>
-  <li>
-  <i>ISO_SIZE</i> : optionnel (peut être estimé). Taille du CD-ROM.
-  </li>
-  <li>
-  <i>ROOTFS_SELECTION</i> : optionnel, voir <i>Meta saveur</i> plus bas.
-  </li>
-  </ul>
-</li>
-<li>
-Le fichier <b>packages.list</b> contenant la liste des paquets sans
-préciser leur version (tazlito utilisera la dernière disponible)
-Ce fichier est absent si ROOTFS_SELECTION est précisé dans receipt.
-</li>
-<li>
-Le fichier optionnel <b>mirrors</b> contenant la liste des miroirs non 
-officiels (undigest) à ajouter pour inclure des paquets personnels.
-</li>
-<li>
-Le répertoire optionnel <b>rootfs</b> contenant l'arborescence à ajouter dans
-le système de fichier racine rootfs.gz (des fichiers de configuretion 
-habituellement).
-</li>
-<li>
-Le répertoire optionnel <b>rootcd</b> contenant l'arborescence à ajouter dans
-la racine du CD-ROM.
-</li>
-</ul>
 <pre>
  # tazlito extract-flavor une-saveur
 </pre>
@@ -335,13 +280,35 @@ des paquets, sont bien présents dans la distro&nbsp;:
  # tazlito check-distro
 </pre>
 
+<a name="writeiso"></a>
+<h3><font color="#6c0023">writeiso</font></h3>
+<p>
+Cette commande sauvegarde le système de fichier dans une archive cpio
+(rootfs.gz) et génère une image ISO bootable. Writeiso peut être utilisé
+avec une installation sur disque dur ou en mode live. Il sauvegarde aussi
+votre répertoire /home. Cette commande vous permet de modifier de refabriquer
+facilement votre propre LiveCD. Il suffit de démarrer le LiveCD, de modifier
+les fichiers que vous voulez et de faire :
+</p>
+<pre>
+ # tazlito writeiso [gzip|lzma|none]
+ # tazlito writeiso gzip
+ # tazlito writeiso gzip image-name
+</pre>
+
 <a name="frugal-install"></a>
 <h3><font color="#6c0023">frugal-install</font></h3>
 <p>
-Installe les fichiers nécessaire du CD-ROM dans /boot/frugal.
+Installe les fichiers nécessaire du CD-ROM dans /boot/frugal et ajoute
+une entée GRUB si nécessaire. En mode frugal, Slitaz fonctionne entièrement
+en mémoire (RAM). Cela permet de tester une distribution sans graver d'ISO ou
+d'avoir un OS de dépannage prêt lorsque l'ordinateur démarre.
+Pour installer tous les fichiers nécessaires à partir d'une arborescence ou
+d'une image ISO :
 </p>
 <pre>
  # tazlito frugal-install slitaz.iso
+ # tazlito -fi slitaz.iso
 </pre>
 
 <a name="check-list"></a>
@@ -367,7 +334,7 @@ Recompresse le(s) rootfs avec la meilleure compression possible.
 <p>
 Réunit plusieurs saveurs imbriquées comme des poupées russes. Chaque rootfs
 est un sous ensemble du précédent. Le premier rootfs est extrait de l'image
-ISO en 2e paramètre.
+ISO en 3e paramètre.
 La saveur à lancer sera choisie au démarrage suivant la quantité de RAM
 disponible.
 </p>
@@ -453,7 +420,7 @@ Soit créer directement l'arboscence qui définie la saveur (voir la commande
 <a name="publish-flavor"></a>
 <h3><font color="#6c0023">Publier une saveur</font></h3>
 <p>
-Les fichiers .flavor ne font généralement que quelques Ko. Il peuvent être
+Les fichiers .flavor ne font généralement que quelques Ko. Ils peuvent être
 envoyés via la liste de diffusion de SliTaz.
 </p>
 <p>
@@ -461,6 +428,61 @@ Le résultat de <b>tazlito extract-flavor</b> peut aussi être mis dans mercurial
 (http://repos.slitaz.org/flavors). Cette méthode est préférable car l'arborescence
 sera directement visible avec l'interface web de mercurial.
 </p>
+<p>
+Cette arborescence comprend :
+</p>
+<ul>
+<li>
+Le fichier <b>receipt</b> décrit la saveur grâce aux variables&nbsp;:
+  <ul>
+  <li>
+  <i>FLAVOR</i> : le nom de la saveur.
+  </li>
+  <li>
+  <i>SHORT_DESC</i> : la description en une ligne.
+  </li>
+  <li>
+  <i>VERSION</i> : format libre.
+  </li>
+  <li>
+  <i>MAINTAINER</i> : adresse email.
+  </li>
+  <li>
+  <i>FRUGAL_RAM</i> : optionnel (peut être estimé), RAM minimum nécessaire.
+  </li>
+  <li>
+  <i>ROOTFS_SIZE</i> : optionnel (peut être estimé). Taille de rootfs.gz décompressé en RAM.
+  </li>
+  <li>
+  <i>INITRAMFS_SIZE</i> : optionnel (peut être estimé). Taille de rootfs.gz sur le CD-ROM.
+  </li>
+  <li>
+  <i>ISO_SIZE</i> : optionnel (peut être estimé). Taille du CD-ROM.
+  </li>
+  <li>
+  <i>ROOTFS_SELECTION</i> : optionnel, voir <i>Meta saveur</i> plus bas.
+  </li>
+  </ul>
+</li>
+<li>
+Le fichier <b>packages.list</b> contenant la liste des paquets sans
+préciser leur version (tazlito utilisera la dernière disponible)
+Ce fichier est absent si ROOTFS_SELECTION est précisé dans receipt.
+</li>
+<li>
+Le fichier optionnel <b>mirrors</b> contenant la liste des miroirs non 
+officiels (undigest) à ajouter pour inclure des paquets personnels.
+</li>
+<li>
+Le répertoire optionnel <b>rootfs</b> contenant l'arborescence à ajouter dans
+le système de fichier racine rootfs.gz (des fichiers de configuration 
+habituellement).
+</li>
+<li>
+Le répertoire optionnel <b>rootcd</b> contenant l'arborescence à ajouter dans
+la racine du CD-ROM.
+</li>
+</ul>
 
 <a name="tune-flavor"></a>
 <h3><font color="#6c0023">Adapter une saveur</font></h3>
@@ -501,7 +523,7 @@ ROOTFS_SELECTION="160M core 96M justX 32M base"
 <p>
 Une meta saveur n'a pas de liste de paquets <i>(packages.list)</i>.
 Les noyaux SliTaz antérieurs à la version 2.6.30 ne supportaient pas les
-meta saveur.
+meta saveurs.
 </p>
 
 <h2>MAINTENEUR</h2>
