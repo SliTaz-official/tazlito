@@ -310,7 +310,7 @@ all needed files from a distro tree or an ISO image:
 <h3><font color="#6c0023">check-list</font></h3>
 <p>
 Checks if the distro-packages.list is updated with the latest package
-versions.
+versions:
 </p>
 <pre>
  # tazlito check-list
@@ -385,11 +385,11 @@ base               6.9M  13.1M  Minimal set of packages to boot
 core-3in1         31.5M 105.6M  SliTaz core system with justX and base alternatives
 core              31.5M 104.6M  SliTaz core system
 eeepc             31.2M 105.4M  SliTaz eeepc system
-justX             16.1M  51.2M  SliTaz with a minimal X environnement
+justX             16.1M  51.2M  SliTaz with a minimal X environment
 </pre>
 <p>
 We will start by remanufacturing the <i>eeepc</i> flavor which uses 105.4M of RAM 
-and has a CD-ROM size of 31.2M.
+and has a CD-ROM size of 31.2M:
 </p>
 <pre>
 # tazlito clean-distro
@@ -423,9 +423,10 @@ tree will be directly visible with the mercurial web interface.
 </p>
 <p>
 This tree includes:
+</p>
 <ul>
 <li>
-A <b>receipt</b> file discribing the flavor thanks to the variables:
+A <b>receipt</b> file describing the flavor thanks to the variables:
   <ul>
   <li>
 FLAVOR: The flavor name.
@@ -440,29 +441,30 @@ VERSION: Free format.
 MAINTAINER: Email address of maintainer.
   </li>
   <li>
-FRUGAL_RAM: Minimum RAM required (optionnal).
+FRUGAL_RAM: Minimum RAM required (optional).
   </li>
   <li>
-ROOTFS_SIZE: Size of rootfs.gz decompressed into RAM (optionnal).
+ROOTFS_SIZE: Size of rootfs.gz decompressed into RAM (optional).
   </li>
   <li>
-INITRAMFS_SIZE: Size of rootfs.gz on the CD-ROM (optionnal).
+INITRAMFS_SIZE: Size of rootfs.gz on the CD-ROM (optional).
   </li>
   <li>
-ISO_SIZE: Size of CD-ROM (optionnal).
+ISO_SIZE: Size of CD-ROM (optional).
   </li>
   <li>
-ROOTFS_SELECTION: Optionnal, see <i>Meta flavor</i> below.
+ROOTFS_SELECTION: Optional, see <i>Meta flavor</i> below.
   </li>
   </ul>
 </li>
 <li>
-The file <b>packages.list</b> containting the list of packages without
-specifying the version (tazlito uses the lastest available).
-This file is missing if ROOTFS_SELECTION exits in receipt.
+The file <b>packages.list</b> containing the list of packages without
+specifying the version (tazlito uses the latest available).
+This file is missing if ROOTFS_SELECTION exists in the receipt.
+</li>
 <li>
 The optional <b>mirrors</b> file containing the list of unofficial mirrors
-(undigest) to be added to include personnal packages.
+(undigest) to be added to include personal packages.
 </li>
 <li>
 The optional directory <b>rootfs</b> containing the tree to add to the
@@ -473,7 +475,6 @@ The optional directory <b>rootcd</b> containing the tree to add to the
 root of the CD-ROM.
 </li>
 </ul>
-</p>
 
 <a name="tune-flavor"></a>
 <h3><font color="#6c0023">Adapt a flavor</font></h3>
@@ -489,7 +490,7 @@ scratch. To adapt the eeepc flavor for example:
 # cp -a eeepc myslitaz
 </pre>
 <p>
-Files in my-slitaz can then be adapted, and
+Files in my-slitaz can then be adapted, and:
 </p>
 <pre>
 # tazlito pack-flavor myslitaz
