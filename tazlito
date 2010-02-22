@@ -1054,14 +1054,28 @@ code	data
 				[ -f $FLAVORS_REPOSITORY/$2/packages.list ] ||
 					tazlito extract-flavor $2
 				get_pkglist $2 > $TMP_DIR/$FLAVOR.pkglist
+				for i in rootcd rootfs; do
+					mkdir $TMP_DIR/$i
+					# Copy extra files from the first flavor
+					[ -d $FLAVORS_REPOSITORY/$2/$i ] &&
+					cp -a $FLAVORS_REPOSITORY/$2/$i $TMP_DIR
+					# Overload extra files by meta flavor
+					[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] &&
+					cp -a $FLAVORS_REPOSITORY/$FLAVOR/$i $TMP_DIR
+					[ -n "$(ls $TMP_DIR/$i)" ] &&
+					( cd $TMP_DIR/$i ; find . | cpio -o -H newc 2> /dev/null ) | \
+					gzip -9 >$TMP_DIR/$FLAVOR.$i
+					rm -rf $TMP_DIR/$i
+				done
+			else
+				for i in rootcd rootfs; do
+					[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] || \
+						continue
+					( cd $FLAVORS_REPOSITORY/$FLAVOR/$i ; \
+					find . | cpio -o -H newc 2> /dev/null ) | \
+					gzip -9 >$TMP_DIR/$FLAVOR.$i
+				done
 			fi
-			for i in rootcd rootfs; do
-				[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] || \
-					continue
-				( cd $FLAVORS_REPOSITORY/$FLAVOR/$i ; find . | \
-				cpio -o -H newc 2> /dev/null ) | \
-				gzip -9 >$TMP_DIR/$FLAVOR.$i
-			done
 			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
 				packed_size=$(($packed_size \
 					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
