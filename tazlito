@@ -807,7 +807,7 @@ Distro directory    : $DISTRO"
 			exit 1
 		fi
 		mkdir $TMP_DIR
-		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2> /dev/null)
+		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i > /dev/null)
 		if [ "$3" = "--brief" ]; then
 			if [ "$4" != "--noheader" ]; then
 				echo "Name              ISO   Rootfs  Description"
@@ -1141,7 +1141,7 @@ EOT
 			status
 			mkdir $TMP_DIR
 			echo -n "Extracting flavor $FLAVOR.flavor... "
-			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i 2>/dev/null )
+			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
@@ -1151,7 +1151,7 @@ EOT
 					echo -n "Adding $i... "
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
-						( cd "$ADDFILES/$i"; cpio -id 2> /dev/null)
+						( cd "$ADDFILES/$i"; cpio -id > /dev/null)
 				fi
 			done
 			if [ -s $TMP_DIR/$FLAVOR.mirrors ]; then
