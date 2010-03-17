@@ -74,6 +74,12 @@ clean_distro_action()
 		-e "tazlito clean-distro && sleep 1"
 }
 
+show_flavors()
+{
+	tazlito list-flavors | \
+	awk '{if (show && $1 != "") print $1} /^==/ {show=1}'
+}
+
 get_flavor_action()
 {
 	cd /home/slitaz
@@ -103,6 +109,71 @@ edit_distro_script()
 	[ ! -f $DISTRO_SCRIPT ] && echo "#!/bin/sh" > $DISTRO_SCRIPT
 	chmod +x $DISTRO_SCRIPT
 	editor $DISTRO_SCRIPT
+}
+
+merge_input()
+{
+	set -- $(cat /tmp/tazlito.mergelist 2> /dev/null)
+	while [ -n "$2" ]; do
+		echo "$2 | $1"
+		shift 2
+	done
+}
+
+merge_add()
+{
+	 echo -n " $ISO_IN $ISO_RAM" >> /tmp/tazlito.mergelist
+}
+
+merge_del()
+{
+	set -- $(cat /tmp/tazlito.mergelist)
+	ARGS=""
+	while [ -n "$2" ]; do
+		case "$1" in
+		$ISO_ITEM) ;;
+		*)	[ -n "$ARGS" ] && ARGS="$ARGS "
+			ARGS="$ARGS$1 $2" ;;
+		esac
+		shift 2
+	done
+	echo -n "$ARGS" > /tmp/tazlito.mergelist
+}
+
+merge_args()
+{
+	first=true
+	while [ -n "$2" ]; do
+		echo "$(stat -c "%s" $1) $1 $2"
+		shift 2
+	done | sort -nr | while read size file ram; do
+		if $first; then
+			cp $file $ISO_OUT
+			echo -n "$ram $ISO_OUT "
+			first=false
+			continue
+		fi
+		dir=$tmp/$(basename $file)
+		mkdir $dir
+		mount -o loop,ro $file $dir
+		echo -n "$ram $dir/boot/rootfs.gz "
+	done
+}
+
+merge_action()
+{
+	set -- $(cat /tmp/tazlito.mergelist 2> /dev/null)
+	rm -f /tmp/tazlito.mergelist
+	tmp=/tmp/tazlitobox$$
+	mkdir $tmp
+	[ -n "$4" ] || return
+	xterm -geometry 80x16 -title "build meta iso image $ISO_OUT" \
+		-e "script -c 'tazlito merge $(merge_args $@)' && echo -e \"----\nENTER to continue...\" && read close"
+	mv $ISO_OUT.merged $ISO_OUT
+	for i in $tmp/*; do
+		umount -d $i
+	done
+	rm -rf $tmp
 }
 
 # Boxes
@@ -194,7 +265,7 @@ export TAZLITO_BOX='
 	</pixmap>
 	</hbox>
 
-	<notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Configuration">
+	<notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Meta|Configuration">
 
 	<frame Filesystem to ISO>
 
@@ -210,15 +281,14 @@ SliTaz Live system, you just have to: boot, modify, writeiso.
 
 	<hbox>
 		<text use-markup="true">
-			<label>"<b>Compression (gzip,lzma,none):</b>"</label>
+			<label>"<b>Compression:</b>"</label>
 		</text>
-		<entry>
-			<default>gzip</default>
+		<combobox>
 			<variable>COMPRESSION</variable>
-		</entry>
-	</hbox>
-
-	<hbox>
+			<item>gzip</item>
+			<item>lzma</item>
+			<item>none</item>
+		</combobox>
 		<button>
 			<label>Writeiso</label>
 			<input file icon="forward"></input>
@@ -356,6 +426,74 @@ Gen Flavor will generate a new flavor file based on rootfs in
 		</button>
 	</hbox>
 
+	</frame>
+	
+	<frame Meta ISO image>
+
+	<vbox>
+		<hbox>
+		<text wrap="true" width-chars="33" use-markup="true">
+			<label>
+"
+Combines several ISO flavors like
+nested Russian dolls. The amount
+of RAM available at startup will be
+used to select the good one. "
+			</label>
+		</text>
+
+		<tree>
+			<width>140</width><height>50</height>
+			<label>RAM|ISO</label>
+			<variable>ISO_ITEM</variable>
+			<input>$BIN merge_input</input>
+			<action>$BIN merge_del</action>
+			<action>refresh:ISO_ITEM</action>
+		</tree>
+		</hbox>
+		<hbox>
+			<text use-markup="true">
+				<label>"<b>ISO input: </b> "</label>
+			</text>
+			<entry accept="filename">
+				<variable>ISO_IN</variable>
+			</entry>
+			<button>
+				<input file stock="gtk-open"></input>
+				<action type="fileselect">ISO_IN</action>
+			</button>
+		</hbox>
+		<hbox>
+			<text use-markup="true">
+				<label>"<b>RAM need:</b>  "</label>
+			</text>
+			<entry>
+				<default>128M</default>
+				<variable>ISO_RAM</variable>
+			</entry>
+			<button>
+				<input file icon="add"></input>
+				<label>"Add ISO"</label>
+				<action>$BIN merge_add</action>
+				<action>refresh:ISO_ITEM</action>
+			</button>
+		</hbox>
+		<hbox>
+			<text use-markup="true">
+				<label>"<b>ISO output:</b>"</label>
+			</text>
+			<entry accept="filename">
+				<default>meta.iso</default>
+				<variable>ISO_OUT</variable>
+			</entry>
+			<button>
+				<input file icon="go-next"></input>
+				<label>"Build ISO"</label>
+				<action>$BIN merge_action</action>
+			</button>
+		</hbox>
+	</vbox>
+	
 	</frame>
 	
 	<frame Flavor config and packages list>
