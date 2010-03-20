@@ -506,6 +506,16 @@ Les fichiers dans myslitaz peuvent être adaptés, puis
 <p>
 Créera simplement la nouvelle saveur.
 </p>
+<p>
+Astuce: on peut éviter l'installation de mercurial en extrayant une saveur.
+L'exemple précédent dévient:
+</p>
+<pre>
+# tazlito get-flavor eeepc
+# tazlito extract-flavor eeepc.flavor
+# cd /home/slitaz/flavors
+# cp -a eeepc myslitaz
+</pre>
 
 <a name="meta-flavor"></a>
 <h3><font color="#6c0023">Meta saveur</font></h3>
