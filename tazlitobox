@@ -432,51 +432,51 @@ Gen Flavor will generate a new flavor file based on rootfs in
 
 	<vbox>
 		<hbox>
-		<text wrap="true" width-chars="33" use-markup="true">
-			<label>
+			<vbox>
+				<text wrap="true" width-chars="33" use-markup="true">
+					<label>
 "
 Combines several ISO flavors like
 nested Russian dolls. The amount
 of RAM available at startup will be
 used to select the good one. "
-			</label>
-		</text>
-
-		<tree>
-			<width>140</width><height>50</height>
-			<label>RAM|ISO</label>
-			<variable>ISO_ITEM</variable>
-			<input>$BIN merge_input</input>
-			<action>$BIN merge_del</action>
-			<action>refresh:ISO_ITEM</action>
-		</tree>
-		</hbox>
-		<hbox>
-			<text use-markup="true">
-				<label>"<b>ISO input: </b> "</label>
-			</text>
-			<entry accept="filename">
-				<variable>ISO_IN</variable>
-			</entry>
-			<button>
-				<input file stock="gtk-open"></input>
-				<action type="fileselect">ISO_IN</action>
-			</button>
-		</hbox>
-		<hbox>
-			<text use-markup="true">
-				<label>"<b>RAM need:</b>  "</label>
-			</text>
-			<entry>
-				<default>128M</default>
-				<variable>ISO_RAM</variable>
-			</entry>
-			<button>
-				<input file icon="add"></input>
-				<label>"Add ISO"</label>
-				<action>$BIN merge_add</action>
+					</label>
+				</text>
+				<hbox>
+					<text use-markup="true">
+						<label>"<b>ISO input: </b> "</label>
+					</text>
+					<entry accept="filename">
+						<variable>ISO_IN</variable>
+					</entry>
+					<button>
+						<input file stock="gtk-open"></input>
+						<action type="fileselect">ISO_IN</action>
+					</button>
+				</hbox>
+				<hbox>
+					<text use-markup="true">
+						<label>"<b>RAM need:</b>  "</label>
+					</text>
+					<entry>
+						<default>128M</default>
+						<variable>ISO_RAM</variable>
+					</entry>
+					<button>
+						<input file icon="add"></input>
+						<action>$BIN merge_add</action>
+						<action>refresh:ISO_ITEM</action>
+					</button>
+				</hbox>
+			</vbox>
+			<tree>
+				<width>140</width><height>50</height>
+				<label>RAM|ISO</label>
+				<variable>ISO_ITEM</variable>
+				<input>$BIN merge_input</input>
+				<action>$BIN merge_del</action>
 				<action>refresh:ISO_ITEM</action>
-			</button>
+			</tree>
 		</hbox>
 		<hbox>
 			<text use-markup="true">
