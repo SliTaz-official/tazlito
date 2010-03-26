@@ -111,6 +111,17 @@ edit_distro_script()
 	editor $DISTRO_SCRIPT
 }
 
+loram_action()
+{
+	case "$LORAM_RAM$LORAM_CDROM" in
+	falsetrue)	type=cdrom ;;
+	*)		type=ram ;;
+	esac
+	xterm -geometry 80x16 \
+		-title "build loram iso image $LORAM_OUT" \
+		-e "tazlito build-loram $LORAM_IN $LORAM_OUT $type ; echo -e \"----\nENTER to continue...\" && read close"
+}
+
 merge_input()
 {
 	set -- $(cat /tmp/tazlito.mergelist 2> /dev/null)
@@ -265,7 +276,7 @@ export TAZLITO_BOX='
 	</pixmap>
 	</hbox>
 
-	<notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Meta|Configuration">
+	<notebook labels="Writeiso|Live flavor|Flavors list|Gen flavor|Meta|Low RAM|Configuration">
 
 	<frame Filesystem to ISO>
 
@@ -490,6 +501,62 @@ used to select the good one. "
 				<input file icon="go-next"></input>
 				<label>"Build ISO"</label>
 				<action>$BIN merge_action</action>
+			</button>
+		</hbox>
+	</vbox>
+	
+	</frame>
+	
+	<frame Low RAM ISO image>
+
+	<vbox>
+		<hbox>
+	<text wrap="true" width-chars="25" use-markup="true">
+		<label>
+"
+Build a low RAM version
+of a SliTaz ISO image.
+The root filesystem is
+compressed and slower.
+"
+		</label>
+	</text>
+
+			<vbox>
+		<radiobutton>
+			<label>The filesystem is always in RAM.</label>
+			<variable>LORAM_RAM</variable>
+		</radiobutton>
+		<radiobutton>
+			<label>The filesystem may be on CDROM.</label>
+			<variable>LORAM_CDROM</variable>
+		</radiobutton>
+			</vbox>
+		</hbox>
+		<hbox>
+			<text use-markup="true">
+				<label>"<b>ISO input: </b>"</label>
+			</text>
+			<entry accept="filename">
+				<variable>LORAM_IN</variable>
+			</entry>
+			<button>
+				<input file stock="gtk-open"></input>
+				<action type="fileselect">LORAM_IN</action>
+			</button>
+		</hbox>
+		<hbox>
+			<text use-markup="true">
+				<label>"<b>ISO ouput:</b>"</label>
+			</text>
+			<entry accept="filename">
+				<default>loram.iso</default>
+				<variable>LORAM_OUT</variable>
+			</entry>
+			<button>
+				<input file icon="go-next"></input>
+				<label>"Build ISO"</label>
+				<action>$BIN loram_action</action>
 			</button>
 		</hbox>
 	</vbox>

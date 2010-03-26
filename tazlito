@@ -95,6 +95,7 @@ usage ()
   writeiso        Use running system to generate a bootable ISO (with /home).
   merge           Merge multiple rootfs into one iso.
   repack          Recompress rootfs into iso with maximum ratio.
+  build-loram     Generate a live-CD for low ram systems.
   frugal-install  Frugal install in /boot/frugal from a distro or ISO.
   emu-iso         Emulate an ISO image with Qemu.
   burn-iso        Burn ISO image to a cdrom using Wodim.\n"
@@ -238,6 +239,7 @@ verify_rootcd()
 
 create_iso()
 {
+	echo "Generating $1"
 	genisoimage -R -o $1 -b boot/isolinux/isolinux.bin \
  		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
@@ -598,6 +600,288 @@ F5 enhelp.txt
 F6 enopts.txt
 EOT
 	status
+}
+
+# Install a missing package
+install_package()
+{
+	echo -n "Install package $1 "
+	[ -n "$2" ] && echo -n "for kernel $2 "
+	echo -n "?"
+	read answer
+	case "$answer" in
+	y*|Y*|o*|O*)	yes y | tazpkg get-install $1;;
+	*)		return 1;;
+	esac
+}
+
+# Check iso for loram transformation
+check_iso_for_loram()
+{
+	[ -s $TMP_DIR/iso/boot/rootfs.gz ] ||
+	[ -s $TMP_DIR/iso/boot/rootfs1.gz ]
+}
+
+# Build initial rootfs for loram ISO ram/cdrom
+build_initfs()
+{
+	version=$(ls $TMP_DIR/iso/boot/vmlinuz-* | sed 's/.*vmlinuz-//')
+	need_lib=false
+	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/lib \
+		 $TMP_DIR/initfs/mnt $TMP_DIR/initfs/proc $TMP_DIR/initfs/tmp
+	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz ]; do
+		install_package linux-aufs $version || return 1
+	done
+	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz \
+		$TMP_DIR/initfs/lib
+	if [ -f /bin/cromfs-driver ]; then
+		cp /bin/cromfs-driver $TMP_DIR/initfs/bin
+	else
+		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
+		while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.gz ]; do
+			install_package linux-squashfs $version || return 1
+		done
+		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.gz \
+			 $TMP_DIR/initfs/lib
+	fi
+	if [ "$1" == "cdrom" ]; then
+		for i in $(ls /dev/[hs]d[a-f]); do
+			cp -a $i $TMP_DIR/initfs/dev
+		done
+	fi
+	if [ -x /usr/share/boot/busybox-static ]; then
+		cp /usr/share/boot/busybox-static $TMP_DIR/initfs/bin/busybox
+	else
+		cp /bin/busybox $TMP_DIR/initfs/bin
+		need_lib=true
+	fi
+	for i in $($TMP_DIR/initfs/bin/busybox | awk \
+	  '{ if (s) printf "%s",$0 } /Currently/ { s=1 }' | sed 's/,//g'); do
+		ln $TMP_DIR/initfs/bin/busybox $TMP_DIR/initfs/bin/$i
+	done
+	for i in /dev/console /dev/loop* /dev/null /dev/tty /dev/zero \
+		 /dev/kmem /dev/mem /dev/random /dev/urandom; do
+		cp -a $i $TMP_DIR/initfs/dev
+	done
+	$need_lib && for i in /lib/ld-* /lib/lib[cm].so* /lib/lib[cm]-* ; do
+		cp -a $i $TMP_DIR/initfs/lib
+	done
+	cat > $TMP_DIR/initfs/init <<EOTEOT
+#!/bin/sh
+
+getarg()
+{
+	grep -q " \$1=" /proc/cmdline || return 1
+	eval \$2=\$(sed 's/.* loram=\\([^ ]*\\).*/\\1/' < /proc/cmdline)
+	return 0
+}
+
+copy_rootfs()
+{
+	total=\$(grep MemTotal /proc/meminfo | sed 's/[^0-9]//g')
+	need=\$(du -c \${path}rootfs* | tail -n 1 | cut -f1)
+	[ \$(( \$total / \$need )) -gt 1 ] || return 1
+	if ! grep -q " keep-loram" /proc/cmdline && cp \${path}rootfs* /mnt; then
+		path=/mnt/
+		return 0
+	else
+		rm -f /mnt/rootfs*
+		return 1
+	fi
+}
+
+echo "Switching / to tmpfs..."
+mount -t proc proc /proc
+size="\$(grep rootfssize= < /proc/cmdline | \\
+	sed 's/.*rootfssize=\\([0-9]*[kmg%]\\).*/-o size=\\1/')"
+[ -n "\$size" ] || size="-o size=90%"
+
+if [ -f \$(echo /rootfs*.gz | cut -f1 -d' ') ]; then	# loram-ram
+
+total=\$(grep MemTotal /proc/meminfo | sed 's/[^0-9]//g')
+free=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
+if [ \$(( \$total/\$free )) -gt 1 ] || ! mount -t tmpfs \$size tmpfs /mnt; then
+	echo "No tmpfs for /mnt"
+	mkdir -p /mnt/.rw
+	mount -t tmpfs tmpfs /mnt/.rw
+	mkdir -p /mnt/.rw/mnt/.rw
+	path=/
+else
+	mkdir -p /mnt/.rw
+	path=/mnt/.
+	for i in rootfs* ; do
+		mv /\$i \$path\$i 
+	done
+fi
+insmod /lib/squashfs.ko.gz
+
+else				# loram-cdrom
+
+getarg cdrom DRIVE_NAME ||
+DRIVE_NAME=\$(grep "drive name" < /proc/sys/dev/cdrom/info | cut -f 3)
+DEVICE=/dev/\$DRIVE_NAME
+DIR=fs
+if getarg loram DIR; then
+	DEVICE=\${DIR%,*}
+	DIR=/\${DIR#*,}
+fi
+mount -t tmpfs \$size tmpfs /mnt
+mkdir -p /mnt/.rw /mnt/.cdrom /mnt/mnt/.cdrom
+i=0
+while [ \$i -lt 5 ] && ! mount -r \$DEVICE /mnt/.cdrom; do
+	case "\$DEVICE" in
+	/dev/sd*|UUID=*|LABEL=*)
+		mount -t sysfs sysfs /sys
+		USBDELAY=\$(cat /sys/module/usb_storage/parameters/delay_use)
+		umount /sys
+		sleep \$((1+\$USBDELAY)) ;;
+	esac
+	i=\$((i+1))
+done
+path=/mnt/.cdrom/
+copy_rootfs && insmod /lib/squashfs.ko.gz && umount -d /mnt/.cdrom
+
+fi
+
+memfree=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
+umount /proc
+branch=br=/mnt/.rw:/mnt/.cdrom/\$DIR
+if [ ! -d /mnt/.cdrom/fs/etc ]; then
+branch=br=/mnt/.rw
+for i in \${path}rootfs* ; do
+	fs=\${i#*root}
+	branch=\$branch:/mnt/.\$fs
+	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs
+	if [ -f /bin/cromfs-driver ]; then
+		cromfs-driver \${path}root\$fs /mnt/.\$fs -o ro,dev,suid,allow_other
+	else
+		mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
+	fi
+done
+fi
+insmod /lib/aufs.ko.gz
+mount -t aufs -o \$branch none /mnt
+[ \$memfree -lt 30000 ] && sed -i 's/ slim//' /mnt/etc/rcS.conf
+[ -x /mnt/sbin/init ] && exec /bin/switch_root mnt /sbin/init || sh
+EOTEOT
+	chmod +x $TMP_DIR/initfs/init
+	( cd $TMP_DIR/initfs ; find | busybox cpio -o -H newc 2> /dev/null) | \
+	lzma e $TMP_DIR/initfs.gz -si
+	rm -rf $TMP_DIR/initfs
+	rem=$(( $(stat -c "%s" $TMP_DIR/initfs.gz) % 4 ))
+	[ $rem -ne 0 ] &&
+	dd if=/dev/zero bs=1 count=$(( 4 - $rem )) >> $TMP_DIR/initfs.gz 2> /dev/null
+	return 0
+}
+
+# Move each initramfs to squashfs (or cromfs)
+build_loram_rootfs()
+{
+	rootfs_sizes=""
+	for i in $TMP_DIR/iso/boot/rootfs*.gz; do
+		mkdir -p $TMP_DIR/fs
+		cd $TMP_DIR/fs
+		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idm
+		cd - > /dev/null
+		rootfs=$TMP_DIR/$(basename $i)
+		if [ -x /usr/bin/mkcromfs ]; then
+			/usr/bin/mkcromfs -qq -f 262144 -b 16384 $TMP_DIR/fs $rootfs
+		else
+			/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp lzma
+		fi
+		cd $TMP_DIR
+		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
+		if [ "$1" != "cdrom" ]; then
+			( cd $(dirname $rootfs); echo $(basename $rootfs) | \
+			  cpio -o -H newc ) > $rootfs.cpio
+			rm -f $rootfs
+			mv $rootfs.cpio $rootfs
+		fi
+		cd - > /dev/null
+		rm -rf $TMP_DIR/fs
+	done
+}
+
+# Move meta boot configuration files to basic configuration files
+# because meta loram flavor is useless when rootfs is not load in ram
+unmeta_boot()
+{
+	if [ -f $TMP_DIR/loramiso/boot/isolinux/noram.cfg ]; then
+		# We keep enough information to do unloram...
+		sed -i 's/label slitaz/label orgslitaz/' \
+			$TMP_DIR/loramiso/boot/isolinux/common.cfg
+		sed -i	-e 's|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |' \
+			-e 's|label slitaz1|label slitaz|' \
+			-e '/label slitaz[1-9]/{NNNd}' \
+			$TMP_DIR/loramiso/boot/isolinux/*.cfg
+	fi
+}
+
+# Move rootfs to squashfs filesystem(s) in the cdrom writeable with aufs.
+# These squashfs may be load in ram a boot time.
+# Rootfs are also copied to cdrom for tiny ramsize systems.
+# Meta flavors are converted to normal flavors.
+build_loram_cdrom()
+{
+	build_initfs cdrom || return 1
+	build_loram_rootfs cdrom
+	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
+	mkdir $TMP_DIR/loramiso/fs
+	cd $TMP_DIR/loramiso/fs
+	for i in $( ls ../boot/root* | sort -r ) ; do
+		( zcat $i 2> /dev/null || unlzma -c $i ) | cpio -idmu
+		rm -f $i
+	done
+	cd - > /dev/null
+	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
+	mv $TMP_DIR/rootfs*.gz $TMP_DIR/loramiso
+	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
+	unmeta_boot
+	create_iso $OUTPUT $TMP_DIR/loramiso
+}
+
+# Update meta flavor selection sizes.
+# Reduce sizes with rootfs gains.
+update_metaiso_sizes()
+{
+	local append="$(grep append $TMP_DIR/loramiso/boot/isolinux/common.cfg)"
+	local new
+	[ -n "$append" ] || return
+	set -- $append
+	shift
+	new=""
+	while [ -n "$2" ]; do
+		local s
+		case "$1" in
+		*G) s=$(( ${1%G} * 1024 * 1024 ));;
+		*M) s=$(( ${1%M} * 1024 ));;
+		*)  s=${1%K};;
+		esac
+		rootfs_sizes=${rootfs_sizes#* }
+		for i in $rootfs_sizes ; do
+			s=$(( $s - $i ))
+		done
+		new="$new $s $2"
+		shift 2
+	done
+	sed -i "s/append .*/append$new $1/" $TMP_DIR/loramiso/boot/isolinux/common.cfg 
+}
+
+# Move rootfs to a squashfs filesystem into the initramfs writeable with aufs.
+# Meta flavor selection sizes are updated.
+build_loram_ram()
+{
+	build_initfs ram || return 1
+	build_loram_rootfs
+	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
+	rm -f $TMP_DIR/loramiso/boot/bzImage
+	ln $TMP_DIR/loramiso/boot/vmlinuz* $TMP_DIR/loramiso/boot/bzImage
+	rootfs=$(ls $TMP_DIR/rootfs* | sort | tail -n 1)
+	cat $rootfs >> $TMP_DIR/initfs.gz
+	mv $TMP_DIR/initfs.gz $rootfs
+	cp $TMP_DIR/rootfs* $TMP_DIR/loramiso/boot
+	update_metaiso_sizes
+	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
 ####################
@@ -1743,7 +2027,6 @@ EOT
 		status
 		rm -f $TMP_DIR/iso/boot/rootfs.gz
 		update_bootconfig $TMP_DIR/iso/boot/isolinux "$append"
-		echo "Generating $ISO"
 		create_iso $ISO $TMP_DIR/iso
 		rm -rf $TMP_DIR
 		;;
@@ -1764,16 +2047,38 @@ EOT
 		
 		for i in $TMP_DIR/iso/boot/rootfs* ; do
 			echo -n "Repacking $(basename $i)"
-			(zcat $i || unlzma -c $i || cat $i) \
+			(zcat $i 2> /dev/null || unlzma -c $i || cat $i) \
 				2>/dev/null > $TMP_DIR/rootfs
 			lzma e $TMP_DIR/rootfs $i \
 				 $(lzma_switches $TMP_DIR/rootfs)
 			status
 		done
 		
-		echo "Generating $ISO"
 		create_iso $ISO $TMP_DIR/iso
 		rm -rf $TMP_DIR ;;
+
+	build-loram)
+		# Build a Live CD for low ram systems.
+		#
+
+		ISO=$2
+		OUTPUT=$3
+		mkdir -p $TMP_DIR/iso
+		mount -o loop,ro -t iso9660 $ISO $TMP_DIR/iso
+		if ! check_iso_for_loram ; then
+			echo "$2 is not a valid SliTaz live CD. Abort."
+			umount -d $TMP_DIR/iso
+			rm -rf $TMP_DIR
+			exit 1
+		fi
+
+		case "$4" in
+		cdrom)	build_loram_cdrom ;;
+		*)	build_loram_ram ;;
+		esac
+		umount -d $TMP_DIR/iso
+		rm -rf $TMP_DIR ;;
+
 	
 	frugal-install|-fi)
 		ISO_IMAGE="$2"
