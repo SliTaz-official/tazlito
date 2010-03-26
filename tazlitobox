@@ -113,8 +113,9 @@ edit_distro_script()
 
 loram_action()
 {
-	case "$LORAM_RAM$LORAM_CDROM" in
-	falsetrue)	type=cdrom ;;
+	case "$LORAM_RAM$LORAM_CDROM$LORAM_HTTP" in
+	falsetruefalse)	type=cdrom ;;
+	falsefalsetrue)	type=http ;;
 	*)		type=ram ;;
 	esac
 	xterm -geometry 80x16 \
@@ -530,6 +531,10 @@ compressed and slower.
 		<radiobutton>
 			<label>The filesystem may be on CDROM.</label>
 			<variable>LORAM_CDROM</variable>
+		</radiobutton>
+		<radiobutton>
+			<label>The filesystem is on the WEB.</label>
+			<variable>LORAM_HTTP</variable>
 		</radiobutton>
 			</vbox>
 		</hbox>

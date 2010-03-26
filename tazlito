@@ -622,9 +622,11 @@ check_iso_for_loram()
 	[ -s $TMP_DIR/iso/boot/rootfs1.gz ]
 }
 
-# Build initial rootfs for loram ISO ram/cdrom
+# Build initial rootfs for loram ISO ram/cdrom/http
 build_initfs()
 {
+	urliso="mirror.slitaz.org mirror.switch.ch/ftp/mirror/slitaz \
+download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 	version=$(ls $TMP_DIR/iso/boot/vmlinuz-* | sed 's/.*vmlinuz-//')
 	need_lib=false
 	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/lib \
@@ -649,7 +651,44 @@ build_initfs()
 			cp -a $i $TMP_DIR/initfs/dev
 		done
 	fi
-	if [ -x /usr/share/boot/busybox-static ]; then
+	if [ "$1" == "http" ]; then
+		mkdir $TMP_DIR/initfs/etc
+		ln -s /proc/mounts $TMP_DIR/initfs/etc/mtab
+		cp /usr/share/udhcpc/default.script $TMP_DIR/initfs/lib/udhcpc
+		sed -i 's|/sbin/||' $TMP_DIR/initfs/lib/udhcpc
+		cp -a /dev/fuse $TMP_DIR/initfs/dev
+		if ! $need_lib && [ -x /usr/share/boot/fusermount-static ]; then
+			cp /usr/share/boot/fusermount-static $TMP_DIR/initfs/bin/httpfs
+		else
+			cp /usr/bin/fusermount $TMP_DIR/initfs/bin
+			need_lib=true
+		fi
+		if ! $need_lib && [ -x /usr/share/boot/httpfs-static ]; then
+			cp /usr/share/boot/httpfs-static $TMP_DIR/initfs/bin/httpfs
+		else
+			[ ! -f /usr/bin/httpfs ] && ! install_package httpfs-fuse && return 1
+			cp /usr/bin/httpfs $TMP_DIR/initfs/bin
+			cp -a /lib/librt* $TMP_DIR/initfs/lib
+			cp -a /lib/libdl* $TMP_DIR/initfs/lib
+			cp -a /lib/libpthread* $TMP_DIR/initfs/lib
+			cp -a /usr/lib/libfuse* $TMP_DIR/initfs/lib
+			cp -a /lib/libresolv* $TMP_DIR/initfs/lib
+			cp -a /lib/libnss_dns* $TMP_DIR/initfs/lib
+			need_lib=true
+		fi
+		cd $TMP_DIR/initfs
+		echo "Get slitaz-release..."
+		for i in $TMP_DIR/iso/boot/rootfs*.gz; do
+			( zcat $i 2> /dev/null || unlzma -c $i) | \
+			cpio -idmu etc/slitaz-release > /dev/null
+		done
+		cd - > /dev/null
+		echo "Default urls for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso: $urliso"
+		echo -n "list of urls to insert: "
+		read -t 30 urliso2
+		urliso="$urliso2 $urliso"
+	fi
+	if ! $need_lib && [ -x /usr/share/boot/busybox-static ]; then
 		cp /usr/share/boot/busybox-static $TMP_DIR/initfs/bin/busybox
 	else
 		cp /bin/busybox $TMP_DIR/initfs/bin
@@ -696,7 +735,49 @@ size="\$(grep rootfssize= < /proc/cmdline | \\
 	sed 's/.*rootfssize=\\([0-9]*[kmg%]\\).*/-o size=\\1/')"
 [ -n "\$size" ] || size="-o size=90%"
 
-if [ -f \$(echo /rootfs*.gz | cut -f1 -d' ') ]; then	# loram-ram
+if [ -x /bin/httpfs ]; then	# loram-http
+
+while read var default; do
+	eval \$var=\$default
+	getarg \$var \$var
+done <<EOT
+eth	eth0
+dns	208.67.222.222,208.67.220.220
+netmask	255.255.255.0
+gw
+ip
+EOT
+if [ -n "\$ip" ]; then
+	ifconfig \$eth \$ip netmask \$netmask up
+	route add default gateway \$gw
+	for i in \$(echo \$dns | sed 's/,/ /g'); do
+		echo "nameserver \$i" >> /etc/resolv.conf
+	done
+else
+	udhcpc -s /lib/udhcpc -i \$eth
+fi
+for i in $urliso ; do
+	[ -n "\$URLISO" ] && URLISO="\$URLISO,"
+	URLISO="\${URLISO}http://\$i/iso/\$(cat /etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso"
+done
+getarg urliso URLISO
+DIR=fs
+if getarg loram DIR; then
+	DEVICE=\${DIR%,*}
+	DIR=/\${DIR#*,}
+fi
+mount -t tmpfs \$size tmpfs /mnt
+path=/mnt/.cdrom/
+mkdir -p /mnt/.rw \$path
+while [ ! -d \$path/boot ]; do
+	for i in \$(echo \$URLISO | sed 's/,/ /g'); do
+		httpfs \$i \$path && break
+	done
+	mount -o loop,ro -t iso9660 \$path/*.iso \$path
+done
+#copy_rootfs && umount -d \$path && umount -d \$path
+
+elif [ -f \$(echo /rootfs*.gz | cut -f1 -d' ') ]; then	# loram-ram
 
 total=\$(grep MemTotal /proc/meminfo | sed 's/[^0-9]//g')
 free=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
@@ -836,6 +917,18 @@ build_loram_cdrom()
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	mv $TMP_DIR/rootfs*.gz $TMP_DIR/loramiso
 	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
+	unmeta_boot
+	create_iso $OUTPUT $TMP_DIR/loramiso
+}
+
+# Create http bootstrap to load a remove loram_cdrom
+# Meta flavors are converted to normal flavors.
+build_loram_http()
+{
+	build_initfs http || return 1
+	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
+	rm -f $TMP_DIR/loramiso/boot/rootfs*
+	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	unmeta_boot
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
@@ -2074,6 +2167,7 @@ EOT
 
 		case "$4" in
 		cdrom)	build_loram_cdrom ;;
+		http)	build_loram_http ;;
 		*)	build_loram_ram ;;
 		esac
 		umount -d $TMP_DIR/iso
