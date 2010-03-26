@@ -337,6 +337,17 @@ startup according to the amount of RAM available:
  # tazlito merge 160M slitaz-core.iso 96M rootfs-justx.gz 32M rootfs-base.gz
 </pre>
 
+<a name="build-loram"></a>
+<h3><font color="#6c0023">build-loram</font></h3>
+<p>
+Creates a ISO image flavor for low ram system from a SliTaz ISO image.
+You can build a flavor with / always in ram or where / may stay on cdrom.
+</p>
+<pre>
+ # tazlito build-loram slitaz.iso loram.iso
+ # tazlito build-loram slitaz.iso loram-cdrom.iso cdrom
+</pre>
+
 <a name="emu-iso"></a>
 <h3><font color="#6c0023">emu-iso</font></h3>
 <p>
