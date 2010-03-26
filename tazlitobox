@@ -468,7 +468,7 @@ used to select the good one. "
 				</hbox>
 				<hbox>
 					<text use-markup="true">
-						<label>"<b>RAM need:</b>  "</label>
+						<label>"<b>RAM needed:</b>  "</label>
 					</text>
 					<entry>
 						<default>128M</default>
@@ -515,7 +515,7 @@ used to select the good one. "
 	<text wrap="true" width-chars="25" use-markup="true">
 		<label>
 "
-Build a low RAM version
+Build a Low RAM version
 of a SliTaz ISO image.
 The root filesystem is
 compressed and slower.
@@ -529,7 +529,7 @@ compressed and slower.
 			<variable>LORAM_RAM</variable>
 		</radiobutton>
 		<radiobutton>
-			<label>The filesystem may be on CDROM.</label>
+			<label>The filesystem may be on a CDROM.</label>
 			<variable>LORAM_CDROM</variable>
 		</radiobutton>
 		<radiobutton>
@@ -552,7 +552,7 @@ compressed and slower.
 		</hbox>
 		<hbox>
 			<text use-markup="true">
-				<label>"<b>ISO ouput:</b>"</label>
+				<label>"<b>ISO output:</b>"</label>
 			</text>
 			<entry accept="filename">
 				<default>loram.iso</default>

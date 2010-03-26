@@ -684,7 +684,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 		done
 		cd - > /dev/null
 		echo "Default urls for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso: $urliso"
-		echo -n "list of urls to insert: "
+		echo -n "List of urls to insert: "
 		read -t 30 urliso2
 		urliso="$urliso2 $urliso"
 	fi
@@ -884,7 +884,7 @@ build_loram_rootfs()
 }
 
 # Move meta boot configuration files to basic configuration files
-# because meta loram flavor is useless when rootfs is not load in ram
+# because meta loram flavor is useless when rootfs is not loaded in ram
 unmeta_boot()
 {
 	if [ -f $TMP_DIR/loramiso/boot/isolinux/noram.cfg ]; then
@@ -898,8 +898,8 @@ unmeta_boot()
 	fi
 }
 
-# Move rootfs to squashfs filesystem(s) in the cdrom writeable with aufs.
-# These squashfs may be load in ram a boot time.
+# Move rootfs to squashfs filesystem(s) to the cdrom writeable with aufs.
+# These squashfs may be loaded in ram a boot time.
 # Rootfs are also copied to cdrom for tiny ramsize systems.
 # Meta flavors are converted to normal flavors.
 build_loram_cdrom()
@@ -921,7 +921,7 @@ build_loram_cdrom()
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
-# Create http bootstrap to load a remove loram_cdrom
+# Create http bootstrap to load and remove loram_cdrom
 # Meta flavors are converted to normal flavors.
 build_loram_http()
 {
