@@ -634,6 +634,10 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz ]; do
 		install_package linux-aufs $version || return 1
 	done
+	# bootfloppybox will need floppy.ko.gz, /dev/fd0, /dev/tty0
+	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.gz \
+		$TMP_DIR/initfs/lib 2> /dev/null
+	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2> /dev/null
 	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz \
 		$TMP_DIR/initfs/lib
 	if [ -f /bin/cromfs-driver ]; then
