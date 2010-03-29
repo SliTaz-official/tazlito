@@ -798,7 +798,6 @@ else
 		mv /\$i \$path\$i 
 	done
 fi
-insmod /lib/squashfs.ko.gz
 
 else				# loram-cdrom
 
@@ -824,7 +823,7 @@ while [ \$i -lt 5 ] && ! mount -r \$DEVICE /mnt/.cdrom; do
 	i=\$((i+1))
 done
 path=/mnt/.cdrom/
-copy_rootfs && insmod /lib/squashfs.ko.gz && umount -d /mnt/.cdrom
+copy_rootfs && umount -d /mnt/.cdrom
 
 fi
 
@@ -840,6 +839,7 @@ for i in \${path}rootfs* ; do
 	if [ -f /bin/cromfs-driver ]; then
 		cromfs-driver \${path}root\$fs /mnt/.\$fs -o ro,dev,suid,allow_other
 	else
+		insmod /lib/squashfs.ko.gz 2> /dev/null
 		mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
 	fi
 done
@@ -1792,7 +1792,8 @@ EOT
 				n=$(($n+1))
 				echo "Building $flavor rootfs..."
 				download $flavor.flavor
-				zcat $flavor.flavor | cpio -i $flavor.pkglist
+				zcat $flavor.flavor | cpio -i \
+					$flavor.pkglist $flavor.rootfs
 				sed 's/.*/&.tazpkg/' < $flavor.pkglist \
 					> $DISTRO/list-packages0$n
 				mkdir ${ROOTFS}0$n
@@ -1802,6 +1803,11 @@ EOT
 				rm -rf ${ROOTFS}0$n/boot
 				status
 				cd $DISTRO
+				if [ -s $flavor.rootfs ]; then
+					echo "Add $flavor rootfs extra files..."
+					zcat $flavor.rootfs | \
+					( cd ${ROOTFS}0$n ; cpio -idmu )
+				fi
 				mv $flavor.pkglist ${ROOTFS}0$n/etc/tazlito/distro-packages.list
 				rm -f $flavor.flavor install-list
 				mergefs ${ROOTFS}0$n $last
