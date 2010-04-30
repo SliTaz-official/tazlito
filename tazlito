@@ -599,6 +599,12 @@ F4 display.txt
 F5 enhelp.txt
 F6 enopts.txt
 EOT
+	# Restore real label names
+	echo $2 | awk '{ for (i=NF; i>1; i-=2) printf "%d/%s\n",i/2,$i }' | \
+	while read pat; do
+		sed -i "s/slitaz$pat/" $1/common.cfg \
+			$(grep -l 'include common' $1/*.cfg)
+	done
 	status
 }
 
@@ -687,7 +693,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 			cpio -idmu etc/slitaz-release > /dev/null
 		done
 		cd - > /dev/null
-		echo "Default urls for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso: $urliso"
+		echo "Default urls for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-$(cat $TMP_DIR/initfs/etc/slitaz-release)-loram-cdrom.iso: $urliso"
 		echo -n "List of urls to insert: "
 		read -t 30 urliso2
 		urliso="$urliso2 $urliso"
@@ -762,7 +768,7 @@ else
 fi
 for i in $urliso ; do
 	[ -n "\$URLISO" ] && URLISO="\$URLISO,"
-	URLISO="\${URLISO}http://\$i/iso/\$(cat /etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso"
+	URLISO="\${URLISO}http://\$i/iso/\$(cat /etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso,http://\$i/iso/\$(cat /etc/slitaz-release)/flavors/slitaz-\$(cat /etc/slitaz-release)-loram-cdrom.iso"
 done
 getarg urliso URLISO
 DIR=fs
