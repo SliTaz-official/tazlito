@@ -451,7 +451,7 @@ Gen Flavor will generate a new flavor file based on rootfs in
 Combines several ISO flavors like
 nested Russian dolls. The amount
 of RAM available at startup will be
-used to select the good one. "
+used to select the utmost one. "
 					</label>
 				</text>
 				<hbox>
