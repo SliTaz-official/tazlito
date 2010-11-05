@@ -764,7 +764,7 @@ if [ -n "\$ip" ]; then
 		echo "nameserver \$i" >> /etc/resolv.conf
 	done
 else
-	udhcpc -s /lib/udhcpc -i \$eth
+	udhcpc -f -q -s /lib/udhcpc -i \$eth
 fi
 for i in $urliso ; do
 	[ -n "\$URLISO" ] && URLISO="\$URLISO,"
@@ -852,6 +852,7 @@ done
 fi
 insmod /lib/aufs.ko.gz
 mount -t aufs -o \$branch none /mnt
+[ -x /bin/httpfs ] && sed -i 's/DHCP="yes"/DHCP="no"/' /mnt/etc/network.conf
 [ \$memfree -lt 30000 ] && sed -i 's/ slim//' /mnt/etc/rcS.conf
 [ -x /mnt/sbin/init ] && exec /bin/switch_root mnt /sbin/init || sh
 EOTEOT
