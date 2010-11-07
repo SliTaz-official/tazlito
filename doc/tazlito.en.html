@@ -45,8 +45,8 @@ Tazlito is a small utility to extract a LiveCD, rebuild the
 ISO image and regenerate the root filesystem of the LiveCD. 
 Tazlito can also generate a distribution from a list of packages 
 previously downloaded. To run, Tazlito uses the configuration file 
-/etc/tazlito/tazlito.conf or a tazlito.conf found in the 
-current directory that can be easily generated. 
+/etc/tazlito/tazlito.conf or an easily generated tazlito.conf 
+found in the current directory. 
 It specifies the name of the ISO, volume, maintainer and 
 the paths of the packages to distribute and the generated ISO. 
 Tazlito can also set up a directory containing additional files 
@@ -240,7 +240,7 @@ distro-tree and an ISO image via a list of packages. To function,
 this command needs a list of packages, a directory containing
 all the (.tazpkg) packages on the list, and a directory to
 generate the distribution. The list of packages can be extracted
-from a flavor by the 'get-flavor' command. If one uses the
+from a flavor with the 'get-flavor' command. If one uses the
 LiveCD, the options --cdrom and --iso= permit the regeneration
 of packages that place files in /boot without being obliged
 to download them and recovers the additional files of the 
@@ -365,7 +365,7 @@ cdrom or booting into frugal mode:
 <p>
 Burn-iso will guess the cdrom device and its speed, and wodim
 (part of cdrkit) will begin to burn an ISO image. The default
-ISO image is the one in the current configuration file,
+ISO image is the one located in the current configuration file,
 but it's possible to specify a different image via the
 command line:
 </p>
@@ -504,7 +504,7 @@ scratch. To adapt the eeepc flavor for example:
 # cp -a eeepc myslitaz
 </pre>
 <p>
-Files in my-slitaz can then be adapted, and:
+Files in my-slitaz can then be changed, and:
 </p>
 <pre>
 # tazlito pack-flavor myslitaz
