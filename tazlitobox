@@ -8,6 +8,13 @@
 #
 VERSION=3.0
 
+# Include gettext helper script.
+. /usr/bin/gettext.sh
+
+# Export package name for gettext.
+TEXTDOMAIN='tazusbbox'
+export TEXTDOMAIN
+
 export BIN=$0
 
 # Check if user is root.
