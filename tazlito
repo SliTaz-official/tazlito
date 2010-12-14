@@ -271,6 +271,7 @@ gen_livecd_isolinux()
 	cd $ROOTCD
 	echo -n "Computing md5..."
 	find * -type f ! -name md5sum -exec md5sum {} \; > md5sum
+	sed -i '/  boot\/isolinux\/isolinux.bin$/d' md5sum
 	status
 	cd $DISTRO
 	echo ""
@@ -305,7 +306,7 @@ lzma_history_bits()
 
 lzma_switches()
 {
-	echo "-d$(lzma_history_bits $1) -mt$(grep ^processor < /proc/cpuinfo | wc -l)"
+	echo "-d$(lzma_history_bits $1) -mt$(grep '^processor' < /proc/cpuinfo | wc -l)"
 }
 
 # Pack rootfs
@@ -777,15 +778,16 @@ if getarg loram DIR; then
 	DIR=/\${DIR#*,}
 fi
 mount -t tmpfs \$size tmpfs /mnt
+path2=/mnt/.httpfs/
 path=/mnt/.cdrom/
-mkdir -p /mnt/.rw \$path
+mkdir -p /mnt/.rw \$path \$path2
 while [ ! -d \$path/boot ]; do
 	for i in \$(echo \$URLISO | sed 's/,/ /g'); do
-		httpfs \$i \$path && break
+		httpfs \$i \$path2 && break
 	done
-	mount -o loop,ro -t iso9660 \$path/*.iso \$path
+	mount -o loop,ro -t iso9660 \$path2/*.iso \$path
 done
-#copy_rootfs && umount -d \$path && umount -d \$path
+#copy_rootfs && umount -d \$path && umount -d \$path2
 
 elif [ -f \$(echo /rootfs*.gz | cut -f1 -d' ') ]; then	# loram-ram
 
@@ -849,6 +851,8 @@ for i in \${path}rootfs* ; do
 		mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
 	fi
 done
+else
+mkdir -p /mnt/.rw/mnt/.httpfs
 fi
 insmod /lib/aufs.ko.gz
 mount -t aufs -o \$branch none /mnt
