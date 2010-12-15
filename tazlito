@@ -883,7 +883,7 @@ build_loram_rootfs()
 		if [ -x /usr/bin/mkcromfs ]; then
 			/usr/bin/mkcromfs -qq -f 262144 -b 16384 $TMP_DIR/fs $rootfs
 		else
-			/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp lzma
+			/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
 		fi
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
