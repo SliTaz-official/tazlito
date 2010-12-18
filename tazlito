@@ -1039,8 +1039,12 @@ find_flavor_rootfs()
 		done
 	done
 	
-	# Remove tazpkg date
+	# Remove tazpkg files and tmp files
 	rm -rf $1/var/lib/tazpkg/installed*
+	rm -f $1/var/lib/tazpkg/*packages* $1/var/lib/tazpkg/files.list.lzma \
+		$1/var/lib/tazpkg/mirror*  $1/var/cache/*/* \
+		$1/var/lock/* $1/var/log/* $1/var/run/* $1/var/run/*/* \
+		$1/var/tmp/* $1/var/lib/*  $1/var/lib/dbus/* 2> /dev/null
 	
 	# Cleanup directory tree
 	cd $1
