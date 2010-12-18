@@ -640,7 +640,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/lib \
 		 $TMP_DIR/initfs/mnt $TMP_DIR/initfs/proc $TMP_DIR/initfs/tmp
 	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz ]; do
-		install_package linux-aufs $version || return 1
+		install_package aufs $version || return 1
 	done
 	# bootfloppybox will need floppy.ko.gz, /dev/fd0, /dev/tty0
 	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.gz \
