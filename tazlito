@@ -87,6 +87,7 @@ usage ()
   upgrade-flavor  Update package list to the latest available versions.
   extract-flavor  Extract a (*.flavor) flavor into $FLAVORS_REPOSITORY.
   pack-flavor     Pack (and update) a flavor from $FLAVORS_REPOSITORY.
+  iso2flavor      Create a flavor file from a SliTaz iso image.
   check-list      Check a distro-packages.list for updates.
   extract-distro  Extract an ISO to a directory and rebuild LiveCD tree.
   gen-distro      Generate a Live distro and ISO from a list of packages.
@@ -992,6 +993,63 @@ build_loram_ram()
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
+# Remove files installed by packages 
+find_flavor_rootfs()
+{
+	for i in $1/etc/tazlito/*.extract; do
+		[ -e $i ] || continue
+		chroot $1 /bin/sh ${i#$1}
+	done
+	
+	# Clean hardlinks and files patched by genisofs in /boot		
+	for i in isolinux/isolinux.bin isolinux/boot.cat bzImage ; do
+		rm -f $1/boot/$i
+	done
+	
+	# Clean files generated in post_install
+	rm -f $1/lib/modules/*/modules.* $1/etc/mtab \
+	      $1/dev/core $1/dev/fd $1/dev/std*
+			
+	# Verify md5
+	cat $1/var/lib/tazpkg/installed/*/md5sum | \
+	while read md5 file; do
+		[ -e $1$file ] || continue
+		[ "$(cat $1$file | md5sum)" == "$md5  -" ] && 
+		rm -f $1$file
+	done
+	
+	# Check configuration files
+	for i in $1/var/lib/tazpkg/installed/*/volatile.cpio.gz; do
+		[ -e $i ] || continue
+		mkdir /tmp/volatile$$
+		zcat $i | ( cd /tmp/volatile$$ ; cpio -idmu > /dev/null )
+		( cd /tmp/volatile$$ ; find * -type f ) | while read file ; do
+			[ -e $1/$file ] || continue
+			cmp -s /tmp/volatile$$/$file $1/$file && rm -f $1/$file
+		done
+		rm -rf /tmp/volatile$$
+	done
+	
+	# Remove other files blindly
+	for i in $1/var/lib/tazpkg/installed/*/files.list; do
+		for file in $(cat $i); do
+			[ $1$file -nt $i ] && continue
+			[ -f $1$file -a ! -L $1$file ] && continue
+			[ -d $1$file ] || rm -f $1$file
+		done
+	done
+	
+	# Remove tazpkg date
+	rm -rf $1/var/lib/tazpkg/installed*
+	
+	# Cleanup directory tree
+	cd $1
+	find * -type d | sort -r | while read dir; do
+		rmdir $dir 2> /dev/null
+	done
+	cd - > /dev/null
+}
+
 ####################
 # Tazlito commands #
 ####################
@@ -1570,6 +1628,89 @@ EOT
 		fi
 		echo ""
 		;;
+		
+	iso2flavor)
+		if [ -z "$3" -o ! -s "$2" ]; then
+			cat <<EOT
+Usage : tazlito iso2flavor image.iso flavor_name
+
+Create a file flavor_name.flavor from the cdrom image file image.iso
+EOT
+			exit 1
+		fi
+		FLAVOR=${3%.flavor}
+		mkdir -p $TMP_DIR/iso $TMP_DIR/rootfs
+		mount -o loop,ro $2 $TMP_DIR/iso
+		if [ -s $TMP_DIR/iso/boot/rootfs1.gz ]; then
+			echo "META flavors are not supported."
+			umount -d $TMP_DIR/iso
+		elif [ ! -s $TMP_DIR/iso/boot/rootfs.gz ]; then
+			echo "No /boot/rootfs.gz in iso image. Need a SliTaz iso."
+			umount -d $TMP_DIR/iso
+		else
+			( unlzma -c $TMP_DIR/iso/boot/rootfs.gz || \
+			  zcat $TMP_DIR/iso/boot/rootfs.gz ) | \
+				( cd $TMP_DIR/rootfs ; cpio -idmu > /dev/null )
+			if [ ! -s $TMP_DIR/rootfs/etc/slitaz-release ]; then
+				echo "No file /etc/slitaz-release in /boot/rootfs.gz of iso image. Need a non loram SliTaz iso."
+				umount -d $TMP_DIR/iso
+			else
+				ROOTFS_SIZE=$(du -hs $TMP_DIR/rootfs | awk '{ print $1 }')
+				RAM_SIZE=$(du -s $TMP_DIR/rootfs | awk '{ print 32*int(($1+36000)/32768) "M" }')
+				cp -a $TMP_DIR/iso $TMP_DIR/rootcd
+				ISO_SIZE=$(df -h $TMP_DIR/iso | awk 'END { print $2 }')
+				BUILD_DATE=$(date +%Y%m%d\ \at\ \%H:%M:%S -r $TMP_DIR/iso/md5sum)
+				umount -d $TMP_DIR/iso
+				INITRAMFS_SIZE=$(du -chs $TMP_DIR/rootcd/boot/rootfs.gz | awk '{ s=$1 } END { print $1 }')
+				rm -f $TMP_DIR/rootcd/boot/rootfs.gz $TMP_DIR/rootcd/md5sum
+				mv $TMP_DIR/rootcd/boot $TMP_DIR/rootfs
+				sed 's/.*  \(.*\).tazpkg*/\1/' > $TMP_DIR/$FLAVOR.pkglist \
+					< $TMP_DIR/rootfs/var/lib/tazpkg/installed.md5
+				#[ -s $TMP_DIR/rootfs/etc/tazlito/distro-packages.list ] &&
+				#	mv $TMP_DIR/rootfs/etc/tazlito/distro-packages.list $TMP_DIR/$FLAVOR.pkglist
+				PKGCNT=$(grep -v ^# $TMP_DIR/$FLAVOR.pkglist | wc -l | awk '{ print $1 }')
+				find_flavor_rootfs $TMP_DIR/rootfs
+				[ -d $TMP_DIR/rootfs/boot ] && mv $TMP_DIR/rootfs/boot $TMP_DIR/rootcd
+				[ -n "$(ls $TMP_DIR/rootfs)" ] && ( cd $TMP_DIR/rootfs ; find * | cpio -o -H newc ) | gzip -9 > $TMP_DIR/$FLAVOR.rootfs
+				[ -n "$(ls $TMP_DIR/rootcd)" ] && ( cd $TMP_DIR/rootcd ; find * | cpio -o -H newc ) | gzip -9 > $TMP_DIR/$FLAVOR.rootcd
+				rm -rf $TMP_DIR/rootcd $TMP_DIR/rootfs
+				VERSION=""; MAINTAINER=""
+				echo -en "Flavor short description \007: "; read -t 30 DESCRIPTION
+				if [ -n "$DESCRIPTION" ]; then
+					echo -en "Flavor version : "; read -t 30 VERSION
+					echo -en "Flavor maintainer (your email) : "; read -t 30 MAINTAINER
+				fi
+				[ -n "$DESCRIPTION" ] || DESCRIPTION="Slitaz $FLAVOR flavor"
+				[ -n "$VERSION" ] || VERSION="1.0"
+				[ -n "$MAINTAINER" ] || MAINTAINER="nobody@slitaz.org"
+				cat > $TMP_DIR/$FLAVOR.desc <<EOT
+Flavor          : $FLAVOR
+Description     : $DESCRIPTION
+Version         : $VERSION
+Maintainer      : $MAINTAINER
+LiveCD RAM size : $RAM_SIZE
+Build date      : $BUILD_DATE
+Packages        : $PKGCNT
+Rootfs size     : $ROOTFS_SIZE
+Initramfs size  : $INITRAMFS_SIZE
+ISO image size  : $ISO_SIZE
+================================================================================
+
+EOT
+				( cd $TMP_DIR ; ls $FLAVOR.* | cpio -o -H newc ) | gzip -9 > $FLAVOR.flavor
+				cat <<EOT
+Tazlito can't detect each file installed during a package post_install.
+You should extract this flavor (tazlito extract-flavor $FLAVOR),
+check the files in /home/slitaz/flavors/$FLAVOR/rootfs tree and remove
+files generated by post_installs.
+Check /home/slitaz/flavors/$FLAVOR/receipt too and repack the flavor
+(tazlito pack-flavor $FLAVOR)
+EOT
+			fi
+		fi
+		rm -rf $TMP_DIR
+		;;
+		
 	check-list)
 		# Use current packages list in $PWD by default.
 		DISTRO_PKGS_LIST=distro-packages.list
