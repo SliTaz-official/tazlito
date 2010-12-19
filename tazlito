@@ -250,6 +250,14 @@ create_iso()
 		/usr/bin/isohybrid $1 2> /dev/null
 		status
 	fi
+	if [ -s /etc/tazlito/info ]; then
+		if [ $(stat -c /etc/tazlito/info) -lt $(( 31 * 1024 )) ]; then
+			echo -n "Storing ISO info..."
+			dd if=/etc/tazlito/info bs=1k seek=1 of=$1 \
+				conv=notrunc 2> /dev/null
+			status
+		fi
+	fi
 }
 
 # Generate a new ISO image using isolinux.
@@ -1600,12 +1608,16 @@ EOT
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
 			status
+			infos="$FLAVOR.desc"
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
 					echo -n "Adding $i... "
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id > /dev/null)
+					zcat $TMP_DIR/$FLAVOR.$i | cpio -tv \
+						> $TMP_DIR/$FLAVOR.list$i
+					infos="$infos\n$FLAVOR.list$i"
 				fi
 			done
 			if [ -s $TMP_DIR/$FLAVOR.mirrors ]; then
@@ -1615,6 +1627,7 @@ EOT
 					echo "$line" > $LOCALSTATE/undigest/$FLAVOR$n/mirror
 					n=$(( $n + 1 ))
 				done < $TMP_DIR/$FLAVOR.mirrors
+				infos="$infos\n$FLAVOR.mirrors"
 				tazpkg recharge
 			fi
 			rm -f /etc/tazlito/rootfs.list
@@ -1628,6 +1641,8 @@ EOT
 				> tazlito.conf.$$ && mv tazlito.conf.$$ tazlito.conf
 			sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$FLAVOR\"/" tazlito.conf
 			status
+			( cd $TMP_DIR ; echo -e $infos | cpio -o -H newc ) \
+				gzip -9 > /etc/tazlito/info
 			rm -Rf $TMP_DIR
 		fi
 		echo ""
