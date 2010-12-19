@@ -1040,11 +1040,11 @@ find_flavor_rootfs()
 	done
 	
 	# Remove tazpkg files and tmp files
-	rm -rf $1/var/lib/tazpkg/installed*
+	rm -rf $1/var/lib/tazpkg/installed* $1/tmp $1/var/tmp
 	rm -f $1/var/lib/tazpkg/*packages* $1/var/lib/tazpkg/files.list.lzma \
 		$1/var/lib/tazpkg/mirror*  $1/var/cache/*/* \
 		$1/var/lock/* $1/var/log/* $1/var/run/* $1/var/run/*/* \
-		$1/var/tmp/* $1/var/lib/*  $1/var/lib/dbus/* 2> /dev/null
+		$1/var/lib/*  $1/var/lib/dbus/* 2> /dev/null
 	
 	# Cleanup directory tree
 	cd $1
@@ -2102,11 +2102,12 @@ Archive compression: $COMPRESSION"
 		esac
 		status
 		
+		cd /
 		# Create list of files including default user files since it is defined in /etc/passwd
 		# and some new users might have been added.
-		find /bin /etc /init /sbin /var /dev /lib /root /usr /home >/tmp/list
+		find bin etc init sbin var dev lib root usr home >/tmp/list
 
-		for dir in /proc /sys /tmp /mnt /media /media/cdrom /media/flash /media/usbdisk
+		for dir in proc sys tmp mnt media media/cdrom media/flash media/usbdisk
 		do
 			echo $dir >>/tmp/list
 		done
@@ -2116,6 +2117,7 @@ Archive compression: $COMPRESSION"
 		rm -f /tmp/rootfs
 		write_initramfs &
 		sleep 2
+		cd - > /dev/null
 		echo -en "\nFilesystem size:"
 		while [ ! -f /tmp/rootfs ]
 		do
