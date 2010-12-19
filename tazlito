@@ -251,7 +251,7 @@ create_iso()
 		status
 	fi
 	if [ -s /etc/tazlito/info ]; then
-		if [ $(stat -c /etc/tazlito/info) -lt $(( 31 * 1024 )) ]; then
+		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
 			echo -n "Storing ISO info..."
 			dd if=/etc/tazlito/info bs=1k seek=1 of=$1 \
 				conv=notrunc 2> /dev/null
