@@ -1641,7 +1641,7 @@ EOT
 				> tazlito.conf.$$ && mv tazlito.conf.$$ tazlito.conf
 			sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$FLAVOR\"/" tazlito.conf
 			status
-			( cd $TMP_DIR ; echo -e $infos | cpio -o -H newc ) \
+			( cd $TMP_DIR ; echo -e $infos | cpio -o -H newc ) | \
 				gzip -9 > /etc/tazlito/info
 			rm -Rf $TMP_DIR
 		fi
