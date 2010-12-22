@@ -902,15 +902,31 @@ build_loram_rootfs()
 		fi
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
-		if [ "$1" != "cdrom" ]; then
-			( cd $(dirname $rootfs); echo $(basename $rootfs) | \
+		( cd $(dirname $rootfs); echo $(basename $rootfs) | \
 			  cpio -o -H newc ) > $rootfs.cpio
-			rm -f $rootfs
-			mv $rootfs.cpio $rootfs
-		fi
+		rm -f $rootfs
+		mv $rootfs.cpio $rootfs
 		cd - > /dev/null
 		rm -rf $TMP_DIR/fs
 	done
+}
+
+# Move each initramfs to squashfs (or cromfs)
+build_loram_rootfs_cdrom()
+{
+	mkdir -p $TMP_DIR/fs
+	cd $TMP_DIR/fs
+	for i in $TMP_DIR/iso/boot/rootfs*.gz; do
+		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idm
+	done
+	rootfs=$TMP_DIR/rootfs.gz
+	if [ -x /usr/bin/mkcromfs ]; then
+		/usr/bin/mkcromfs -qq -f 262144 -b 16384 $TMP_DIR/fs $rootfs
+	else
+		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
+	fi
+	rm -rf $TMP_DIR/fs
+	cd $TMP_DIR
 }
 
 # Move meta boot configuration files to basic configuration files
@@ -935,7 +951,7 @@ unmeta_boot()
 build_loram_cdrom()
 {
 	build_initfs cdrom || return 1
-	build_loram_rootfs cdrom
+	build_loram_rootfs_cdrom
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
 	if [ "$1" == "small" ]; then
 		rm -f $TMP_DIR/loramiso/boot/root*
