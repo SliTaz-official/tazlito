@@ -120,8 +120,9 @@ edit_distro_script()
 
 loram_action()
 {
-	case "$LORAM_RAM$LORAM_CDROM" in
-	falsetrue)	type=cdrom ;;
+	case "$LORAM_RAM$LORAM_CDROM$LORAM_CDROM_SMALL" in
+	falsefalsetrue)	type=smallcdrom ;;
+	falsetruefalse)	type=cdrom ;;
 	*)		type=ram ;;
 	esac
 	xterm -geometry 80x16 \
@@ -535,7 +536,11 @@ compressed and slower.
 			<variable>LORAM_RAM</variable>
 		</radiobutton>
 		<radiobutton>
-			<label>The filesystem may be on a CDROM.</label>
+			<label>The filesystem may be on a small CDROM.</label>
+			<variable>LORAM_CDROM_SMALL</variable>
+		</radiobutton>
+		<radiobutton>
+			<label>The filesystem may be on a large CDROM.</label>
 			<variable>LORAM_CDROM</variable>
 		</radiobutton>
 			</vbox>

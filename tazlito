@@ -241,6 +241,12 @@ verify_rootcd()
 create_iso()
 {
 	echo "Generating $1"
+	if [ $(ls $2/boot/vmlinuz* $2/boot/bzImage | wc -l) -eq 2 ]; then
+		if cmp $2/boot/vmlinuz* $2/boot/bzImage > /dev/null; then
+			rm -f $2/boot/bzImage
+			ln $2/boot/vmlinuz* $2/boot/bzImage
+		fi
+	fi
 	genisoimage -R -o $1 -b boot/isolinux/isolinux.bin \
  		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
@@ -852,7 +858,7 @@ branch=br=/mnt/.rw
 for i in \${path}rootfs* ; do
 	fs=\${i#*root}
 	branch=\$branch:/mnt/.\$fs
-	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs
+	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs /mnt/.rw/mnt/.cdrom
 	if [ -f /bin/cromfs-driver ]; then
 		cromfs-driver \${path}root\$fs /mnt/.\$fs -o ro,dev,suid,allow_other
 	else
@@ -931,16 +937,20 @@ build_loram_cdrom()
 	build_initfs cdrom || return 1
 	build_loram_rootfs cdrom
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
-	mkdir $TMP_DIR/loramiso/fs
-	cd $TMP_DIR/loramiso/fs
-	for i in $( ls ../boot/root* | sort -r ) ; do
-		( zcat $i 2> /dev/null || unlzma -c $i ) | cpio -idmu
-		rm -f $i
-	done
-	cd - > /dev/null
+	if [ "$1" == "small" ]; then
+		rm -f $TMP_DIR/loramiso/boot/root*
+	else
+		mkdir $TMP_DIR/loramiso/fs
+		cd $TMP_DIR/loramiso/fs
+		for i in $( ls ../boot/root* | sort -r ) ; do
+			( zcat $i 2> /dev/null || unlzma -c $i ) | cpio -idmu
+			rm -f $i
+		done
+		mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
+		cd - > /dev/null
+	fi
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	mv $TMP_DIR/rootfs*.gz $TMP_DIR/loramiso
-	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
 	unmeta_boot
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
@@ -2349,9 +2359,10 @@ EOT
 		fi
 
 		case "$4" in
-		cdrom)	build_loram_cdrom ;;
-		http)	build_loram_http ;;
-		*)	build_loram_ram ;;
+		cdrom)		build_loram_cdrom ;;
+		smallcdrom)	build_loram_cdrom small ;;
+		http)		build_loram_http ;;
+		*)		build_loram_ram ;;
 		esac
 		umount -d $TMP_DIR/iso
 		rm -rf $TMP_DIR ;;
