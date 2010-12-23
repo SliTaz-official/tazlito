@@ -1981,6 +1981,10 @@ EOT
 			sh $DISTRO_SCRIPT $DISTRO
 		fi
 		if [ -s /etc/tazlito/rootfs.list ]; then
+			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
+			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
+			sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
+			  $ROOTCD/boot/isolinux/isolinux.msg
 			[ -f $ROOTCD/boot/isolinux/ifmem.c32 ] ||
 			cp /boot/isolinux/ifmem.c32 $ROOTCD/boot/isolinux
 			n=0
