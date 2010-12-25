@@ -854,7 +854,7 @@ fi
 memfree=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
 umount /proc
 branch=br=/mnt/.rw:/mnt/.cdrom/\$DIR
-if [ ! -d /mnt/.cdrom/fs/etc ]; then
+if [ ! -d /mnt/.cdrom/\$DIR/etc ]; then
 branch=br=/mnt/.rw
 for i in \${path}rootfs* ; do
 	fs=\${i#*root}
@@ -970,7 +970,7 @@ build_loram_cdrom()
 	mv $TMP_DIR/rootfs*.gz $TMP_DIR/loramiso
 	unmeta_boot
 	VOLUM_NAME="SliTaz_LoRAM_CDROM"
-	sed -i "s/root=/loram=LABEL=$VOLUM_NAME &/" \
+	sed -i "s/root=/loram=LABEL=$VOLUM_NAME,fs &/" \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
