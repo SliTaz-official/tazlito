@@ -737,7 +737,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 getarg()
 {
 	grep -q " \$1=" /proc/cmdline || return 1
-	eval \$2=\$(sed 's/.* loram=\\([^ ]*\\).*/\\1/' < /proc/cmdline)
+	eval \$2=\$(sed "s/.* \$1=\\\\([^ ]*\\\\).*/\\\\1/" < /proc/cmdline)
 	return 0
 }
 
@@ -968,6 +968,9 @@ build_loram_cdrom()
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	mv $TMP_DIR/rootfs*.gz $TMP_DIR/loramiso
 	unmeta_boot
+	VOLUM_NAME="SliTaz_LoRAM_CDROM"
+	sed -i "s/root=/loram=LABEL=$VOLUM_NAME &/" \
+		$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
