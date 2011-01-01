@@ -253,7 +253,7 @@ create_iso()
 		-boot-info-table $2
 	if [ -x /usr/bin/isohybrid ]; then
 		echo -n "Creating hybrid ISO..."
-		/usr/bin/isohybrid $1 2> /dev/null
+		/usr/bin/isohybrid $1 -entry 2 2> /dev/null
 		status
 	fi
 	if [ -s /etc/tazlito/info ]; then
