@@ -6,24 +6,25 @@
 	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
 	<meta name="description" content="" />
 	<meta name="expires" content="never" />
-	<meta name="modified" content="2008-07-18 14:00:00" />
+	<meta name="modified" content="2011-02-24 13:30:00" />
 	<style type="text/css"><!--
-	body { font: 90% sans-serif, vernada, arial; margin: 0; }
-	#header { background: #f0ba08; color: black; height: 50px;
+	body { font: 90% sans-serif, vernada, arial; margin: 0; 
+		border-top: 34px solid #f1f1f1; }
+	#header { background: #351a0a; color: black; height: 50px;
 		border-top: 1px solid black; border-bottom: 1px solid black; }
 	#content { margin: 0px 50px 26px 50px; }
-	h1 { margin: 14px 0px 0px 16px; }
+	h1 { margin: 14px 0px 0px 16px; color: #fff; margin: 10px; }
+	h3 { font-weight: bold; color: #666666; }
 	li { line-height: 1.4em; }
-	pre { padding: 5px; color: black; background: #e1e0b0; }
-	pre.script { padding: 10px; color: black; background: #e8e8e8;
-		border: 1px inset #333333; }
+	pre { padding: 5px; color: black; background: #e1e0b0;
+		border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
 	code { font-size: 100%; color: #669900; background: transparent; }
 	hr { color: white; background: white; height: 1px; border: 0; }
 	--></style>
 </head>
 <body bgcolor="#ffffff">
 <div id="header">
-<h1><font color="#3e1220">Tazlito Manual</font></h1>
+	<h1>Tazlito Manual</h1>
 </div>
 <hr />
 <!-- Start content -->
@@ -62,7 +63,7 @@ about creating a LiveCD in the Handbook.
 <h2>COMMANDS</h2>
 
 <a name="usage"></a>
-<h3><font color="#6c0023">usage</font></h3>
+<h3>usage</h3>
 <p>
 The 'usage' command displays a summary of available commands
 with a short description:
@@ -72,7 +73,7 @@ with a short description:
 </pre>
 
 <a name="stats"></a>
-<h3><font color="#6c0023">stats</font></h3>
+<h3>stats</h3>
 <p>
 Stats displays the configuration variables, the paths to the
 various files and directories, and information on the ISO image:
@@ -82,7 +83,7 @@ various files and directories, and information on the ISO image:
 </pre>
 
 <a name="gen-config"></a>
-<h3><font color="#6c0023">gen-config</font></h3>
+<h3>gen-config</h3>
 <p>
 The 'gen-config' command allows you to generate a configuration
 file ready to be edited. By default the file is created in
@@ -95,7 +96,7 @@ if specified via the command line:
 </pre>
 
 <a name="configure"></a>
-<h3><font color="#6c0023">configure</font></h3>
+<h3>configure</h3>
 <p>
 This command configures the system configuration
 file or one found in the current directory:
@@ -105,7 +106,7 @@ file or one found in the current directory:
 </pre>
 
 <a name="gen-iso"></a>
-<h3><font color="#6c0023">gen-iso</font></h3>
+<h3>gen-iso</h3>
 <p>
 The 'gen-iso' command can generate a 
 new LiveCD image following modifications and additions to the 
@@ -119,7 +120,7 @@ modified and rebuilt via:
 </pre>
 
 <a name="gen-initiso"></a>
-<h3><font color="#6c0023">gen-initiso</font></h3>
+<h3>gen-initiso</h3>
 <p>
 The 'gen'initso' command will do the same work as 'gen-iso',
 but it rebuilds the initramfs compressed system prior.
@@ -131,7 +132,7 @@ must be rebuilt if modified:
 </pre>
 
 <a name="list-flavors"></a>
-<h3><font color="#6c0023">list-flavors</font></h3>
+<h3>list-flavors</h3>
 <p>
 The 'list-flavors' command downloads (if necessary) and displays 
 a list of the different flavors available. You can force the
@@ -143,7 +144,7 @@ download with the --recharge option:
 </pre>
 
 <a name="get-flavors"></a>
-<h3><font color="#6c0023">get-flavor</font></h3>
+<h3>get-flavor</h3>
 <p>
 The 'get-flavor' command downloads (if necessary) and prepares the
 files for 'gen-distro' to generate a flavor:
@@ -153,7 +154,7 @@ files for 'gen-distro' to generate a flavor:
 </pre>
 
 <a name="show-flavors"></a>
-<h3><font color="#6c0023">show-flavor</font></h3>
+<h3>show-flavor</h3>
 <p>
 The 'show-flavor' command displays the description of the 
 flavor and its size after regeneration. The options
@@ -166,7 +167,7 @@ flavor and its size after regeneration. The options
 </pre>
 
 <a name="gen-flavor"></a>
-<h3><font color="#6c0023">gen-flavor</font></h3>
+<h3>gen-flavor</h3>
 <p>
 The 'gen-flavor' command creates a description file of a new
 flavor from the results of generating a distro (gen-distro).
@@ -177,7 +178,7 @@ The .flavor file can then be sent to slitaz.org:
 </pre>
 
 <a name="gen-liveflavor"></a>
-<h3><font color="#6c0023">gen-liveflavor</font></h3>
+<h3>gen-liveflavor</h3>
 <p>
 The 'gen-liveflavor' command creates a description file of a new
 flavor from the results of generating a distro based on the 
@@ -188,7 +189,7 @@ current system. The --help option provides more information:
 </pre>
 
 <a name="upgrade-flavor"></a>
-<h3><font color="#6c0023">upgrade-flavor</font></h3>
+<h3>upgrade-flavor</h3>
 <p>
 The `upgrade-flavor' command refreshes a flavor file by updating the
 list of packages with the latest versions available:
@@ -198,7 +199,7 @@ list of packages with the latest versions available:
 </pre>
 
 <a name="extract-flavor"></a>
-<h3><font color="#6c0023">extract-flavor</font></h3>
+<h3>extract-flavor</h3>
 <p>
 The 'extract-flavor' command converts a flavor into an easily modifiable
 tree structure in /home/slitaz/flavors which can be managed with
@@ -210,7 +211,7 @@ mercurial:
 </pre>
 
 <a name="pack-flavor"></a>
-<h3><font color="#6c0023">pack-flavor</font></h3>
+<h3>pack-flavor</h3>
 <p>
 The 'pack-flavor' command converts a tree structure in /home/slitaz/flavors
  into a flavor file (.flavor). It is inverse of 'tazlito extract-flavor':
@@ -220,7 +221,7 @@ The 'pack-flavor' command converts a tree structure in /home/slitaz/flavors
 </pre>
 
 <a name="extract-distro"></a>
-<h3><font color="#6c0023">extract-distro</font></h3>
+<h3>extract-distro</h3>
 <p>
 The 'extract-distro' command is used to extract an ISO image
 from the LiveCD to rebuild the structure of the root cdrom
@@ -233,7 +234,7 @@ or additions and rebuild the ISO image via 'gen-iso' or
 </pre>
 
 <a name="gen-distro"></a>
-<h3><font color="#6c0023">gen-distro</font></h3>
+<h3>gen-distro</h3>
 <p>
 The <em>Generate Distribution</em> command can generate the
 distro-tree and an ISO image via a list of packages. To function,
@@ -257,7 +258,7 @@ a distribution:
 </pre>
 
 <a name="clean-distro"></a>
-<h3><font color="#6c0023">clean-distro</font></h3>
+<h3>clean-distro</h3>
 <p>
 Removes all files generated or extracts of the structure
 of the LiveCD:
@@ -267,7 +268,7 @@ of the LiveCD:
 </pre>
 
 <a name="check-distro"></a>
-<h3><font color="#6c0023">check-distro</font></h3>
+<h3>check-distro</h3>
 <p>
 This command simply verifies if files installed
 by the packages are present on the system:
@@ -277,7 +278,7 @@ by the packages are present on the system:
 </pre>
 
 <a name="writeiso"></a>
-<h3><font color="#6c0023">writeiso</font></h3>
+<h3>writeiso</h3>
 <p>
 This command will write the current filesystem to a cpio archive 
 (rootfs.gz) and then generate a bootable ISO image. Writeiso can 
@@ -293,7 +294,7 @@ build your own LiveCD image, just boot, modify any files, and then:
 </pre>
 
 <a name="frugal-install"></a>
-<h3><font color="#6c0023">frugal-install</font></h3>
+<h3>frugal-install</h3>
 <p>
 Perfom a frugal installation into /boot/frugal and add a GRUB entry 
 if needed. Frugal mode will make SliTaz work completely in memory 
@@ -307,7 +308,7 @@ all needed files from a distro tree or an ISO image:
 </pre>
 
 <a name="check-list"></a>
-<h3><font color="#6c0023">check-list</font></h3>
+<h3>check-list</h3>
 <p>
 Checks if the distro-packages.list is updated with the latest package
 versions:
@@ -317,7 +318,7 @@ versions:
 </pre>
 
 <a name="repack"></a>
-<h3><font color="#6c0023">repack</font></h3>
+<h3>repack</h3>
 <p>
 Recompresses the rootfs with the best possible compression:
 </p>
@@ -326,7 +327,7 @@ Recompresses the rootfs with the best possible compression:
 </pre>
 
 <a name="merge"></a>
-<h3><font color="#6c0023">merge</font></h3>
+<h3>merge</h3>
 <p>
 Combines several flavors like nested Russian dolls. Each rootfs is a
 subset of the previous. The first rootfs is extracted from the ISO image
@@ -338,7 +339,7 @@ startup according to the amount of RAM available:
 </pre>
 
 <a name="build-loram"></a>
-<h3><font color="#6c0023">build-loram</font></h3>
+<h3>build-loram</h3>
 <p>
 Creates an ISO image flavor for low ram systems from a SliTaz ISO image.
 You can build a flavor with / always in ram or where / resides on the cdrom:
@@ -349,7 +350,7 @@ You can build a flavor with / always in ram or where / resides on the cdrom:
 </pre>
 
 <a name="emu-iso"></a>
-<h3><font color="#6c0023">emu-iso</font></h3>
+<h3>emu-iso</h3>
 <p>
 The emu-iso command uses the Qemu emulator to start and run SliTaz.
 Qemu is used to test the newly built ISO image without burning to a
@@ -361,7 +362,7 @@ cdrom or booting into frugal mode:
 </pre>
 
 <a name="burn-iso"></a>
-<h3><font color="#6c0023">burn-iso</font></h3>
+<h3>burn-iso</h3>
 <p>
 Burn-iso will guess the cdrom device and its speed, and wodim
 (part of cdrkit) will begin to burn an ISO image. The default
@@ -381,7 +382,7 @@ A <i>.flavor</i> file contains just a few KB of information needed to
 </p>
 
 <a name="rebuild-flavor"></a>
-<h3><font color="#6c0023">Manufacture a flavor</font></h3>
+<h3>Manufacture a flavor</h3>
 <p>
 You can choose the flavor to (re)manufacture from among those available:
 </p>
@@ -409,7 +410,7 @@ and has a CD-ROM size of 31.2M:
 </pre>
 
 <a name="create-flavor"></a>
-<h3><font color="#6c0023">Create a flavor</font></h3>
+<h3>Create a flavor</h3>
 <p>
 To create a flavor, you must:
 </p>
@@ -424,7 +425,7 @@ To create a flavor, you must:
 </ul>
 
 <a name="publish-flavor"></a>
-<h3><font color="#6c0023">Post a flavor</font></h3>
+<h3>Post a flavor</h3>
 <p>
 Because a .flavor file contains just a few KB; it can be easily sent via the
 mailing list.
@@ -491,7 +492,7 @@ root of the CD-ROM.
 </ul>
 
 <a name="tune-flavor"></a>
-<h3><font color="#6c0023">Adapt a flavor</font></h3>
+<h3>Adapt a flavor</h3>
 <p>
 It is often easier to modify an existing flavor than to create one from
 scratch. To adapt the eeepc flavor for example:
@@ -524,7 +525,7 @@ Using the previous example:
 </pre>
 
 <a name="meta-flavor"></a>
-<h3><font color="#6c0023">Meta flavor</font></h3>
+<h3>Meta flavor</h3>
 <p>
 A meta flavor contains several flavors like nested Russian dolls. The flavor
 will be launched at startup according to the amount of RAM available.

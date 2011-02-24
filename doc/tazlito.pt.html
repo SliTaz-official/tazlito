@@ -6,24 +6,25 @@
     <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
     <meta name="description" content="" />
     <meta name="expires" content="never" />
-    <meta name="modified" content="2008-07-18 14:00:00" />
+    <meta name="modified" content="2011-02-24 13:30:00" />
     <style type="text/css"><!--
-    body { font: 90% sans-serif, vernada, arial; margin: 0; }
-    #header { background: #f0ba08; color: black; height: 50px;
-        border-top: 1px solid black; border-bottom: 1px solid black; }
-    #content { margin: 0px 50px 26px 50px; }
-    h1 { margin: 14px 0px 0px 16px; }
-    li { line-height: 1.4em; }
-    pre { padding: 5px; color: black; background: #e1e0b0; }
-    pre.script { padding: 10px; color: black; background: #e8e8e8;
-        border: 1px inset #333333; }
-    code { font-size: 100%; color: #669900; background: transparent; }
-    hr { color: white; background: white; height: 1px; border: 0; }
-    --></style>
+	body { font: 90% sans-serif, vernada, arial; margin: 0; 
+		border-top: 34px solid #f1f1f1; }
+	#header { background: #351a0a; color: black; height: 50px;
+		border-top: 1px solid black; border-bottom: 1px solid black; }
+	#content { margin: 0px 50px 26px 50px; }
+	h1 { margin: 14px 0px 0px 16px; color: #fff; margin: 10px; }
+	h3 { font-weight: bold; color: #666666; }
+	li { line-height: 1.4em; }
+	pre { padding: 5px; color: black; background: #e1e0b0;
+		border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
+	code { font-size: 100%; color: #669900; background: transparent; }
+	hr { color: white; background: white; height: 1px; border: 0; }
+	--></style>
 </head>
 <body bgcolor="#ffffff">
 <div id="header">
-<h1><font color="#3e1220">Manual Tazlito</font></h1>
+	<h1>Manual Tazlito</h1>
 </div>
 <hr />
 <!-- Start content -->
@@ -63,7 +64,7 @@ informações adicionais sobre a criação de um LiveCD no Manual SliTaz.
 <h2>COMANDOS</h2>
 
 <a name="usage"></a>
-<h3><font color="#6c0023">usage</font></h3>
+<h3>usage</h3>
 <p>
 O comando "usage" mostra um resumo dos comandos disponíveis com uma pequena
 descrição:
@@ -73,7 +74,7 @@ descrição:
 </pre>
 
 <a name="stats"></a>
-<h3><font color="#6c0023">stats</font></h3>
+<h3>stats</h3>
 <p>
 "Stats" mostra as variáveis da configuração, os caminhos para os vários arquivos
 e diretórios e informações sobre a imagem ISO:
@@ -83,7 +84,7 @@ e diretórios e informações sobre a imagem ISO:
 </pre>
 
 <a name="gen-config"></a>
-<h3><font color="#6c0023">gen-config</font></h3>
+<h3>gen-config</h3>
 <p>
 O comando "gen-config" permite a geração do arquivo de configuração pronto para
 ser editado. Por padrão o arquivo é criado no diretório atual, mas também pode
@@ -95,7 +96,7 @@ ser em outro diretório informado na linha de comando:
 </pre>
 
 <a name="configure"></a>
-<h3><font color="#6c0023">configure</font></h3>
+<h3>configure</h3>
 <p>
 Este comando pode configurar o arquivo de configuração do sistema ou o encontrado
 no diretório atual:
@@ -105,7 +106,7 @@ no diretório atual:
 </pre>
 
 <a name="gen-iso"></a>
-<h3><font color="#6c0023">gen-iso</font></h3>
+<h3>gen-iso</h3>
 <p>
 O comando "gen-iso" pode gerar uma nova imagem do LiveCD a partir de modificações
 e adições ao sistema de arquivos root do cdrom. Para funcionar, este comando
@@ -118,7 +119,7 @@ ou reconstruida via:
 </pre>
 
 <a name="gen-initiso"></a>
-<h3><font color="#6c0023">gen-initiso</font></h3>
+<h3>gen-initiso</h3>
 <p>
 O comando "gen-initiso" faz o mesmo que o "gen-iso", mas antes ele reconstrói o 
 sistema comprimido initramfs. O initramfs contem o sistema de arquivos root e
@@ -129,7 +130,7 @@ deve ser reconstruído se modificado:
 </pre>
 
 <a name="list-flavors"></a>
-<h3><font color="#6c0023">list-flavors</font></h3>
+<h3>list-flavors</h3>
 <p>
 Este comando baixa (se necessário) e mostra a lista de diferentes variantes
 disponíveis. Pode-se forçar o download com a opção --recharge:
@@ -140,7 +141,7 @@ disponíveis. Pode-se forçar o download com a opção --recharge:
 </pre>
 
 <a name="get-flavor"></a>
-<h3><font color="#6c0023">get-flavor</font></h3>
+<h3>get-flavor</h3>
 <p>
 O comando "get-flavor" baixa (se necessário) e prepara os arquivos para que o
 comando "gen-distro" gere uma variante:
@@ -150,7 +151,7 @@ comando "gen-distro" gere uma variante:
 </pre>
 
 <a name="show-flavor"></a>
-<h3><font color="#6c0023">show-flavor</font></h3>
+<h3>show-flavor</h3>
 <p>
 Este comando mostra a descrição da variante e seu tamanho após a regeneração.
 As opções --brief e --hoheader reduzem a saida do comando:
@@ -162,7 +163,7 @@ As opções --brief e --hoheader reduzem a saida do comando:
 </pre>
 
 <a name="gen-flavor"></a>
-<h3><font color="#6c0023">gen-flavor</font></h3>
+<h3>gen-flavor</h3>
 <p>
 O comando "gen-flavor" cria um arquivo de descrição de uma nova variante a partir
 dos resultados da regeneração da distro (gen-distro). O arquivo .flavor pode
@@ -173,7 +174,7 @@ ser enviado ao slitaz.org:
 </pre>
 
 <a name="gen-liveflavor"></a>
-<h3><font color="#6c0023">gen-liveflavor</font></h3>
+<h3>gen-liveflavor</h3>
 <p>
 Este comando cria um arquivo de descrição de uma nova variante a partir
 dos resultados de geração da distro baseada no sistema atual. A opção
@@ -184,7 +185,7 @@ dos resultados de geração da distro baseada no sistema atual. A opção
 </pre>
 
 <a name="upgrade-flavor"></a>
-<h3><font color="#6c0023">upgrade-flavor</font></h3>
+<h3>upgrade-flavor</h3>
 <p>
 Este comando renova um arquivo flavor, atualizando a lista de pacotes
 com a versão mais recente disponível no mirror:
@@ -194,7 +195,7 @@ com a versão mais recente disponível no mirror:
 </pre>
 
 <a name="extract-flavor"></a>
-<h3><font color="#6c0023">extract-flavor</font></h3>
+<h3>extract-flavor</h3>
 <p>
 O comando 'extract-flavor' converte um flavor em uma estrutura de pastas
 facilmente modificável em /home/slitaz/flavors que pode ser ser 
@@ -206,7 +207,7 @@ gerenciada com o mercurial:
 </pre>
 
 <a name="pack-flavor"></a>
-<h3><font color="#6c0023">pack-flavor</font></h3>
+<h3>pack-flavor</h3>
 <p>
 Este comando converte uma estrutura de pastas encontrada em /home/slitaz/flavors
 em um arquivo de variante (.flavor). É o inverso do que o comando 
@@ -217,7 +218,7 @@ em um arquivo de variante (.flavor). É o inverso do que o comando
 </pre>
 
 <a name="extract-distro"></a>
-<h3><font color="#6c0023">extract-distro</font></h3>
+<h3>extract-distro</h3>
 <p>
 Este comando é usado para extrair uma imagem ISO do LiveCD e reconstruir a 
 estrutura do cdrom e sistema root. Isto possibilita fazer as mudanças desejadas,
@@ -229,7 +230,7 @@ adições e reconstruções da imagem ISO por meio do comando "gen-iso" ou
 </pre>
 
 <a name="gen-distro"></a>
-<h3><font color="#6c0023">gen-distro</font></h3>
+<h3>gen-distro</h3>
 <p>
 O comando para <em>Geração de Distribuição</em> pode gerar a árvore da distribuição
 e a imagem ISO por meio de uma lista de pacotes. Para funcionar, este comando
@@ -251,7 +252,7 @@ distribuição:
 </pre>
 
 <a name="clean-distro"></a>
-<h3><font color="#6c0023">clean-distro</font></h3>
+<h3>clean-distro</h3>
 <p>
 Remove todos os arquivos gerados ou extraidos da estrutura do LiveCD:
 </p>
@@ -260,7 +261,7 @@ Remove todos os arquivos gerados ou extraidos da estrutura do LiveCD:
 </pre>
 
 <a name="check-distro"></a>
-<h3><font color="#6c0023">check-distro</font></h3>
+<h3>check-distro</h3>
 <p>
 Este comando simplesmente verifica se os arquivos instalados pelos pacotes estão
 presentes no sistema:
@@ -270,7 +271,7 @@ presentes no sistema:
 </pre>
 
 <a name="writeiso"></a>
-<h3><font color="#6c0023">writeiso</font></h3>
+<h3>writeiso</h3>
 <p>
 Este comando irá converter o sistema de arquivos atual em um arquivo
 cpio (rootfs.gz) e então gerar uma imagem ISO inicializável. Pode ser
@@ -286,7 +287,7 @@ inicie o sistema, modifique arquivos, instale pacotes e então:
 </pre>
 
 <a name="frugal-install"></a>
-<h3><font color="#6c0023">frugal-install</font></h3>
+<h3>frugal-install</h3>
 <p>
 Executa uma instalação frugal em /boot/frugal e adiciona uma entrada ao
 GRUB, caso necessário. Este tipo de instalação irá rodar o SliTaz
@@ -301,7 +302,7 @@ de pastas ou de uma imagem ISO:
 </pre>
 
 <a name="check-list"></a>
-<h3><font color="#6c0023">check-list</font></h3>
+<h3>check-list</h3>
 <p>
 Verifica se o arquivo distro-packages.list está atualizado com as
 mais recentes versões dos pacotes:
@@ -311,7 +312,7 @@ mais recentes versões dos pacotes:
 </pre>
 
 <a name="repack"></a>
-<h3><font color="#6c0023">repack</font></h3>
+<h3>repack</h3>
 <p>
 Comprime novamente o rootfs com a melhor compressão possível:
 </p>
@@ -320,7 +321,7 @@ Comprime novamente o rootfs com a melhor compressão possível:
 </pre>
 
 <a name="merge"></a>
-<h3><font color="#6c0023">merge</font></h3>
+<h3>merge</h3>
 <p>
 Combina diversas variantes. Cada rootfs é uma consequência de seu
 anterior. O primeiro rootfs é extraido da imagem ISO indicada como
@@ -332,7 +333,7 @@ de acordo com a memória RAM disponível:
 </pre>
 
 <a name="build-loram"></a>
-<h3><font color="#6c0023">build-loram</font></h3>
+<h3>build-loram</h3>
 <p>
 Cria uma variante para sistemas com pouca memória RAM à partir de uma
 imagem ISO do SliTaz. Pode-se gerar uma variante que seja carregada na
@@ -344,7 +345,7 @@ diretamente na memória ou lida a partir do cdrom:
 </pre>
 
 <a name="emu-iso"></a> 
-<h3><font color="#6c0023">emu-iso</font></h3> 
+<h3>emu-iso</h3> 
 <p> 
 O comando emu-iso utiliza o emulador Qemu para iniciar e rodar o SliTaz.
 É util para testar a iso criada sem a necessidade de gravá-la em um 
@@ -355,7 +356,7 @@ cdrom ou bootar em modo frugal.
 </pre> 
 
 <a name="burn-iso"></a>
-<h3><font color="#6c0023">burn-iso</font></h3>
+<h3>burn-iso</h3>
 <p>
 O comando "burn-iso" obtém informações sobre o dispositivo de cd e as velocidades
 permitidas para gravação, e o wodim (parte do cdrkit) inicia para gravar a imagem
@@ -374,7 +375,7 @@ necessária para (re)construir um LiveCD customizado do SliTaz.
 </p>
 
 <a name="rebuild-flavor"></a>
-<h3><font color="#6c0023">(Re)construa uma variante</font></h3>
+<h3>(Re)construa uma variante</h3>
 <p>
 Você pode escolher uma variante para (re)construir a partir daquelas
 disponíveis:
@@ -403,7 +404,7 @@ ocupa 105.4M de RAM e possui um tamanho de imagem ISO de 31.2M:
 </pre>
 
 <a name="create-flavor"></a>
-<h3><font color="#6c0023">Crie uma variante</font></h3>
+<h3>Crie uma variante</h3>
 <p>
 Para criar uma variante, você deve:
 </p>
@@ -416,7 +417,7 @@ Para criar uma variante, você deve:
 </ul>
 
 <a name="publish-flavor"></a>
-<h3><font color="#6c0023">Publique uma variante</font></h3>
+<h3>Publique uma variante</h3>
 <p>
 Um arquivo .flavor possui alguns Kb de tamanho, então você pode enviá-lo
 para a lista de discussão do SliTaz.
@@ -487,7 +488,7 @@ a serem adicionados ao CDROM.
 </ul>
 
 <a name="tune-flavor"></a>
-<h3><font color="#6c0023">Adapte uma variante</font></h3>
+<h3>Adapte uma variante</h3>
 <p>
 Às vezes é mais fácil modificar uma variante existente do que criar uma
 nova. Para adaptar a variante eeepc, por exemplo:
@@ -520,7 +521,7 @@ Usando o exemplo anterior:
 </pre>
 
 <a name="meta-flavor"></a>
-<h3><font color="#6c0023">Meta flavor</font></h3>
+<h3>Meta flavor</h3>
 <p>
 Uma meta variante (meta flavor) contem diversas variantes juntas. Ao se
 iniciar o sistema com uma meta variante, uma variante contida no LiveCD

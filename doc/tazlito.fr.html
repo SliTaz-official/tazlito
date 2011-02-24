@@ -6,26 +6,27 @@
 	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
 	<meta name="description" content="" />
 	<meta name="expires" content="never" />
-	<meta name="modified" content="2007-08-03 13:26:42" />
+	<meta name="modified" content="2011-02-24 13:30:00" />
 	<style type="text/css"><!--
-	body { font: 90% sans-serif, vernada, arial; margin: 0; }
-	#header { background: #f0ba08; color: black; height: 50px;
+	body { font: 90% sans-serif, vernada, arial; margin: 0; 
+		border-top: 34px solid #f1f1f1; }
+	#header { background: #351a0a; color: black; height: 50px;
 		border-top: 1px solid black; border-bottom: 1px solid black; }
 	#content { margin: 0px 50px 26px 50px; }
-	h1 { margin: 14px 0px 0px 16px; }
+	h1 { margin: 14px 0px 0px 16px; color: #fff; margin: 10px; }
+	h3 { font-weight: bold; color: #666666; }
 	li { line-height: 1.4em; }
-	pre { padding: 5px; color: black; background: #e1e0b0; }
-	pre.script { padding: 10px; color: black; background: #e8e8e8;
-		border: 1px inset #333333; }
+	pre { padding: 5px; color: black; background: #e1e0b0;
+		border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
 	code { font-size: 100%; color: #669900; background: transparent; }
 	hr { color: white; background: white; height: 1px; border: 0; }
 	--></style>
 </head>
 <body bgcolor="#ffffff">
 <div id="header">
-<h1><font color="#3e1220">Tazlito Manual</font></h1>
+	<h1>Tazlito Manual</h1>
 </div>
-<hr />
+<hr />	
 <!-- Start content -->
 <div id="content">
 
@@ -64,7 +65,7 @@ du LiveCD, via le livre de cuisine (Cookbook) de SliTaz
 
 <h2>COMMANDES</h2>
 <a name="usage"></a>
-<h3><font color="#6c0023">usage</font></h3>
+<h3>usage</h3>
 <p>
 La commande 'usage' affiche une liste des commandes disponibles avec une
 courte description&nbsp;:
@@ -74,7 +75,7 @@ courte description&nbsp;:
 </pre>
 
 <a name="stats"></a>
-<h3><font color="#6c0023">stats</font></h3>
+<h3>stats</h3>
 <p>
 Stats affiche les variables de configuration, le chemin vers les différents
 fichiers et répertoires et les informations sur l'image ISO&nbsp;:
@@ -84,7 +85,7 @@ fichiers et répertoires et les informations sur l'image ISO&nbsp;:
 </pre>
 
 <a name="gen-config"></a>
-<h3><font color="#6c0023">gen-config</font></h3>
+<h3>gen-config</h3>
 <p>
 La commande 'gen-config' vous permet de générer une fichier de configuration
 prêt à être édité. Par défaut le fichier est créé dans le répertoire courant
@@ -96,7 +97,7 @@ et peut aussi l'être dans un autre répertoire si spécifié&nbsp;:
 </pre>
 
 <a name="configure"></a>
-<h3><font color="#6c0023">configure</font></h3>
+<h3>configure</h3>
 <p>
 La commande configure permet de configurer le fichier de configuration
 système ou celui trouvé dans le répertoire courant&nbsp;:
@@ -106,7 +107,7 @@ système ou celui trouvé dans le répertoire courant&nbsp;:
 </pre>
 
 <a name="gen-iso"></a>
-<h3><font color="#6c0023">gen-iso</font></h3>
+<h3>gen-iso</h3>
 <p>
 La commande 'gen-iso' pour <em>Generate ISO</em> permet de générer une nouvelle
 image ISO du LiveCD suite à des modifications et ajouter dans le système
@@ -119,7 +120,7 @@ construite avec la commande 'extract-distro', modifiée et reconstruite via&nbsp;
 </pre>
 
 <a name="gen-initiso"></a>
-<h3><font color="#6c0023">gen-initiso</font></h3>
+<h3>gen-initiso</h3>
 <p>
 La commande 'gen-initiso' va faire le même travail que 'gen-iso' mais en
 reconstruisant préalablement l'initramfs compressé du système. L'initramfs
@@ -131,7 +132,7 @@ en cas de modifications sur les fichiers.
 </pre>
 
 <a name="list-flavors"></a>
-<h3><font color="#6c0023">list-flavors</font></h3>
+<h3>list-flavors</h3>
 <p>
 La commande 'list-flavors' télécharge si nécessaire et affiche la liste des
 différentes saveurs disponibles. On peut forcer le téléchargement avec
@@ -142,7 +143,7 @@ différentes saveurs disponibles. On peut forcer le téléchargement avec
  # tazlito list-flavors --recharge
 </pre>
 <a name="get-flavor"></a>
-<h3><font color="#6c0023">get-flavor</font></h3>
+<h3>get-flavor</h3>
 <p>
 La commande 'get-flavor' télécharge si nécessaire et prépare les fichiers
 nécessaires à 'gen-distro' pour refabriquer une saveur. 
@@ -152,7 +153,7 @@ nécessaires à 'gen-distro' pour refabriquer une saveur.
 </pre>
 
 <a name="show-flavor"></a>
-<h3><font color="#6c0023">show-flavor</font></h3>
+<h3>show-flavor</h3>
 <p>
 La commande 'show-flavor' affiche les caractéristiques d'une saveur et ses
 dimensions après refabrication. Les options '--brief' et '--noheader' réduisent
@@ -165,7 +166,7 @@ l'affichage produit.
 </pre>
 
 <a name="gen-flavor"></a>
-<h3><font color="#6c0023">gen-flavor</font></h3>
+<h3>gen-flavor</h3>
 <p>
 La commande 'gen-flavor' crée un fichier de description d'une nouvelle saveur
 à partir des résultats de fabrication de 'gen-distro'. Le fichier .flavor
@@ -176,7 +177,7 @@ produit pourra être ensuite envoyé à slitaz.org.
 </pre>
 
 <a name="gen-liveflavor"></a>
-<h3><font color="#6c0023">gen-liveflavor</font></h3>
+<h3>gen-liveflavor</h3>
 <p>
 La commande 'gen-liveflavor' crée une image ISO et un fichier de description
 d'une nouvelle saveur à partir de la distribution courante. Un fichier texte
@@ -198,7 +199,7 @@ libre, et afficher un message à l'écran.
 </pre>
 
 <a name="upgrade-flavor"></a>
-<h3><font color="#6c0023">upgrade-flavor</font></h3>
+<h3>upgrade-flavor</h3>
 <p>
 La commande 'upgrade-flavor' raffraîchit une saveur consue pour une ancienne
 version de SliTaz en mettant à jour la liste des paquets avec les dernières
@@ -209,7 +210,7 @@ versions des paquets disponibles.
 </pre>
 
 <a name="extract-flavor"></a>
-<h3><font color="#6c0023">extract-flavor</font></h3>
+<h3>extract-flavor</h3>
 <p>
 La commande 'extract-flavor' convertit une saveur en une arborescence
 facilement modifiable dans /home/slitaz/flavors/'saveur' qui pourra être gérée
@@ -220,7 +221,7 @@ avec Mercurial dans http://hg.slitaz.org/flavors.
 </pre>
 
 <a name="pack-flavor"></a>
-<h3><font color="#6c0023">pack-flavor</font></h3>
+<h3>pack-flavor</h3>
 <p>
 La commande 'pack-flavor' convertit une arborescence de /home/slitaz/flavors/ 
 en saveur (.flavor). Soit l'opération inverse de <i>tazlito extract-flavor</i>.
@@ -230,7 +231,7 @@ en saveur (.flavor). Soit l'opération inverse de <i>tazlito extract-flavor</i>.
 </pre>
 
 <a name="extract-distro"></a>
-<h3><font color="#6c0023">extract-distro</font></h3>
+<h3>extract-distro</h3>
 <p>
 La commande 'extract-iso' sert à extraire les fichiers d'une images ISO du
 LiveCD, pour en reconstruire la structure (Racine du cdrom et du système).
@@ -242,7 +243,7 @@ d'utilisation&nbsp;:
  # tazlito extract-distro slitaz-cooking.iso
 </pre>
 <a name="gen-distro"></a>
-<h3><font color="#6c0023">gen-distro</font></h3>
+<h3>gen-distro</h3>
 <p>
 La commande <em>Generate Distribution</em> permet de générer la structure du
 système Live et une image ISO via une liste de paquets. Pour fonctionner, cette
@@ -263,7 +264,7 @@ miroirs de SliTaz ou générés par Tazwok. Pour générer une distro&nbsp;:
  # tazlito gen-distro package-list
 </pre>
 <a name="clean-distro"></a>
-<h3><font color="#6c0023">clean-distro</font></h3>
+<h3>clean-distro</h3>
 <p>
 Supprime tous les fichiers générés ou extraits de la structure du LiveCD&nbsp;:
 </p>
@@ -271,7 +272,7 @@ Supprime tous les fichiers générés ou extraits de la structure du LiveCD&nbsp;:
  # tazlito clean-distro
 </pre>
 <a name="check-distro"></a>
-<h3><font color="#6c0023">check-distro</font></h3>
+<h3>check-distro</h3>
 <p>
 Cette commande permet simplement de vérifier si les fichiers non installés par
 des paquets, sont bien présents dans la distro&nbsp;:
@@ -281,7 +282,7 @@ des paquets, sont bien présents dans la distro&nbsp;:
 </pre>
 
 <a name="writeiso"></a>
-<h3><font color="#6c0023">writeiso</font></h3>
+<h3>writeiso</h3>
 <p>
 Cette commande sauvegarde le système de fichier dans une archive cpio
 (rootfs.gz) et génère une image ISO bootable. Writeiso peut être utilisé
@@ -297,7 +298,7 @@ les fichiers que vous voulez et de faire :
 </pre>
 
 <a name="frugal-install"></a>
-<h3><font color="#6c0023">frugal-install</font></h3>
+<h3>frugal-install</h3>
 <p>
 Installe les fichiers nécessaire du CD-ROM dans /boot/frugal et ajoute
 une entée GRUB si nécessaire. En mode frugal, Slitaz fonctionne entièrement
@@ -312,7 +313,7 @@ d'une image ISO :
 </pre>
 
 <a name="check-list"></a>
-<h3><font color="#6c0023">check-list</font></h3>
+<h3>check-list</h3>
 <p>
 Vérifie si distro-packages.list est à jour avec les dernières version des paquets.
 </p>
@@ -321,7 +322,7 @@ Vérifie si distro-packages.list est à jour avec les dernières version des paquet
 </pre>
 
 <a name="repack"></a>
-<h3><font color="#6c0023">repack</font></h3>
+<h3>repack</h3>
 <p>
 Recompresse le(s) rootfs avec la meilleure compression possible.
 </p>
@@ -330,7 +331,7 @@ Recompresse le(s) rootfs avec la meilleure compression possible.
 </pre>
 
 <a name="merge"></a>
-<h3><font color="#6c0023">merge</font></h3>
+<h3>merge</h3>
 <p>
 Réunit plusieurs saveurs imbriquées comme des poupées russes. Chaque rootfs
 est un sous ensemble du précédent. Le premier rootfs est extrait de l'image
@@ -343,7 +344,7 @@ disponible.
 </pre>
 
 <a name="build-loram"></a>
-<h3><font color="#6c0023">build-loram</font></h3>
+<h3>build-loram</h3>
 <p>
 Crée une image ISO pour les machines avec peu de mémoire.
 Le système de fichier racine peut soit être toujours chargé en mémoire ou peut
@@ -355,7 +356,7 @@ Le système de fichier racine peut soit être toujours chargé en mémoire ou peut
 </pre>
 
 <a name="emu-iso"></a>
-<h3><font color="#6c0023">emu-iso</font></h3>
+<h3>emu-iso</h3>
 <p>
 La commande emu-iso va utiliser l'émulateur Qemu pour démarrer et lançer
 SliTaz. Qemu permet de tester l'image ISO fraîchement construite sans
@@ -367,7 +368,7 @@ la graver sur cdrom ou redémarrer en mode frugal.
 </pre>
 
 <a name="burn-iso"></a>
-<h3><font color="#6c0023">burn-iso</font></h3>
+<h3>burn-iso</h3>
 <p>
 Burn ISO va deviner le périphérique de cdrom, sa vitesse de gravure et lancer
 l'outils Wodim pour graver une image ISO. L'image ISO par défaut est celle
@@ -385,7 +386,7 @@ Les fichiers <i>.flavor</i> contiennent en quelques Ko toutes les informations
 nécessaires pour refabriquer un Live CD customisé de SliTaz.
 </p>
 <a name="rebuild-flavor"></a>
-<h3><font color="#6c0023">Refabriquer une saveur</font></h3>
+<h3>Refabriquer une saveur</h3>
 <p>
 On choisit la saveur à refabriquer parmi celles disponibles.
 </p>
@@ -413,7 +414,7 @@ Nous allons refabriquer la saveur <i>eeepc</i> dont le système de fichier utilis
 </pre>
 
 <a name="create-flavor"></a>
-<h3><font color="#6c0023">Créer une saveur</font></h3>
+<h3>Créer une saveur</h3>
 <p>
 Pour créer une saveur, il faut :
 </p>
@@ -433,7 +434,7 @@ Soit créer directement l'arboscence qui définie la saveur (voir la commande
 </ul>
 
 <a name="publish-flavor"></a>
-<h3><font color="#6c0023">Publier une saveur</font></h3>
+<h3>Publier une saveur</h3>
 <p>
 Les fichiers .flavor ne font généralement que quelques Ko. Ils peuvent être
 envoyés via la liste de diffusion de SliTaz.
@@ -501,7 +502,7 @@ la racine du CD-ROM.
 </ul>
 
 <a name="tune-flavor"></a>
-<h3><font color="#6c0023">Adapter une saveur</font></h3>
+<h3>Adapter une saveur</h3>
 <p>
 Il est souvent plus simple de modifier une saveur existante que d'en créer une
 ex-nihilo. Pour adapter la saveur eeepc par exemple&nbsp;:
@@ -534,7 +535,7 @@ L'exemple précédent dévient:
 </pre>
 
 <a name="meta-flavor"></a>
-<h3><font color="#6c0023">Meta saveur</font></h3>
+<h3>Meta saveur</h3>
 <p>
 Une meta saveur contient plusieurs saveurs imbriquées comme des poupées russes.
 La saveur à lancer sera choisie au démarrage suivant la quantité de RAM
