@@ -4,9 +4,9 @@
 # Tabs are used for ident ans all action should go into functions to
 # separate GUI and commands.
 #
-# (C) GNU gpl v3 - SliTaz GNU/Linux 2010.
+# (C) GNU gpl v3 - SliTaz GNU/Linux 2011.
 #
-VERSION=3.3
+VERSION=4.0
 
 # Include gettext helper script.
 . /usr/bin/gettext.sh
