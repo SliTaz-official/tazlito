@@ -7,12 +7,12 @@
 # and/or a new ISO. Most commands must be run by root, except the stats
 # and the configuration file manipulation.
 #
-# (C) 2007-2010 SliTaz - GNU General Public License.
+# (C) 2007-2011 SliTaz - GNU General Public License.
 #
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
 #
-VERSION=3.3
+VERSION=3.5
 
 # Tazlito configuration variables to be shorter
 # and to use words rather than numbers.
@@ -61,7 +61,6 @@ fi
 # configuration variable.
 ROOTFS=$DISTRO/rootfs
 ROOTCD=$DISTRO/rootcd
-FLAVORS_REPOSITORY=/home/slitaz/flavors
 
 #####################
 # Tazlito functions #
