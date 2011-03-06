@@ -1,8 +1,8 @@
 #!/bin/sh
 # 
 # Gtkdialog box for Tazlito - SliTaz Live Tool.
-# Tabs are used for ident ans all action should go into functions to
-# separate GUI and commands.
+# Tabs are used for indent and all actions should go into functions to
+# separate the GUI and commands.
 #
 # (C) GNU gpl v3 - SliTaz GNU/Linux 2011.
 #
@@ -46,7 +46,7 @@ recharge_list()
 		-e "tazlito list-flavors --recharge | grep ^[a-z] && sleep 2"
 }
 
-# When using gen-liveflavor, gen-flavor or gen-distro, user can put some
+# When using gen-liveflavor, gen-flavor or gen-distro, a user can put some
 # addfiles copied into the rootfs.
 addfiles_action()
 {
@@ -651,7 +651,7 @@ compression.
 
 case $1 in
 	*_*)
-		# Exec all function called by args (must have an underscore).
+		# Exec all functions called by args (must have an underscore).
 		$1 ;;
 	*)
 		# Tazlitobox action.

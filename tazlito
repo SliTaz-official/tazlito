@@ -703,7 +703,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 			need_lib=true
 		fi
 		cd $TMP_DIR/initfs
-		echo "Get slitaz-release..."
+		echo "Getting slitaz-release..."
 		for i in $TMP_DIR/iso/boot/rootfs*.gz; do
 			( zcat $i 2> /dev/null || unlzma -c $i) | \
 			cpio -idmu etc/slitaz-release > /dev/null
@@ -1695,14 +1695,14 @@ EOT
 			echo "META flavors are not supported."
 			umount -d $TMP_DIR/iso
 		elif [ ! -s $TMP_DIR/iso/boot/rootfs.gz ]; then
-			echo "No /boot/rootfs.gz in iso image. Need a SliTaz iso."
+			echo "No /boot/rootfs.gz in iso image. Needs a SliTaz iso."
 			umount -d $TMP_DIR/iso
 		else
 			( unlzma -c $TMP_DIR/iso/boot/rootfs.gz || \
 			  zcat $TMP_DIR/iso/boot/rootfs.gz ) | \
 				( cd $TMP_DIR/rootfs ; cpio -idmu > /dev/null )
 			if [ ! -s $TMP_DIR/rootfs/etc/slitaz-release ]; then
-				echo "No file /etc/slitaz-release in /boot/rootfs.gz of iso image. Need a non loram SliTaz iso."
+				echo "No file /etc/slitaz-release in /boot/rootfs.gz of iso image. Needs a non loram SliTaz iso."
 				umount -d $TMP_DIR/iso
 			else
 				ROOTFS_SIZE=$(du -hs $TMP_DIR/rootfs | awk '{ print $1 }')
@@ -1773,7 +1773,7 @@ EOT
 		for pkg in `cat $DISTRO_PKGS_LIST`
 		do
 			if ! grep -q "$pkg" /var/lib/tazpkg/packages.list; then
-				echo "Update: $pkg"
+				echo "Updating: $pkg"
 				up=$(($up + 1))
 			fi
 		done
@@ -2010,7 +2010,7 @@ EOT
 				status
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
-					echo "Add $flavor rootfs extra files..."
+					echo "Adding $flavor rootfs extra files..."
 					zcat $flavor.rootfs | \
 					( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
