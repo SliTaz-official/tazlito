@@ -479,7 +479,7 @@ mergefs()
 			[ -f $2/$file ] && 
 			[ "$(basename $file)" == "volatile.cpio.gz" ] &&
 			[ "$(dirname $(dirname $file))" == \
-			  "./var/lib/tazpkg/installed" ] && rm -f $2/$file
+			  ".$INSTALLED" ] && rm -f $2/$file
 		elif [ -b $1/$file ]; then
 			[ -b $2/$file ] && rm -f $2/$file
 		elif [ -c $1/$file ]; then
@@ -525,7 +525,7 @@ fi
 
 get_size()
 {
-cat /var/lib/tazpkg/packages.list $TMP_DIR/packages.list 2>/dev/null | awk "{ \
+cat $LOCALSTATE/packages.list $TMP_DIR/packages.list 2>/dev/null | awk "{ \
 if (/^$(echo $1 | sed 's/[$+.\]/\\&/g')$/) get=1; \
 if (/installed/ && get == 1) { print ; get++ } \
 }
@@ -544,7 +544,7 @@ while read pkg; do
 	set -- $(get_size $pkg)
 	packed_size=$(( $packed_size + $1 ))
 	unpacked_size=$(( $unpacked_size + $2 ))
-	for i in $(grep -hs ^$pkg /var/lib/tazpkg/packages.list \
+	for i in $(grep -hs ^$pkg $LOCALSTATE/packages.list \
 				  $TMP_DIR/packages.list); do
 		echo $i
 		break
@@ -664,6 +664,8 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 		$TMP_DIR/initfs/lib
 	if [ -f /bin/cromfs-driver ]; then
 		cp /bin/cromfs-driver $TMP_DIR/initfs/bin
+		ls /bin/unmkcromfs | \
+			cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	else
 		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
 		while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.gz ]; do
@@ -671,6 +673,8 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 		done
 		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.gz \
 			 $TMP_DIR/initfs/lib
+		ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
+			cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	fi
 	if [ "$1" == "cdrom" ]; then
 		for i in $(ls /dev/[hs]d[a-f]*); do
@@ -1048,7 +1052,7 @@ find_flavor_rootfs()
 	      $1/dev/core $1/dev/fd $1/dev/std*
 			
 	# Verify md5
-	cat $1/var/lib/tazpkg/installed/*/md5sum | \
+	cat $1$INSTALLED/*/md5sum | \
 	while read md5 file; do
 		[ -e $1$file ] || continue
 		[ "$(cat $1$file | md5sum)" == "$md5  -" ] && 
@@ -1056,7 +1060,7 @@ find_flavor_rootfs()
 	done
 	
 	# Check configuration files
-	for i in $1/var/lib/tazpkg/installed/*/volatile.cpio.gz; do
+	for i in $1$INSTALLED/*/volatile.cpio.gz; do
 		[ -e $i ] || continue
 		mkdir /tmp/volatile$$
 		zcat $i | ( cd /tmp/volatile$$ ; cpio -idmu > /dev/null )
@@ -1068,7 +1072,7 @@ find_flavor_rootfs()
 	done
 	
 	# Remove other files blindly
-	for i in $1/var/lib/tazpkg/installed/*/files.list; do
+	for i in $1$INSTALLED/*/files.list; do
 		for file in $(cat $i); do
 			[ $1$file -nt $i ] && continue
 			[ -f $1$file -a ! -L $1$file ] && continue
@@ -1077,9 +1081,9 @@ find_flavor_rootfs()
 	done
 	
 	# Remove tazpkg files and tmp files
-	rm -rf $1/var/lib/tazpkg/installed* $1/tmp $1/var/tmp
-	rm -f $1/var/lib/tazpkg/*packages* $1/var/lib/tazpkg/files.list.lzma \
-		$1/var/lib/tazpkg/mirror*  $1/var/cache/*/* \
+	rm -rf $1$INSTALLED* $1/tmp $1/var/tmp
+	rm -f $1$LOCALSTATE/*packages* $1$LOCALSTATE/files.list.lzma \
+		$1$LOCALSTATE/mirror*  $1/var/cache/*/* \
 		$1/var/lock/* $1/var/log/* $1/var/run/* $1/var/run/*/* \
 		$1/var/lib/*  $1/var/lib/dbus/* 2> /dev/null
 	
@@ -1424,12 +1428,12 @@ code	data
 			mkdir $TMP_DIR
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			echo -n "Updating $FLAVOR package list..."
-			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
 			packed_size=0; unpacked_size=0
 			while read org; do
 				i=0
 				pkg=$org
-				while ! grep -q ^$pkg$ /var/lib/tazpkg/packages.txt; do
+				while ! grep -q ^$pkg$ $LOCALSTATE/packages.txt; do
 					pkg=${pkg%-*}
 					i=$(($i + 1))
 					[ $i -gt 5 ] && break;
@@ -1437,7 +1441,7 @@ code	data
 				set -- $(get_size $pkg)
 				packed_size=$(( $packed_size + $1 ))
 				unpacked_size=$(( $unpacked_size + $2 ))
-				for i in $(grep ^$pkg /var/lib/tazpkg/packages.list); do
+				for i in $(grep ^$pkg $LOCALSTATE/packages.list); do
 					echo $i
 					break
 				done
@@ -1505,11 +1509,11 @@ code	data
 			[ -s $TMP_DIR/$FLAVOR.mirrors ] &&
 				cp $TMP_DIR/$FLAVOR.mirrors \
 					$FLAVORS_REPOSITORY/$FLAVOR/mirrors
-			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
 			while read org; do
 				i=0
 				pkg=$org
-				while ! grep -q ^$pkg$ /var/lib/tazpkg/packages.txt; do
+				while ! grep -q ^$pkg$ $LOCALSTATE/packages.txt; do
 					pkg=${pkg%-*}
 					i=$(($i + 1))
 					[ $i -gt 5 ] && break;
@@ -1527,7 +1531,7 @@ code	data
 		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
 			mkdir $TMP_DIR
 			echo -n "Creating flavor $FLAVOR..."
-			[ -s /var/lib/tazpkg/packages.list ] || tazpkg recharge
+			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
 					$TMP_DIR/$FLAVOR.mirrors
@@ -1715,7 +1719,7 @@ EOT
 				rm -f $TMP_DIR/rootcd/boot/rootfs.gz $TMP_DIR/rootcd/md5sum
 				mv $TMP_DIR/rootcd/boot $TMP_DIR/rootfs
 				sed 's/.*  \(.*\).tazpkg*/\1/' > $TMP_DIR/$FLAVOR.pkglist \
-					< $TMP_DIR/rootfs/var/lib/tazpkg/installed.md5
+					< $TMP_DIR/rootfs$INSTALLED.md5
 				#[ -s $TMP_DIR/rootfs/etc/tazlito/distro-packages.list ] &&
 				#	mv $TMP_DIR/rootfs/etc/tazlito/distro-packages.list $TMP_DIR/$FLAVOR.pkglist
 				PKGCNT=$(grep -v ^# $TMP_DIR/$FLAVOR.pkglist | wc -l | awk '{ print $1 }')
@@ -1772,7 +1776,7 @@ EOT
 		echo "================================================================================"
 		for pkg in `cat $DISTRO_PKGS_LIST`
 		do
-			if ! grep -q "$pkg" /var/lib/tazpkg/packages.list; then
+			if ! grep -q "$pkg" $LOCALSTATE/packages.list; then
 				echo "Updating: $pkg"
 				up=$(($up + 1))
 			fi
@@ -2084,8 +2088,8 @@ EOT
 			status
 		fi
 		# Tazpkg mirror.
-		if [ ! -f "$ROOTFS/var/lib/tazpkg/mirror" ]; then
-			echo -n "Mirror URL   : Missing /var/lib/tazpkg/mirror"
+		if [ ! -f "$ROOTFS$LOCALSTATE/mirror" ]; then
+			echo -n "Mirror URL   : Missing $LOCALSTATE/mirror"
 			todomsg
 		else
 			echo -n "Mirror configuration exists..."
