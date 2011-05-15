@@ -28,6 +28,9 @@ CACHE_DIR=/var/cache/tazpkg
 MIRROR=$LOCALSTATE/mirror
 DEFAULT_MIRROR="http://mirror.slitaz.org/packages/`cat /etc/slitaz-release`/"
 
+log=/var/log/tazlito.log
+echo "" > $log
+
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
 if [ -f "/etc/tazlito/tazlito.conf" ] ; then
@@ -102,17 +105,14 @@ usage ()
 }
 
 # Status function.
-status()
-{
-	local CHECK=$?
+status() {
 	echo -en "\\033[70G[ "
-	if [ $CHECK = 0 ]; then
-		echo -en "\\033[1;33mOK"
+	if [ $? = 0 ]; then
+		echo -en "\\033[1;32mOK"
 	else
 		echo -en "\\033[1;31mFailed"
 	fi
 	echo -e "\\033[0;39m ]"
-	return $CHECK
 }
 
 yesorno()
@@ -631,8 +631,13 @@ install_package()
 	echo -n "?"
 	read answer
 	case "$answer" in
-	y*|Y*|o*|O*)	yes y | tazpkg get-install $1;;
-	*)		return 1;;
+	y*|Y*|o*|O*)
+		# We dont want package on host cache.
+		echo -n "Getting and installing package: $1"
+		yes y | tazpkg get-install $1 2>&1 >> $log || exit 1 
+		status ;;
+	*)	
+		return 1 ;;
 	esac
 }
 
@@ -1351,11 +1356,11 @@ code	data
 		tazpkg recharge
 		[ -n "$3" ] && while read action pkg; do
 			case "$action" in
-			+)	yes | tazpkg get-install $pkg;;
-			-)	yes | tazpkg remove $pkg;;
-			!)	echo $pkg >> non-free.list;;
-			@)	DESC="$pkg";;
-			\?)	echo -en "$pkg"; read action;;
+			+)	yes | tazpkg get-install $pkg 2>&1 >> $log || exit 1 ;;
+			-)	yes | tazpkg remove $pkg ;;
+			!)	echo $pkg >> non-free.list ;;
+			@)	DESC="$pkg" ;;
+			\?)	echo -en "$pkg"; read action ;;
 			esac
 		done < $3
 		yes '' | tazlito gen-distro
@@ -1900,7 +1905,6 @@ EOT
 		# Root fs stuff.
 		echo "Preparing the rootfs directory..."
 		mkdir -p $ROOTFS
-		sleep 2
 		for pkg in $LIST
 		do
 			[ "$pkg" = "" ] && continue
@@ -1947,12 +1951,15 @@ EOT
 				mv $pkg $PACKAGES_REPOSITORY 
 			done
 		fi
-		echo ""
 		cp $LIST_NAME $DISTRO/distro-packages.list
 		sed 's/\(.*\)/\1.tazpkg/' < $DISTRO/distro-packages.list > $DISTRO/list-packages
 		cd $PACKAGES_REPOSITORY
-		yes y | tazpkg install-list \
-			$DISTRO/list-packages --root=$ROOTFS
+		for pkg in $(cat $DISTRO/list-packages)
+		do
+			echo -n "Installing package: $pkg"
+			yes y | tazpkg install $pkg --root=$ROOTFS 2>&1 >> $log || exit 1 
+			status
+		done
 		cd $DISTRO
 		cp distro-packages.list $ROOTFS/etc/tazlito
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
