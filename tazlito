@@ -1968,7 +1968,7 @@ EOT
 			cp -a $ADDFILES/rootfs/* $ROOTFS
 			status
 		fi
-		echo "Root filesystem is generated..." && status
+		echo -n "Root filesystem is generated..." && status
 		# Root CD part.
 		echo -n "Preparing the rootcd directory..."
 		mkdir -p $ROOTCD
