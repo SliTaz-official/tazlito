@@ -488,7 +488,7 @@ mergefs()
 	done
 	
 	# cleanup directories
-	( cd $1; find ) | while read file; do
+	( cd $1; find ) | tac | while read file; do
 		if [ -d $1/$file ]; then
 			[ -d $2/$file ] && rmdir $2/$file 2> /dev/null
 		fi
