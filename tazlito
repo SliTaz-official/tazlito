@@ -481,17 +481,21 @@ mergefs()
 			[ "$(dirname $(dirname $file))" == \
 			  ".$INSTALLED" ] && rm -f $2/$file
 		elif [ -b $1/$file ]; then
-			[ -b $2/$file ] && rm -f $2/$file
+			[ -b $2/$file ] &&
+			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == 
+			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] && 
+			rm -f $2/$file
 		elif [ -c $1/$file ]; then
-			[ -c $2/$file ] && rm -f $2/$file
+			[ -c $2/$file ] &&
+			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == 
+			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] && 
+			rm -f $2/$file
 		fi
 	done
 	
 	# cleanup directories
-	( cd $1; find ) | tac | while read file; do
-		if [ -d $1/$file ]; then
-			[ -d $2/$file ] && rmdir $2/$file 2> /dev/null
-		fi
+	( cd $1; find -type d ) | sed '1!G;h;$!d' | while read file; do
+		[ -d $2/$file ] && rmdir $2/$file 2> /dev/null
 	done
 	true
 	status
