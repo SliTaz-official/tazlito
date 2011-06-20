@@ -482,12 +482,12 @@ mergefs()
 			  ".$INSTALLED" ] && rm -f $2/$file
 		elif [ -b $1/$file ]; then
 			[ -b $2/$file ] &&
-			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == 
+			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == \
 			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] && 
 			rm -f $2/$file
 		elif [ -c $1/$file ]; then
 			[ -c $2/$file ] &&
-			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == 
+			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == \
 			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] && 
 			rm -f $2/$file
 		fi
