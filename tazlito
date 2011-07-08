@@ -1497,6 +1497,12 @@ code	data
 			grep ^Description $TMP_DIR/$FLAVOR.desc | \
 				sed 's/.*: \(.*\)$/SHORT_DESC="\1"/' >> \
 				$FLAVORS_REPOSITORY/$FLAVOR/receipt
+			grep ^Version $TMP_DIR/$FLAVOR.desc | \
+				sed 's/.*: \(.*\)$/VERSION="\1"/' >> \
+				$FLAVORS_REPOSITORY/$FLAVOR/receipt
+			grep ^Maintainer $TMP_DIR/$FLAVOR.desc | \
+				sed 's/.*: \(.*\)$/MAINTAINER="\1"/' >> \
+				$FLAVORS_REPOSITORY/$FLAVOR/receipt
 			grep -q '^Rootfs list' $TMP_DIR/$FLAVOR.desc && \
 			grep '^Rootfs list' $TMP_DIR/$FLAVOR.desc | \
 				sed 's/.*: \(.*\)$/ROOTFS_SELECTION="\1"/' >> \
