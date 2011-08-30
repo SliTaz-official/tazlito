@@ -12,7 +12,7 @@
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
 #
-VERSION=4.0
+VERSION=4.2
 
 # Tazlito configuration variables to be shorter
 # and to use words rather than numbers.
