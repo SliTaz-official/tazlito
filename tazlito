@@ -323,6 +323,18 @@ lzma_switches()
 	echo "-d$(lzma_history_bits $1) -mt$(grep '^processor' < /proc/cpuinfo | wc -l)"
 }
 
+lzma_set_size()
+{
+	# Update size field for lzma'd file packed using -so switch
+	local n
+	local i
+	n=$(unlzma -c $1 | wc -c)
+	for i in $(seq 1 8); do
+		printf '\\\\x%02X' $(($n & 255))
+		n=$(($n >> 8))
+	done | xargs echo -en | dd of=$1 conv=notrunc bs=1 seek=5 2> /dev/null
+}
+
 # Pack rootfs
 pack_rootfs()
 {
@@ -333,6 +345,7 @@ pack_rootfs()
 	elif [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
 		echo -n "Generating lzma'ed initramfs... "
 		lzma e -si -so $(lzma_switches $1) > $2
+		lzma_set_size $2
 	else
 		echo "Generating gziped initramfs... "
 		gzip -9 > $2
@@ -346,6 +359,7 @@ write_initramfs()
 	if [ "$COMPRESSION" = "lzma" ]; then
 		echo -n "Creating rootfs.gz with lzma compression... "
 		cat /tmp/list | cpio -o -H newc | lzma e -si -so > /rootfs.gz
+		lzma_set_size /rootfs.gz
 	elif [ "$COMPRESSION" = "gzip" ]; then
 		echo "Creating rootfs.gz with gzip compression... "
 		cat /tmp/list | cpio -o -H newc | gzip -9 > /rootfs.gz
