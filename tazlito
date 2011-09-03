@@ -325,7 +325,7 @@ lzma_switches()
 
 lzma_set_size()
 {
-	# Update size field for lzma'd file packed using -so switch
+	# Update size field for lzma'd file packed using -si switch
 	local n
 	local i
 	n=$(unlzma -c $1 | wc -c)
@@ -906,6 +906,7 @@ EOTEOT
 	chmod +x $TMP_DIR/initfs/init
 	( cd $TMP_DIR/initfs ; find | busybox cpio -o -H newc 2> /dev/null) | \
 	lzma e $TMP_DIR/initfs.gz -si
+	lzma_set_size $TMP_DIR/initfs.gz
 	rm -rf $TMP_DIR/initfs
 	rem=$(( $(stat -c "%s" $TMP_DIR/initfs.gz) % 4 ))
 	[ $rem -ne 0 ] &&
