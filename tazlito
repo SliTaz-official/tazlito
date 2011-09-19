@@ -328,6 +328,7 @@ lzma_set_size()
 	# Update size field for lzma'd file packed using -si switch
 	local n
 	local i
+	return # Need to fix kernel code ?
 	n=$(unlzma -c $1 | wc -c)
 	for i in $(seq 1 8); do
 		printf '\\\\x%02X' $(($n & 255))
