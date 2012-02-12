@@ -276,10 +276,10 @@ gen_livecd_isolinux()
 		exit 0
 	fi
 	# Set date for boot msg.
-	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.msg; then
+	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.cfg; then
 		DATE=`date +%Y%m%d`
 		echo -n "Setting build date to: $DATE..."
-		sed -i s/'XXXXXXXX'/"$DATE"/ $ROOTCD/boot/isolinux/isolinux.msg
+		sed -i s/'XXXXXXXX'/"$DATE"/ $ROOTCD/boot/isolinux/isolinux.cfg
 		status
 	fi
 	cd $ROOTCD
