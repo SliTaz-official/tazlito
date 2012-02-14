@@ -578,7 +578,7 @@ update_bootconfig()
 	local files
 	echo -n "Updating boot config files..."
 	files="$(grep -l 'include common' $1/*.cfg)"
-	echo $files | while read file ; do
+	for file in $files ; do
 			awk -v n=$(echo $2 | awk '{ print NF/2 }') '{
 if (/label/) label=$0;
 else if (/kernel/) kernel=$0;
