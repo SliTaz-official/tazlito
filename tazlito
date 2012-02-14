@@ -276,10 +276,10 @@ gen_livecd_isolinux()
 		exit 0
 	fi
 	# Set date for boot msg.
-	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.cfg; then
+	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.*g; then
 		DATE=`date +%Y%m%d`
 		echo -n "Setting build date to: $DATE..."
-		sed -i s/'XXXXXXXX'/"$DATE"/ $ROOTCD/boot/isolinux/isolinux.cfg
+		sed -i "s/XXXXXXXX/$DATE/" $ROOTCD/boot/isolinux/isolinux.*g
 		status
 	fi
 	cd $ROOTCD
@@ -575,9 +575,10 @@ rm -f $TMP_DIR/flavor.pkg
 # Update isolinux config files for multiple rootfs
 update_bootconfig()	
 {
+	local files
 	echo -n "Updating boot config files..."
-	grep -l 'include common' $1/*.cfg | \
-	while read file ; do
+	files="$(grep -l 'include common' $1/*.cfg)"
+	echo $files | while read file ; do
 			awk -v n=$(echo $2 | awk '{ print NF/2 }') '{
 if (/label/) label=$0;
 else if (/kernel/) kernel=$0;
@@ -602,20 +603,61 @@ else print;
 }' < $file > $file.$$
 			mv -f $file.$$ $file
 	done
+	sel="$(echo $2 | awk '{
+  for (i=1; i<=NF; i++)
+     if (i % 2 == 0) printf " slitaz%d",i/2
+     else printf " %s",$i
+}')"
 	cat >> $1/common.cfg <<EOT
 
 label slitaz
 	kernel /boot/isolinux/ifmem.c32
-	append$(echo $2 | awk '{
-  for (i=1; i<=NF; i++)
-     if (i % 2 == 0) printf " slitaz%d",i/2
-     else printf " %s",$i
-}') noram
+	append$sel noram
 
 label noram
 	config noram.cfg
 
 EOT
+	# Update vesamenu
+	if [ -s $1/isolinux.cfg ]; then
+		files="$files $1/isolinux.cfg"
+		awk -v n=$(echo $2 | awk '{ print NF/2 }') -v "sel=$sel" '{
+if (/ROWS/) print "MENU ROW " n+$3;
+else if (/TIMEOUTROW/) print "MENU TIMEOUTROW " n+$3;
+else if (/TABMSGROW/) print "MENU TABMSGROW " n+$3;
+else if (/CMDLINEROW/) print "MENU CMDLINEROW " n+$3;
+else if (/VSHIFT/) {
+	x=$3-n;
+	if (x < 0) x=0;
+	print "MENU VSHIFT " x;
+}
+else if (/bzImage/) kernel=$0;
+else if (/rootfs.gz/) {
+	i=index($0,"rootfs.gz");
+	append=substr($0,i+9);
+	print	"	kernel /boot/isolinux/ifmem.c32"
+	print	"	append" sel " noram"
+	print	""
+	print	"label noram"
+	print	"	MENU HIDE"
+	print	"	config noram.cfg"
+	print	""
+	for (i = 1; i <= n; i++) {
+		print "LABEL slitaz" i
+		print "	MENU LABEL SliTaz slitaz" i " Live"
+		print kernel;
+		initrd="initrd=/boot/rootfs" n ".gz"
+		for (j = n - 1; j >= i; j--) {
+			initrd=initrd ",/boot/rootfs" j ".gz";
+		}
+		printf "\tappend %s%s\n",initrd,append;
+		print "";
+	}
+}
+else print;
+}' < $1/isolinux.cfg > $1/isolinux.cfg.$$
+		mv $1/isolinux.cfg.$$ $1/isolinux.cfg
+	fi
 	cat > $1/noram.cfg <<EOT
 display isolinux.msg
 say Not enough RAM to boot slitaz.
@@ -636,8 +678,7 @@ EOT
 	# Restore real label names
 	echo $2 | awk '{ for (i=NF; i>1; i-=2) printf "%d/%s\n",i/2,$i }' | \
 	while read pat; do
-		sed -i "s/slitaz$pat/" $1/common.cfg \
-			$(grep -l 'include common' $1/*.cfg)
+		sed -i "s/slitaz$pat/" $1/common.cfg $files
 	done
 	status
 }
@@ -2131,7 +2172,7 @@ EOT
 			status
 		fi
 		# Isolinux msg	
-		if grep -q "cooking-XXXXXXXX" /$ROOTCD/boot/isolinux/isolinux.msg; then
+		if grep -q "cooking-XXXXXXXX" /$ROOTCD/boot/isolinux/isolinux.*g; then
 			echo -n "Isolinux msg : Missing cooking date XXXXXXXX (ex `date +%Y%m%d`)"
 			todomsg
 		else
