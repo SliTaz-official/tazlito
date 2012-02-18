@@ -660,7 +660,7 @@ else print;
 	fi
 	cat > $1/noram.cfg <<EOT
 display isolinux.msg
-say Not enough RAM to boot slitaz.
+say Not enough RAM to boot slitaz. Give http://tiny.slitaz.org/ a try ?
 default reboot
 label reboot
 	com32 reboot.c32
