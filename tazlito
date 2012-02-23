@@ -2033,6 +2033,7 @@ EOT
 			yes y | tazpkg install $pkg --root=$ROOTFS 2>&1 >> $log || exit 1 
 			status
 		done
+		rm -f $ROOTFS/var/lib/tazpkg/packages.*
 		cd $DISTRO
 		cp distro-packages.list $ROOTFS/etc/tazlito
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
@@ -2090,7 +2091,7 @@ EOT
 				cd $PACKAGES_REPOSITORY
 				yes y | tazpkg install-list \
 					$DISTRO/list-packages0$n --root=${ROOTFS}0$n
-				rm -rf ${ROOTFS}0$n/boot
+				rm -rf ${ROOTFS}0$n/boot ${ROOTFS}0$n/var/lib/tazpkg/packages.*
 				status
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
