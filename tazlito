@@ -1008,9 +1008,10 @@ unmeta_boot()
 		# We keep enough information to do unloram...
 		sed -i 's/label slitaz/label orgslitaz/' \
 			$TMP_DIR/loramiso/boot/isolinux/common.cfg
-		sed -i	-e 's|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |' \
-			-e 's|label slitaz1|label slitaz|' \
-			-e '/label slitaz[1-9]/{NNNd}' \
+		sed -i '/ifmem/{NNNNNNNNd};s/LABEL SliTaz [^L].*/HIDE/' \
+			$TMP_DIR/loramiso/boot/isolinux/isolinux.cfg
+		set -- $(grep 'append [0-9]' $TMP_DIR/loramiso/boot/isolinux/common.cfg)
+		sed -i "s/label $3\$/label slitaz/;s|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |" \
 			$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	fi
 }
