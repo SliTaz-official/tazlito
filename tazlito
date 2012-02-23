@@ -1061,27 +1061,30 @@ build_loram_http()
 # Reduce sizes with rootfs gains.
 update_metaiso_sizes()
 {
-	local append="$(grep append $TMP_DIR/loramiso/boot/isolinux/common.cfg)"
-	local new
-	[ -n "$append" ] || return
-	set -- $append
-	shift
-	new=""
-	while [ -n "$2" ]; do
-		local s
-		case "$1" in
-		*G) s=$(( ${1%G} * 1024 * 1024 ));;
-		*M) s=$(( ${1%M} * 1024 ));;
-		*)  s=${1%K};;
-		esac
-		rootfs_sizes=${rootfs_sizes#* }
-		for i in $rootfs_sizes ; do
-			s=$(( $s - $i ))
+	for cfg in $(grep -l 'append [0-9]' $TMP_DIR/loramiso/boot/isolinux/*.cfg)
+	do
+		local append="$(grep 'append [0-9]' $cfg)"
+		local sizes="$rootfs_sizes"
+		local new
+		set -- $append
+		shift
+		new=""
+		while [ -n "$2" ]; do
+			local s
+			case "$1" in
+			*G) s=$(( ${1%G} * 1024 * 1024 ));;
+			*M) s=$(( ${1%M} * 1024 ));;
+			*)  s=${1%K};;
+			esac
+			sizes=${sizes#* }
+			for i in $sizes ; do
+				s=$(( $s - $i ))
+			done
+			new="$new $s $2"
+			shift 2
 		done
-		new="$new $s $2"
-		shift 2
+		sed -i "/append [0-9]/s/append .*/append$new $1/" $cfg 
 	done
-	sed -i "s/append .*/append$new $1/" $TMP_DIR/loramiso/boot/isolinux/common.cfg 
 }
 
 # Move rootfs to a squashfs filesystem into the initramfs writeable with aufs.
@@ -2454,6 +2457,10 @@ EOT
 
 		ISO=$2
 		OUTPUT=$3
+		if [ -z "$3" ]; then
+			echo "Usage: tazlito $1 input.iso output.iso [cdrom|smallcdrom|http|ram]"
+			exit 1
+		fi
 		mkdir -p $TMP_DIR/iso
 		mount -o loop,ro -t iso9660 $ISO $TMP_DIR/iso
 		if ! check_iso_for_loram ; then
