@@ -2492,7 +2492,13 @@ EOT
 			status
 			echo -n "Installing the Kernel and rootfs..."
 			cp -a /tmp/iso/boot/bzImage /boot/frugal
-			cp -a /tmp/iso/boot/rootfs.gz /boot/frugal
+			if [ -f $DISTRO/rootcd/boot/rootfs1.gz ]; then
+				cd /tmp/iso/boot
+				cat rootfs1.gz rootfs2.gz rootfs3.gz rootfs1.gz > \
+					/boot/frugal/rootfs.gz
+			else
+				cp -a /tmp/iso/boot/rootfs.gz /boot/frugal
+			fi
 			umount /tmp/iso
 			status
 		else
@@ -2500,7 +2506,13 @@ EOT
 			cd $DISTRO && status
 			echo -n "Installing the Kernel and rootfs..."
 			cp -a $DISTRO/rootcd/boot/bzImage /boot/frugal
-			cp -a $DISTRO/rootcd/boot/rootfs.gz /boot/frugal
+			if [ -f $DISTRO/rootcd/boot/rootfs1.gz ]; then
+				cd $DISTRO/rootcd/boot
+				cat rootfs1.gz rootfs2.gz rootfs3.gz rootfs1.gz > \
+					/boot/frugal/rootfs.gz
+			else
+				cp -a $DISTRO/rootcd/boot/rootfs.gz /boot/frugal
+			fi
 			status
 		fi
 		# Grub entry
