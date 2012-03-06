@@ -2082,7 +2082,9 @@ EOT
 			while read flavor; do
 				n=$(($n+1))
 				echo "Building $flavor rootfs..."
-				download $flavor.flavor
+				[ -s $TOP_DIR/$flavor.flavor ] &&
+					cp $TOP_DIR/$flavor.flavor .
+				[ -s $flavor.flavor ] || download $flavor.flavor
 				zcat $flavor.flavor | cpio -i \
 					$flavor.pkglist $flavor.rootfs
 				sed 's/.*/&.tazpkg/' < $flavor.pkglist \
