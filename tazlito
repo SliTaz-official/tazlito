@@ -1004,15 +1004,16 @@ build_loram_rootfs_cdrom()
 # because meta loram flavor is useless when rootfs is not loaded in ram
 unmeta_boot()
 {
-	if [ -f $TMP_DIR/loramiso/boot/isolinux/noram.cfg ]; then
+	local root=${1:-$TMP_DIR/loramiso}
+	if [ -f $root/boot/isolinux/noram.cfg ]; then
 		# We keep enough information to do unloram...
 		sed -i 's/label slitaz/label orgslitaz/' \
-			$TMP_DIR/loramiso/boot/isolinux/common.cfg
+			$root/boot/isolinux/common.cfg
 		sed -i '/ifmem/{NNNNNNNNd};s/LABEL SliTaz [^L].*/HIDE/' \
-			$TMP_DIR/loramiso/boot/isolinux/isolinux.cfg
-		set -- $(grep 'append [0-9]' $TMP_DIR/loramiso/boot/isolinux/common.cfg)
+			$root/boot/isolinux/isolinux.cfg
+		set -- $(grep 'append [0-9]' $root/boot/isolinux/common.cfg)
 		sed -i "s/label $3\$/label slitaz/;s|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |" \
-			$TMP_DIR/loramiso/boot/isolinux/*.cfg
+			$root/boot/isolinux/*.cfg
 	fi
 }
 
@@ -2271,6 +2272,7 @@ Archive compression: $COMPRESSION"
 		if mount /dev/cdrom /media/cdrom 2>/dev/null; then
 			cp /media/cdrom/boot/bzImage $ROOTCD/boot
 			cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
+			unmeta_boot $ROOTCD
 			umount /media/cdrom
 		else
 			echo -e "
