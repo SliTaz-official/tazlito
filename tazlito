@@ -1618,6 +1618,10 @@ code	data
 					wget -O - $i/packages.list >> $TMP_DIR/packages.list
 				done
 			fi
+			#add distro;sh if exist
+			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/distro.sh ]; then
+				cp $FLAVORS_REPOSITORY/$FLAVOR/distro.sh $TMP_DIR/$FLAVOR-distro.sh
+			fi
 			[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] &&
 			get_pkglist $FLAVOR > $TMP_DIR/$FLAVOR.pkglist
 			if grep -q ^ROOTFS_SELECTION \
@@ -1720,6 +1724,8 @@ EOT
 			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
+			echo -n "Extracting distro.sh... "
+			mv $TMP_DIR/$FLAVOR-distro.sh  distro.sh 2> /dev/null
 			status
 			infos="$FLAVOR.desc"
 			for i in rootcd rootfs; do
