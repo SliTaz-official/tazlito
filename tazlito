@@ -1009,7 +1009,7 @@ unmeta_boot()
 		# We keep enough information to do unloram...
 		sed -i 's/label slitaz/label orgslitaz/' \
 			$root/boot/isolinux/common.cfg
-		sed -i '/ifmem/{NNNNNNNNd};s/LABEL SliTaz [^L].*/HIDE/' \
+		sed -i '/ifmem/{NNNNNNNNd};/^LABEL/{N;/LABEL SliTaz [^L]/{NNNd}}' \
 			$root/boot/isolinux/isolinux.cfg
 		set -- $(grep 'append [0-9]' $root/boot/isolinux/common.cfg)
 		sed -i "s/label $3\$/label slitaz/;s|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |" \
