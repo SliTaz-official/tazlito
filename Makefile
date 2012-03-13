@@ -4,7 +4,7 @@
 SBINDIR?=/sbin
 PREFIX?=/usr
 DOCDIR?=/usr/share/doc
-LINGUAS?=
+LINGUAS?=fr
 
 all:
 
@@ -31,14 +31,15 @@ msgfmt:
 # Config file goes in /etc/tazlito
 
 install: msgfmt
-	@echo "Installing Tazlito into $(PREFIX)/bin..."
-	install -g root -o root -m 0777 tazlito $(PREFIX)/bin
-	install -g root -o root -m 0777 tazlito-wiz $(PREFIX)/bin
-	install -g root -o root -m 0755 -d /etc/tazlito
-	install -g root -o root -m 0644 tazlito.conf /etc/tazlito
+	@echo "Installing Tazlito into $(DESTDIR)$(PREFIX)/bin..."
+	install -m 0755 -d $(DESTDIR)$(PREFIX)/bin
+	install -m 0777 tazlito $(DESTDIR)$(PREFIX)/bin
+	install -m 0777 tazlito-wiz $(DESTDIR)$(PREFIX)/bin
+	install -m 0755 -d $(DESTDIR)/etc/tazlito
+	install -m 0644 tazlito.conf $(DESTDIR)/etc/tazlito
 	@echo "Installing Tazlito documentation..."
-	install -g root -o root -m 0755 -d /usr/share/doc/tazlito
-	install -g root -o root -m 0644 doc/*.html /usr/share/doc/tazlito
+	install -m 0755 -d $(DESTDIR)/usr/share/doc/tazlito
+	cp -a doc/*.html $(DESTDIR)/usr/share/doc/tazlito
 	# i18n
 	mkdir -p $(DESTDIR)$(PREFIX)/share/locale
 	cp -a po/mo/* $(DESTDIR)$(PREFIX)/share/locale
@@ -50,7 +51,7 @@ uninstall:
 	rm -f $(PREFIX)/bin/tazlito-wiz
 	rm -rf /etc/tazlito
 	rm -rf /usr/share/doc/tazlito
-	rm -rf $(DESTDIR)$(PREFIX)/share/locale/*/LC_MESSAGES/tazlito*.mo
+	rm -rf $(PREFIX)/share/locale/*/LC_MESSAGES/tazlito*.mo
 
 clean:
 	rm -rf _pkg
