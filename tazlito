@@ -106,13 +106,11 @@ usage ()
 
 # Status function.
 status() {
-	echo -en "\\033[70G[ "
 	if [ $? = 0 ]; then
-		echo -en "\\033[1;32mOK"
+		echo "  OK"
 	else
-		echo -en "\\033[1;31mFailed"
+		echo "  Failed"
 	fi
-	echo -e "\\033[0;39m ]"
 }
 
 yesorno()
