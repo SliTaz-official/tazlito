@@ -2,7 +2,7 @@
 Encoding=UTF-8
 Name=Create a LiveCD
 Name[fr]=Créer un LiveCD
-Exec=subox tazlitobox
-Icon=tazlito
+Exec=subox tazlito-wiz
+Icon=slitaz-icon
 Type=Application
 Categories=System;
