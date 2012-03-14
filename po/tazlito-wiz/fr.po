@@ -66,28 +66,32 @@ msgid ""
 "\n"
 "Note you can still add some file to the SliTaz root filesystem or on the cdrom."
 msgstr ""
+"\n"
+"Maintemant il temps de générer la distro. C'est le dernier moment pour recommencer ou stoper. La création d'un Live CD est gourmande en ressources et prend du temps.\\n"
+"\\n"
+"\n"
+"Notez que vous pouvez encore ajouter des fichiers dans le répertoire racine de SliTaz ou du cdrom."
 
 #: tazlito-wiz:152
 msgid "<b>Generate the distribution</b>"
-msgstr ""
+msgstr "<b>Génère la distribution</b>"
 
 #: tazlito-wiz:166
 msgid "Building the Live system..."
-msgstr ""
+msgstr "Création du système Live"
 
 #: tazlito-wiz:175
 msgid "Live system summary"
-msgstr ""
+msgstr "Statistiques du système Live"
 
 #: tazlito-wiz:177
 msgid "Generated ISO "
-msgstr ""
+msgstr "ISO Générée "
 
 #: tazlito-wiz:178
 msgid "Image size"
-msgstr ""
+msgstr "Taille de l'image"
 
 #: tazlito-wiz:179
 msgid "Uncompressed size"
-msgstr ""
-
+msgstr "Taille non compressée"
