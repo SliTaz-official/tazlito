@@ -93,9 +93,9 @@ start() {
 pkgs_main() {
 	pkgs=$(cat $list | wc -l)
 	skel=$(cat $live/skel)
-	text=$(eval_gettext "Packages - The \$skel have \$pkgs packages")
+	text=$(eval_gettext "Packages - The \$skel has \$pkgs packages")
 	yad --form $opts --text="<b>$text</b>" --separator=" " \
-		--field="$(gettext "Additionnal packages separate by space or one by line:")":TXT \
+		--field="$(gettext "Additional packages separated by space or by line:")":TXT \
 		--button="$(gettext "Edit packages list"):2" \
 		--button="gtk-cancel:1" --button="gtk-ok:0"
 }
@@ -146,8 +146,8 @@ wallpaper() {
 gen_distro_main() {
 	info=$(gettext "
 Now it's time to generate the distro. Last chance to start over or stop. \
-Creating a Live system use quiet a lot of resources and take some time.\n\n
-Note you can still add some file to the SliTaz root filesystem or on the \
+Creating a Live system uses quite a lot of resources and takes some time.
+Note you can still add some files to the SliTaz root filesystem or on the \
 cdrom.")
 	text=$(gettext "<b>Generate the distribution</b>")
 	echo "$info" | yad --text-info $opts --text="$text" \
