@@ -1,0 +1,101 @@
+# TazLito Wiz Portuguese Translation.
+# Copyright (C) 2012 www.slitaz.org 
+# This file is distributed under the same license as the TazLito Wiz package.
+# Claudinei Pereira <claudinei@slitaz.org>, 2012.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TazLito Wiz\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-03-14 00:12+0100\n"
+"PO-Revision-Date: 2012-03-14 03:28+0100\n"
+"Last-Translator: Claudinei Pereira <claudinei@slitaz.org>\n"
+"Language-Team: Portuguese <i18n@slitaz.org>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: tazlito-wiz:48
+msgid "Edit the distro packages list"
+msgstr "Edita a lista de pacotes"
+
+#: tazlito-wiz:57
+msgid "SliTaz Live system creator wizard"
+msgstr "Wizard do Criador de Sistema Live do SliTaz"
+
+#: tazlito-wiz:59
+msgid "Distro name:"
+msgstr "Nome da distribuição:"
+
+#: tazlito-wiz:60
+msgid "Based on:"
+msgstr "Baseado em:"
+
+#: tazlito-wiz:78
+msgid "Getting flavor file and packages list..."
+msgstr "Obtendo arquivo flavor e lista de pacotes..."
+
+#: tazlito-wiz:96
+#, sh-format
+msgid "Packages - The $skel have $pkgs packages"
+msgstr "Pacotes - o $skel possui $pkgs pacotes"
+
+#: tazlito-wiz:98
+msgid "Additionnal packages separate by space or one by line:"
+msgstr "Pacotes adicionais separados por espaço ou um por linha:"
+
+#: tazlito-wiz:99
+msgid "Edit packages list"
+msgstr "Editar lista de pacotes"
+
+#: tazlito-wiz:125
+msgid "SliTaz desktop wallpaper"
+msgstr "Papel de parede do SliTaz"
+
+#: tazlito-wiz:127
+msgid "Wallpaper JPG image:"
+msgstr "Imagem JPG do papel de parede:"
+
+#: tazlito-wiz:147
+msgid ""
+"\n"
+"Now it's time to generate the distro. Last chance to start over or stop. "
+"Creating a Live system use quiet a lot of resources and take some time.\\n"
+"\\n\n"
+"Note you can still add some file to the SliTaz root filesystem or on the "
+"cdrom."
+msgstr ""
+"\n"
+"Agora é o momento de gerar a distribuição. Última chance para prosseguir "
+"ou parar. Criar um sistema Live demanda a utilização de recursos da máquina "
+"e pode levar um certo tempo.\\n"
+"\\n\n"
+"Note que você ainda pode adicionar algum arquivo ao sistema de arquivos ou "
+"no cdrom."
+
+#: tazlito-wiz:152
+msgid "<b>Generate the distribution</b>"
+msgstr "<b>Geração da distribuição</b>"
+
+#: tazlito-wiz:166
+msgid "Building the Live system..."
+msgstr "Gerando o sistema Live..."
+
+#: tazlito-wiz:175
+msgid "Live system summary"
+msgstr "Resumo do sistema Live"
+
+#: tazlito-wiz:177
+msgid "Generated ISO "
+msgstr "ISO gerada "
+
+#: tazlito-wiz:178
+msgid "Image size"
+msgstr "Tamanho da imagem"
+
+#: tazlito-wiz:179
+msgid "Uncompressed size"
+msgstr "Tamanho sem compressão"
