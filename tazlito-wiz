@@ -3,7 +3,6 @@
 # Live system creation wizard in GTK using Yad.
 #
 # Copyright (C) 2012 SliTaz GNU/Linux - GNU gpl v2
-#
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #
 
@@ -161,7 +160,7 @@ gen_distro() {
 	# Deal with --button values
 	case $? in
 		1) exit 0 ;;
-		*) echo -e "\n" | tazlito gen-distro 2>1 | yad \
+		*) echo -e "\n" | tazlito gen-distro 2>&1 | yad \
 			--text-info $opts --tail \
 			--text="<b>$(gettext "Building the Live system...")</b>" ;;
 	esac
