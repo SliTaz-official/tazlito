@@ -413,14 +413,23 @@ gen_initramfs()
 
 distro_sizes()
 {
-	echo "Build date      : `date +%Y%m%d\ \at\ \%H:%M:%S`"
-	echo "Packages        : `ls -1 $ROOTFS*$INSTALLED/*/receipt | wc -l`"
-	echo "Rootfs size     : `du -csh $ROOTFS*/ | awk '{ s=$1 } END { print s }'`"
-	echo "Initramfs size  : `du -csh $ROOTCD/boot/rootfs*.gz | awk '{ s=$1 } END { print s }'`"
-	echo "ISO image size  : `du -sh $ISO_NAME.iso | awk '{ print $1 }'`"
-	echo "================================================================================"
-	echo "Image is ready: $ISO_NAME.iso"
-	echo ""
+	if [ "$time" ]; then
+		time=$(($(date +%s) - $time))
+		sec=$time
+		div=$(( ($time + 30) / 60))
+		[ "$div" != 0 ] && min="~ ${div}m"
+		echo "Build time      : ${sec}s $min"
+	fi
+	cat << EOT
+Build date      : $(date +%Y%m%d)
+Packages        : $(ls -1 $ROOTFS*$INSTALLED/*/receipt | wc -l)
+Rootfs size     : $(du -csh $ROOTFS*/ | awk '{ s=$1 } END { print s }')
+Initramfs size  : $(du -csh $ROOTCD/boot/rootfs*.gz | awk '{ s=$1 } END { print s }')
+ISO image size  : $(du -sh $ISO_NAME.iso | awk '{ print $1 }')
+================================================================================
+Image is ready: $ISO_NAME.iso
+
+EOT
 }
 
 # Print ISO and rootfs size.
@@ -1874,6 +1883,7 @@ EOT
 		# Generate a live distro tree with a set of packages.
 		#
 		check_root
+		time=$(date +%s)
 		
 		# Check if a package list was specified on cmdline.
 		LIST_NAME="distro-packages.list"
