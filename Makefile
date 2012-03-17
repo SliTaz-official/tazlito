@@ -31,15 +31,14 @@ msgfmt:
 # Config file goes in /etc/tazlito
 
 install: msgfmt
-	@echo "Installing Tazlito into $(DESTDIR)$(PREFIX)/bin..."
 	install -m 0755 -d $(DESTDIR)$(PREFIX)/bin
 	install -m 0777 tazlito $(DESTDIR)$(PREFIX)/bin
 	install -m 0777 tazlito-wiz $(DESTDIR)$(PREFIX)/bin
 	install -m 0755 -d $(DESTDIR)/etc/tazlito
 	install -m 0644 tazlito.conf $(DESTDIR)/etc/tazlito
-	@echo "Installing Tazlito documentation..."
-	install -m 0755 -d $(DESTDIR)/usr/share/doc/tazlito
-	cp -a doc/*.html $(DESTDIR)/usr/share/doc/tazlito
+	install -m 0755 -d $(DESTDIR)/usr/share/doc
+	cp -a applications $(DESTDIR)/usr/share
+	cp -a doc $(DESTDIR)/usr/share/doc/tazlito
 	# i18n
 	mkdir -p $(DESTDIR)$(PREFIX)/share/locale
 	cp -a po/mo/* $(DESTDIR)$(PREFIX)/share/locale
@@ -51,11 +50,8 @@ uninstall:
 	rm -f $(PREFIX)/bin/tazlito-wiz
 	rm -rf /etc/tazlito
 	rm -rf /usr/share/doc/tazlito
+	rm -rf /usr/share/applications/tazlito*.desktop
 	rm -rf $(PREFIX)/share/locale/*/LC_MESSAGES/tazlito*.mo
 
 clean:
-	rm -rf _pkg
 	rm -rf po/mo
-	
-
-
