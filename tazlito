@@ -1722,9 +1722,12 @@ EOT
 			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
-			echo -n "Extracting distro.sh... "
-			mv $TMP_DIR/$FLAVOR-distro.sh  distro.sh 2> /dev/null
 			status
+			if [ -f "$TMP_DIR/$FLAVOR-distro.sh" ]; then
+				echo -n "Extracting distro.sh... "
+				mv $TMP_DIR/$FLAVOR-distro.sh  distro.sh 2> /dev/null
+				status
+			fi
 			infos="$FLAVOR.desc"
 			for i in rootcd rootfs; do
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
@@ -1732,7 +1735,7 @@ EOT
 					mkdir -p "$ADDFILES/$i"
 					zcat $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id > /dev/null)
-					zcat $TMP_DIR/$FLAVOR.$i | cpio -tv \
+					zcat $TMP_DIR/$FLAVOR.$i | cpio -tv 2> /dev/null \
 						> $TMP_DIR/$FLAVOR.list$i
 					infos="$infos\n$FLAVOR.list$i"
 				fi
