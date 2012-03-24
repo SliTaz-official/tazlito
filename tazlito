@@ -1728,6 +1728,7 @@ EOT
 			mkdir $TMP_DIR
 			echo -n "Extracting flavor $FLAVOR.flavor... "
 			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
+			status
 			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
 			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
@@ -1747,6 +1748,7 @@ EOT
 					zcat $TMP_DIR/$FLAVOR.$i | cpio -tv 2> /dev/null \
 						> $TMP_DIR/$FLAVOR.list$i
 					infos="$infos\n$FLAVOR.list$i"
+					status
 				fi
 			done
 			if [ -s $TMP_DIR/$FLAVOR.mirrors ]; then
