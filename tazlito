@@ -318,7 +318,8 @@ lzma_history_bits()
 
 lzma_switches()
 {
-	echo "-d$(lzma_history_bits $1) -mt$(grep '^processor' < /proc/cpuinfo | wc -l)"
+	local proc=$(grep -s '^processor' < /proc/cpuinfo | wc -l)
+	echo "-d$(lzma_history_bits $1) -mt${proc:-1}"
 }
 
 lzma_set_size()
