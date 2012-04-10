@@ -237,6 +237,15 @@ verify_rootcd()
 
 create_iso()
 {
+	cd $2
+	echo -n "Computing md5..."
+	find * -type f ! -name md5sum -exec md5sum {} \; > md5sum
+	sed -i '/  boot\/isolinux\/isolinux.bin$/d' md5sum
+	status
+	cd - > /dev/null
+	echo ""
+	echo -e "\033[1mGenerating ISO image\033[0m"
+	echo "================================================================================"
 	echo "Generating $1"
 	if [ $(ls $2/boot/vmlinuz* $2/boot/bzImage | wc -l) -eq 2 ]; then
 		if cmp $2/boot/vmlinuz* $2/boot/bzImage > /dev/null; then
@@ -280,15 +289,7 @@ gen_livecd_isolinux()
 		sed -i "s/XXXXXXXX/$DATE/" $ROOTCD/boot/isolinux/isolinux.*g
 		status
 	fi
-	cd $ROOTCD
-	echo -n "Computing md5..."
-	find * -type f ! -name md5sum -exec md5sum {} \; > md5sum
-	sed -i '/  boot\/isolinux\/isolinux.bin$/d' md5sum
-	status
 	cd $DISTRO
-	echo ""
-	echo -e "\033[1mGenerating ISO image\033[0m"
-	echo "================================================================================"
 	create_iso $ISO_NAME.iso $ROOTCD
 	echo -n "Creating the ISO md5sum..."
 	md5sum $ISO_NAME.iso > $ISO_NAME.md5
@@ -2095,7 +2096,7 @@ EOT
 			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
 			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
 			sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
-			  $ROOTCD/boot/isolinux/isolinux.msg
+			  $ROOTCD/boot/isolinux/isolinux.msg 2> /dev/null
 			[ -f $ROOTCD/boot/isolinux/ifmem.c32 ] ||
 			cp /boot/isolinux/ifmem.c32 $ROOTCD/boot/isolinux
 			n=0
