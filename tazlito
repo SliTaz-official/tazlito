@@ -240,7 +240,8 @@ create_iso()
 	cd $2
 	echo -n "Computing md5..."
 	find * -type f ! -name md5sum -exec md5sum {} \; > md5sum
-	sed -i '/  boot\/isolinux\/isolinux.bin$/d' md5sum
+	sed -i  -e '/  boot\/isolinux\/isolinux.bin$/d' \
+		-e '/  boot\/isolinux\/boot.cat$/d' md5sum
 	status
 	cd - > /dev/null
 	echo ""
@@ -996,8 +997,8 @@ build_loram_rootfs_cdrom()
 {
 	mkdir -p $TMP_DIR/fs
 	cd $TMP_DIR/fs
-	for i in $TMP_DIR/iso/boot/rootfs*.gz; do
-		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idm
+	for i in $(ls -r $TMP_DIR/iso/boot/rootfs*.gz); do
+		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idmu
 	done
 	rootfs=$TMP_DIR/rootfs.gz
 	if [ -x /usr/bin/mkcromfs ]; then
@@ -1006,7 +1007,7 @@ build_loram_rootfs_cdrom()
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
 	fi
 	rm -rf $TMP_DIR/fs
-	cd $TMP_DIR
+	cd - > /dev/null
 }
 
 # Move meta boot configuration files to basic configuration files
