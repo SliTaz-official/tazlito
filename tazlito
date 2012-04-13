@@ -2318,7 +2318,7 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 		-V "SliTaz" -input-charset iso8859-1 -boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
 			echo -n "Creating hybrid ISO..."
-			/usr/bin/isohybrid $ISO_NAME.iso 2> /dev/null
+			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2> /dev/null
 			status
 		fi
 		echo -n "Creating the ISO md5sum..."
