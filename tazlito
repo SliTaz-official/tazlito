@@ -724,6 +724,14 @@ build_initfs()
 	urliso="mirror.slitaz.org mirror.switch.ch/ftp/mirror/slitaz \
 download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 	version=$(ls $TMP_DIR/iso/boot/vmlinuz-* | sed 's/.*vmlinuz-//')
+	if [ -z "$version" ]; then
+		cat <<EOT
+Can't find the kernel version.
+No file /boot/vmlinuz-<version> in ISO image.
+Abort.
+EOT
+		exit 1
+	fi
 	[ -s /usr/share/boot/busybox-static ] || install_package busybox-static
 	need_lib=false
 	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/lib \
