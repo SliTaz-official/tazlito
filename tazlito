@@ -14,6 +14,8 @@
 #
 VERSION=4.5
 
+. /lib/libtaz.sh
+
 # Tazlito configuration variables to be shorter
 # and to use words rather than numbers.
 COMMAND=$1
@@ -29,7 +31,9 @@ MIRROR=$LOCALSTATE/mirror
 DEFAULT_MIRROR="http://mirror.slitaz.org/packages/`cat /etc/slitaz-release`/"
 
 log=/var/log/tazlito.log
-echo "" > $log
+if check_root; then
+	echo "" > $log
+fi
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
@@ -102,15 +106,6 @@ usage ()
   frugal-install  Frugal install in /boot/frugal from a distro or ISO.
   emu-iso         Emulate an ISO image with Qemu.
   burn-iso        Burn ISO image to a cdrom using Wodim.\n"
-}
-
-# Status function.
-status() {
-	if [ $? = 0 ]; then
-		echo "  OK"
-	else
-		echo "  Failed"
-	fi
 }
 
 yesorno()
@@ -207,16 +202,6 @@ installed_package_name()
 	done
 }
 
-# Check if user is root.
-check_root()
-{
-	if test $(id -u) != 0 ; then
-	   echo -e "\nYou must be root to run `basename $0` with this option."
-	   echo -e "Please type 'su' and root password to become super-user.\n"
-	   exit 0
-	fi
-}
-
 # Check for the rootfs tree.
 check_rootfs()
 {
@@ -246,7 +231,7 @@ create_iso()
 	cd - > /dev/null
 	echo ""
 	echo -e "\033[1mGenerating ISO image\033[0m"
-	echo "================================================================================"
+	separator
 	echo "Generating $1"
 	if [ $(ls $2/boot/vmlinuz* $2/boot/bzImage | wc -l) -eq 2 ]; then
 		if cmp $2/boot/vmlinuz* $2/boot/bzImage > /dev/null; then
@@ -295,7 +280,7 @@ gen_livecd_isolinux()
 	echo -n "Creating the ISO md5sum..."
 	md5sum $ISO_NAME.iso > $ISO_NAME.md5
 	status
-	echo "================================================================================"
+	separator
 	# Some packages may want to alter final iso
 	genisohooks final
 }
@@ -377,7 +362,7 @@ gen_initramfs()
 {
 	# Just in case CTRL+c
 	rm -f $DISTRO/gen
-	
+
 	# Some packages may want to alter rootfs
 	genisohooks rootfs
 	cd $1
@@ -440,7 +425,7 @@ distro_stats()
 {
 	echo ""
 	echo -e "\033[1mDistro statistics\033[0m ($DISTRO)"
-	echo "================================================================================"
+	separator
 	distro_sizes
 }
 
@@ -501,23 +486,23 @@ mergefs()
 		elif [ -f $1/$file ]; then
 			[ -f $2/$file ] &&
 			cmp $1/$file $2/$file > /dev/null 2>&1 && rm -f $2/$file
-			[ -f $2/$file ] && 
+			[ -f $2/$file ] &&
 			[ "$(basename $file)" == "volatile.cpio.gz" ] &&
 			[ "$(dirname $(dirname $file))" == \
 			  ".$INSTALLED" ] && rm -f $2/$file
 		elif [ -b $1/$file ]; then
 			[ -b $2/$file ] &&
 			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == \
-			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] && 
+			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] &&
 			rm -f $2/$file
 		elif [ -c $1/$file ]; then
 			[ -c $2/$file ] &&
 			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == \
-			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] && 
+			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] &&
 			rm -f $2/$file
 		fi
 	done
-	
+
 	# cleanup directories
 	( cd $1; find -type d ) | sed '1!G;h;$!d' | while read file; do
 		[ -d $2/$file ] && rmdir $2/$file 2> /dev/null
@@ -583,7 +568,7 @@ rm -f $TMP_DIR/flavor.pkg
 }
 
 # Update isolinux config files for multiple rootfs
-update_bootconfig()	
+update_bootconfig()
 {
 	local files
 	echo -n "Updating boot config files..."
@@ -727,9 +712,9 @@ install_package()
 	y*|Y*|o*|O*)
 		# We dont want package on host cache.
 		echo -n "Getting and installing package: $1"
-		yes y | tazpkg get-install $1 2>&1 >> $log || exit 1 
+		yes y | tazpkg get-install $1 2>&1 >> $log || exit 1
 		status ;;
-	*)	
+	*)
 		return 1 ;;
 	esac
 }
@@ -929,7 +914,7 @@ else
 	mkdir -p /mnt/.rw
 	path=/mnt/.
 	for i in rootfs* ; do
-		mv /\$i \$path\$i 
+		mv /\$i \$path\$i
 	done
 fi
 
@@ -1152,31 +1137,31 @@ build_loram_ram()
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
-# Remove files installed by packages 
+# Remove files installed by packages
 find_flavor_rootfs()
 {
 	for i in $1/etc/tazlito/*.extract; do
 		[ -e $i ] || continue
 		chroot $1 /bin/sh ${i#$1}
 	done
-	
-	# Clean hardlinks and files patched by genisofs in /boot		
+
+	# Clean hardlinks and files patched by genisofs in /boot
 	for i in isolinux/isolinux.bin isolinux/boot.cat bzImage ; do
 		rm -f $1/boot/$i
 	done
-	
+
 	# Clean files generated in post_install
 	rm -f $1/lib/modules/*/modules.* $1/etc/mtab \
 	      $1/dev/core $1/dev/fd $1/dev/std*
-			
+
 	# Verify md5
 	cat $1$INSTALLED/*/md5sum | \
 	while read md5 file; do
 		[ -e $1$file ] || continue
-		[ "$(cat $1$file | md5sum)" == "$md5  -" ] && 
+		[ "$(cat $1$file | md5sum)" == "$md5  -" ] &&
 		rm -f $1$file
 	done
-	
+
 	# Check configuration files
 	for i in $1$INSTALLED/*/volatile.cpio.gz; do
 		[ -e $i ] || continue
@@ -1189,7 +1174,7 @@ find_flavor_rootfs()
 		done
 		rm -rf /tmp/volatile$$
 	done
-	
+
 	# Remove other files blindly
 	for i in $1$INSTALLED/*/files.list; do
 		for file in $(cat $i); do
@@ -1198,14 +1183,14 @@ find_flavor_rootfs()
 			[ -d $1$file ] || rm -f $1$file
 		done
 	done
-	
+
 	# Remove tazpkg files and tmp files
 	rm -rf $1$INSTALLED* $1/tmp $1/var/tmp
 	rm -f $1$LOCALSTATE/*packages* $1$LOCALSTATE/files.list.lzma \
 		$1$LOCALSTATE/mirror*  $1/var/cache/*/* \
 		$1/var/lock/* $1/var/log/* $1/var/run/* $1/var/run/*/* \
 		$1/var/lib/*  $1/var/lib/dbus/* 2> /dev/null
-	
+
 	# Cleanup directory tree
 	cd $1
 	find * -type d | sort -r | while read dir; do
@@ -1234,7 +1219,7 @@ Distro directory    : $DISTRO"
 		if [ ! "$ADDFILES" = "" ] ; then
 			echo -e "Additional files    : $ADDFILES"
 		fi
-		echo "================================================================================"
+		separator
 		echo ""
 	    ;;
 	list-addfiles)
@@ -1278,7 +1263,7 @@ Distro directory    : $DISTRO"
 		empty_config_file
 		echo""
 		echo -e "\033[1mConfiguring :\033[0m `pwd`/tazlito.conf"
-		echo "================================================================================"
+		separator
 		# ISO name.
 		echo -n "ISO name            : " ; read answer
 		sed -i s#'ISO_NAME=\"\"'#"ISO_NAME=\"$answer\""# tazlito.conf
@@ -1291,7 +1276,7 @@ Distro directory    : $DISTRO"
 		# Distro path.
 		echo -n "Distro path         : " ; read answer
 		sed -i s#'DISTRO=\"\"'#"DISTRO=\"$answer\""# tazlito.conf
-		echo "================================================================================"
+		separator
 		echo "Config file is ready to use."
 		echo "You can now extract an ISO or generate a distro."
 		echo ""
@@ -1337,7 +1322,7 @@ Distro directory    : $DISTRO"
 		fi
 		echo ""
 		echo -e "\033[1mTazlito extracting :\033[0m `basename $ISO_IMAGE`"
-		echo "================================================================================"
+		separator
 		# Start to mount the ISO.
 		echo ""
 		echo "Mounting ISO image..."
@@ -1378,7 +1363,7 @@ Distro directory    : $DISTRO"
 			cp -a $TMP_DIR/boot/grub $TARGET/rootcd/boot
 			status
 		fi
-		
+
 		echo -n "Copying the rootfs..."
 		cp $TMP_DIR/boot/rootfs.?z $TARGET/rootcd/boot
 		status
@@ -1394,12 +1379,12 @@ Distro directory    : $DISTRO"
 		umount $TMP_DIR && rm -rf $TMP_DIR
 		cd ..
 		echo ""
-		echo "================================================================================"
+		separator
 		echo "Extracted       : `basename $ISO_IMAGE` ($isosize)"
 		echo "Distro tree     : `pwd`"
 		echo "Rootfs size     : `du -sh rootfs`"
 		echo "Rootcd size     : `du -sh rootcd`"
-		echo "================================================================================"
+		separator
 		echo ""
 		;;
 	list-flavors)
@@ -1409,7 +1394,7 @@ Distro directory    : $DISTRO"
 		fi
 		echo ""
 		echo -e "\033[1mList of flavors\033[0m"
-		echo "================================================================================"
+		separator
 		cat /etc/tazlito/flavors.list
 		echo ""
 		;;
@@ -1425,14 +1410,14 @@ Distro directory    : $DISTRO"
 		if [ "$3" = "--brief" ]; then
 			if [ "$4" != "--noheader" ]; then
 				echo "Name              ISO   Rootfs  Description"
-				echo "================================================================================"
+				separator
 			fi
 			printf "%-16.16s %6.6s %6.6s %s\n" "$FLAVOR" \
 				"$(field ISO $TMP_DIR/$FLAVOR.desc)" \
 				"$(field 'Rootfs size' $TMP_DIR/$FLAVOR.desc)" \
 				"$(grep ^Description $TMP_DIR/$FLAVOR.desc | cut -d: -f2)"
 		else
-			echo "================================================================================"
+			separator
 			cat $TMP_DIR/$FLAVOR.desc
 		fi
 		rm -Rf $TMP_DIR
@@ -1487,7 +1472,7 @@ code	data
 		FLAVOR=${2%.flavor}
 		echo ""
 		echo -e "\033[1mFlavor generation\033[0m"
-		echo "================================================================================"
+		separator
 		if [ -z "$FLAVOR" ]; then
 			echo -n "Flavor name : "
 			read FLAVOR
@@ -1536,7 +1521,7 @@ code	data
 			gzip -9 > $FLAVOR.flavor
 		rm `echo -e $FILES`
 		status
-		echo "================================================================================"
+		separator
 		echo "Flavor size : `du -sh $FLAVOR.flavor`"
 		echo ""
 		;;
@@ -1758,7 +1743,7 @@ EOT
 		# Get a flavor's files and prepare for gen-distro.
 		FLAVOR=${2%.flavor}
 		echo -e "\n\033[1mPreparing $FLAVOR distro flavor\033[0m"
-		echo "================================================================================"
+		separator
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			echo -n "Cleaning $DISTRO..."
 			rm -R $DISTRO 2> /dev/null
@@ -1815,10 +1800,10 @@ EOT
 				gzip -9 > /etc/tazlito/info
 			rm -Rf $TMP_DIR
 		fi
-		echo "================================================================================"
+		separator
 		echo -e "Flavor is ready to be generated by: tazlito gen-distro\n"
 		;;
-		
+
 	iso2flavor)
 		if [ -z "$3" -o ! -s "$2" ]; then
 			cat <<EOT
@@ -1900,7 +1885,7 @@ EOT
 		fi
 		rm -rf $TMP_DIR
 		;;
-		
+
 	check-list)
 		# Use current packages list in $PWD by default.
 		DISTRO_PKGS_LIST=distro-packages.list
@@ -1909,7 +1894,7 @@ EOT
 		[ ! -f $DISTRO_PKGS_LIST ] && echo "No packages list found." && exit 0
 		echo ""
 		echo -e "\033[1mLiveCD packages list check\033[0m"
-		echo "================================================================================"
+		separator
 		for pkg in `cat $DISTRO_PKGS_LIST`
 		do
 			if ! grep -q "$pkg" $LOCALSTATE/packages.list; then
@@ -1918,14 +1903,14 @@ EOT
 			fi
 		done
 		[ -z $up ] && echo -e "List is up-to-date\n" && exit 0
-		echo "================================================================================"
+		separator
 		echo -e "Updates: $up\n" ;;
 	gen-distro)
 		# Generate a live distro tree with a set of packages.
 		#
 		check_root
 		time=$(date +%s)
-		
+
 		# Check if a package list was specified on cmdline.
 		LIST_NAME="distro-packages.list"
 		CDROM=""
@@ -1950,7 +1935,7 @@ EOT
 			esac
 			shift
 		done
-		 
+
 		if [ -d $ROOTFS ] ; then
 			# Delete $ROOTFS if --force is set on command line
 			if [ ! -z $DELETE_ROOTFS ]; then
@@ -1979,7 +1964,7 @@ EOT
 		# Start generation.
 		echo ""
 		echo -e "\033[1mTazlito generating a distro\033[0m"
-		echo "================================================================================"
+		separator
 		# Misc checks
 		[ -n "$PACKAGES_REPOSITORY" ] || PACKAGES_REPOSITORY="."
 		[ -d $PACKAGES_REPOSITORY ] || mkdir -p $PACKAGES_REPOSITORY
@@ -2016,7 +2001,7 @@ EOT
 			fi
 			[ "$REPACK" = "n" -a "$DOWNLOAD" = "n" ] && exit 1
 		done
-		
+
 		# Mount cdrom to be able to repack boot-loader packages
 		if [ ! -e /boot -a -n "$CDROM" ]; then
 			mkdir $TMP_MNT
@@ -2051,7 +2036,7 @@ EOT
 				# Look for package in running distribution
 				elif [ -n "$PACKAGE" -a "$REPACK" = "y" ]; then
 					tazpkg repack $PACKAGE && \
-					  mv $pkg.tazpkg $PACKAGES_REPOSITORY 
+					  mv $pkg.tazpkg $PACKAGES_REPOSITORY
 				fi
 			fi
 			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
@@ -2080,7 +2065,7 @@ EOT
 				pkg=$(ls $pkg*.tazpkg)
 				grep -q "^$pkg$" $LIST_NAME || \
 					echo $pkg >>$LIST_NAME
-				mv $pkg $PACKAGES_REPOSITORY 
+				mv $pkg $PACKAGES_REPOSITORY
 			done
 		fi
 		cp $LIST_NAME $DISTRO/distro-packages.list
@@ -2089,7 +2074,7 @@ EOT
 		for pkg in $(cat $DISTRO/list-packages)
 		do
 			echo -n "Installing package: $pkg"
-			yes y | tazpkg install $pkg --root=$ROOTFS 2>&1 >> $log || exit 1 
+			yes y | tazpkg install $pkg --root=$ROOTFS 2>&1 >> $log || exit 1
 			status
 		done
 		rm -f $ROOTFS/var/lib/tazpkg/packages.*
@@ -2192,8 +2177,8 @@ EOT
 		#
 		check_root
 		echo ""
-		echo -e "\033[1mCleaning :\033[0m $DISTRO"
-		echo "================================================================================"
+		boldify "Cleaning : $DISTRO"
+		separator
 		if [ -d "$DISTRO" ] ; then
 			if [ -d "$ROOTFS" ] ; then
 				echo -n "Removing the rootfs..."
@@ -2211,16 +2196,15 @@ EOT
 			rm -f $DISTRO/$ISO_NAME.md5
 			status
 		fi
-		echo "================================================================================"
-		echo ""
-		;;
+		separator
+		echo "" ;;
 	check-distro)
 		# Check for a few LiveCD needed files not installed by packages.
 		#
 		check_rootfs
 		echo ""
 		echo -e "\033[1mChecking distro :\033[0m $ROOTFS"
-		echo "================================================================================"
+		separator
 		# SliTaz release info.
 		if [ ! -f "$ROOTFS/etc/slitaz-release" ]; then
 			echo "Missing release info : /etc/slitaz-release"
@@ -2237,7 +2221,7 @@ EOT
 			echo -n "Mirror configuration exists..."
 			status
 		fi
-		# Isolinux msg	
+		# Isolinux msg
 		if grep -q "cooking-XXXXXXXX" /$ROOTCD/boot/isolinux/isolinux.*g; then
 			echo -n "Isolinux msg : Missing cooking date XXXXXXXX (ex `date +%Y%m%d`)"
 			todomsg
@@ -2245,12 +2229,12 @@ EOT
 			echo -n "Isolinux message seems good..."
 			status
 		fi
-		echo "================================================================================"
+		separator
 		echo ""
 		;;
 	writeiso)
 		# Writefs to ISO image including /home unlike gen-distro we dont use
-		# packages to generate a rootfs, we build a compressed rootfs with all 
+		# packages to generate a rootfs, we build a compressed rootfs with all
 		# the current filesystem similar to 'tazusb writefs'.
 		#
 		DISTRO="/home/slitaz/distro"
@@ -2270,12 +2254,12 @@ EOT
 		echo ""
 		echo -e "\033[1mWrite filesystem to ISO\033[0m
 ===============================================================================
-The command writeiso will write the current filesystem into a suitable cpio 
-archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso). 
+The command writeiso will write the current filesystem into a suitable cpio
+archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso).
 
 Archive compression: $COMPRESSION"
 		echo ""
-		
+
 		# Save some space
 		rm /var/cache/tazpkg/* -r -f
 		rm -rf /home/slitaz/distro
@@ -2291,13 +2275,13 @@ Archive compression: $COMPRESSION"
 				echo -n "Removing current sound card and screen configurations..."
 				rm -f /var/lib/sound-card-driver
 				rm -f /etc/asound.state
-				rm -f /etc/X11/screen.conf 
+				rm -f /etc/X11/screen.conf
 				rm -f /etc/X11/xorg.conf ;;
 			*)
 				echo -n "Keeping current sound card and screen configurations..." ;;
 		esac
 		status
-		
+
 		cd /
 		# Create list of files including default user files since it is defined in /etc/passwd
 		# and some new users might have been added.
@@ -2325,7 +2309,7 @@ Archive compression: $COMPRESSION"
 		# Move freshly generated rootfs to the cdrom.
 		mkdir -p $ROOTCD/boot
 		mv -f /rootfs.gz $ROOTCD/boot
-		
+
 		# Now we need the kernel and isolinux files.
 		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
 			cp /media/cdrom/boot/bzImage $ROOTCD/boot
@@ -2339,13 +2323,13 @@ Archive compression: $COMPRESSION"
 			umount /media/cdrom;
 	      else
 			echo -e "
-When SliTaz is running in RAM the kernel and bootloader files are kept 
-on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to 
+When SliTaz is running in RAM the kernel and bootloader files are kept
+on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 /media/cdrom to let Tazlito copy the files.\n"
 			echo -en "----\nENTER to continue..."; read i
 			exit 1
 		fi
-		
+
 		# Generate the iso image.
 		cd $DISTRO
 		echo "Generating ISO image..."
@@ -2393,19 +2377,19 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 		fi
 		echo ""
 		echo -e "\033[1mTazlito burn ISO\033[0m "
-		echo "================================================================================"
+		separator
 		echo "Cdrom device  : /dev/$DRIVE_NAME"
 		echo "Drive speed   : $DRIVE_SPEED"
 		echo "ISO image     : $iso"
-		echo "================================================================================"
+		separator
 		echo ""
 		yesorno "Burn ISO image (y/N) ? "
 		if [ "$answer" == "y" ]; then
 			echo ""
 			echo "Starting Wodim to burn the iso..." && sleep 2
-			echo "================================================================================"
+			separator
 			wodim speed=$DRIVE_SPEED dev=/dev/$DRIVE_NAME $iso
-			echo "================================================================================"
+			separator
 			echo "ISO image is burned to cdrom."
 		else
 			echo -e "\nExiting. No ISO burned."
@@ -2424,7 +2408,7 @@ i.e: rootfsN is a subset of rootfsN-1
 rootfs1 is found in iso, sizeN is the RAM size need to launch rootfsN.
 The boot loader will select the rootfs according to the RAM size detected.
 
-Example: 
+Example:
 $ tazlito merge 160M slitaz-core.iso 96M rootfs-justx.gz 32M rootfs-base.gz
 
 Will start slitaz-core with 160M+ RAM, slitaz-justX with 96M-160M RAM,
@@ -2465,7 +2449,7 @@ EOT
 			cp /boot/isolinux/c32box.c32 $TMP_DIR/iso/boot/isolinux 2> /dev/null ||
 			cp /boot/isolinux/ifmem.c32 $TMP_DIR/iso/boot/isolinux
 		fi
-		
+
 		echo -n "Extracting iso/rootfs.gz"
 		extract_rootfs $TMP_DIR/iso/boot/rootfs.gz $TMP_DIR/rootfs1 &&
 		[ -d $TMP_DIR/rootfs1/etc ]
@@ -2509,7 +2493,7 @@ EOT
 		status || cleanup_merge
 		cp -a $TMP_DIR/mnt $TMP_DIR/iso
 		umount -d $TMP_DIR/mnt
-		
+
 		for i in $TMP_DIR/iso/boot/rootfs* ; do
 			echo -n "Repacking $(basename $i)"
 			(zcat $i 2> /dev/null || unlzma -c $i || cat $i) \
@@ -2518,7 +2502,7 @@ EOT
 				 $(lzma_switches $TMP_DIR/rootfs)
 			status
 		done
-		
+
 		create_iso $ISO $TMP_DIR/iso
 		rm -rf $TMP_DIR ;;
 
@@ -2550,7 +2534,7 @@ EOT
 		umount -d $TMP_DIR/iso
 		rm -rf $TMP_DIR ;;
 
-	
+
 	frugal-install|-fi)
 		ISO_IMAGE="$2"
 		echo ""
@@ -2596,7 +2580,7 @@ EOT
 		fi
 		status
 		echo "" ;;
-	
+
 	emu-iso)
 		# Emulate an ISO image with Qemu.
 		if [ -n "$2" ] ; then
