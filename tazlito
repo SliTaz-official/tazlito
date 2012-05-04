@@ -618,7 +618,7 @@ else print;
      if (i % 2 == 0) printf " slitaz%d",i/2
      else printf " %s",$i
 }')"
-	cat >> $1/common.cfg <<EOT
+	[ -s $1/common.cfg ] && cat >> $1/common.cfg <<EOT
 
 label slitaz
 	kernel /boot/isolinux/ifmem.c32
@@ -631,7 +631,11 @@ EOT
 	# Update vesamenu
 	if [ -s $1/isolinux.cfg ]; then
 		files="$files $1/isolinux.cfg"
-		awk -v n=$(echo $2 | awk '{ print NF/2 }') -v "sel=$sel" '{
+		awk -v n=$(echo $2 | awk '{ print NF/2 }') -v "sel=$sel" '
+BEGIN {
+	kernel="	COM32 c32box.c32"
+}
+{
 if (/ROWS/) print "MENU ROW " n+$3;
 else if (/TIMEOUTROW/) print "MENU TIMEOUTROW " n+$3;
 else if (/TABMSGROW/) print "MENU TABMSGROW " n+$3;
@@ -641,8 +645,11 @@ else if (/VSHIFT/) {
 	if (x < 0) x=0;
 	print "MENU VSHIFT " x;
 }
-else if (/bzImage/) kernel=$0;
 else if (/rootfs.gz/) {
+	linux=""
+	if (/bzImage/) {
+		linux="linux /boot/bzImage "
+	}
 	i=index($0,"rootfs.gz");
 	append=substr($0,i+9);
 	print	"	kernel /boot/isolinux/ifmem.c32"
@@ -660,21 +667,18 @@ else if (/rootfs.gz/) {
 		for (j = n - 1; j >= i; j--) {
 			initrd=initrd ",/boot/rootfs" j ".gz";
 		}
-		printf "\tappend %s%s\n",initrd,append;
+		printf "\tappend %s%s%s\n",linux,initrd,append;
 		print "";
 	}
 }
+else if (/bzImage/) kernel=$0;
 else print;
 }' < $1/isolinux.cfg > $1/isolinux.cfg.$$
 		mv $1/isolinux.cfg.$$ $1/isolinux.cfg
 	fi
+	[ -s $1/c32box.c32 ] && sed -i -e '/kernel.*ifmem/d' \
+		-e 's/append \([0-9]\)/append ifmem \1/' $1/isolinux.cfg
 	cat > $1/noram.cfg <<EOT
-display isolinux.msg
-say Not enough RAM to boot slitaz. Give http://tiny.slitaz.org/ a try ?
-default reboot
-label reboot
-	com32 reboot.c32
-
 implicit 0
 prompt 1
 timeout 80
@@ -684,11 +688,30 @@ F3 isolinux.msg
 F4 display.txt
 F5 enhelp.txt
 F6 enopts.txt
+
+display isolinux.msg
+say Not enough RAM to boot slitaz. Give http://tiny.slitaz.org/ a try ?
+default reboot
+label reboot
 EOT
+	if [ -s $1/c32box.c32 ]; then
+		cat >> $1/noram.cfg <<EOT
+	COM32 c32box.c32
+	append reboot
+
+label poweroff
+	COM32 c32box.c32
+	append poweroff
+
+EOT
+	else
+		echo "	com32 reboot.c32" >> $1/noram.cfg
+	fi
 	# Restore real label names
+	[ -s $1/common.cfg ] && files="$1/common.cfg $files"
 	echo $2 | awk '{ for (i=NF; i>1; i-=2) printf "%d/%s\n",i/2,$i }' | \
 	while read pat; do
-		sed -i "s/slitaz$pat/" $1/common.cfg $files
+		sed -i "s/slitaz$pat/" $files
 	done
 	status
 }
@@ -1025,11 +1048,14 @@ unmeta_boot()
 	local root=${1:-$TMP_DIR/loramiso}
 	if [ -f $root/boot/isolinux/noram.cfg ]; then
 		# We keep enough information to do unloram...
+		[ -s $root/boot/isolinux/common.cfg ] &&
 		sed -i 's/label slitaz/label orgslitaz/' \
 			$root/boot/isolinux/common.cfg
+		set -- $(grep 'append ifmem [0-9]' $root/boot/isolinux/isolinux.cfg)
+		shift
 		sed -i '/ifmem/{NNNNNNNNd};/^LABEL/{N;/LABEL SliTaz [^L]/{NNNd}}' \
 			$root/boot/isolinux/isolinux.cfg
-		set -- $(grep 'append [0-9]' $root/boot/isolinux/common.cfg)
+		[ -n "$3" ] || set -- $(grep 'append [0-9]' $root/boot/isolinux/common.cfg)
 		sed -i "s/label $3\$/label slitaz/;s|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |" \
 			$root/boot/isolinux/*.cfg
 	fi
@@ -1081,13 +1107,14 @@ build_loram_http()
 # Reduce sizes with rootfs gains.
 update_metaiso_sizes()
 {
-	for cfg in $(grep -l 'append [0-9]' $TMP_DIR/loramiso/boot/isolinux/*.cfg)
+	for cfg in $(grep -El '(append|ifmem) [0-9]' $TMP_DIR/loramiso/boot/isolinux/*.cfg)
 	do
-		local append="$(grep 'append [0-9]' $cfg)"
+		local append="$(grep -E '(append|ifmem) [0-9]' $cfg)"
 		local sizes="$rootfs_sizes"
 		local new
 		set -- $append
 		shift
+		[ "$1" == "ifmem" ] && shift
 		new=""
 		while [ -n "$2" ]; do
 			local s
@@ -1103,7 +1130,8 @@ update_metaiso_sizes()
 			new="$new $s $2"
 			shift 2
 		done
-		sed -i "/append [0-9]/s/append .*/append$new $1/" $cfg 
+		sed -i -e "/append [0-9]/s/append .*/append$new $1/" -e \
+			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
 	done
 }
 
@@ -2423,8 +2451,10 @@ EOT
 			echo "$1 is already a merged iso. Aborting."
 			cleanup_merge
 		fi
-		if [ ! -f $TMP_DIR/iso/boot/isolinux/ifmem.c32 ]; then
-			if [ ! -f /boot/isolinux/ifmem.c32 ]; then
+		if [ ! -f $TMP_DIR/iso/boot/isolinux/ifmem.c32 -a
+		     ! -f $TMP_DIR/iso/boot/isolinux/c32box.c32 ]; then
+			if [ ! -f /boot/isolinux/ifmem.c32 -a
+			     ! -f /boot/isolinux/c32box.c32 ]; then
 				cat <<EOT
 No file /boot/isolinux/ifmem.c32
 Please install syslinux package !
@@ -2432,6 +2462,7 @@ EOT
 				rm -rf $TMP_DIR
 				exit 1
 			fi
+			cp /boot/isolinux/c32box.c32 $TMP_DIR/iso/boot/isolinux 2> /dev/null ||
 			cp /boot/isolinux/ifmem.c32 $TMP_DIR/iso/boot/isolinux
 		fi
 		
