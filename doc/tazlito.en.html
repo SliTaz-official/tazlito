@@ -1,32 +1,18 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-	<title>Tazlito Manual - SliTaz Live Tool</title>
-	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
-	<meta name="description" content="" />
-	<meta name="expires" content="never" />
-	<meta name="modified" content="2011-02-24 13:30:00" />
-	<style type="text/css"><!--
-	body { font: 90% sans-serif, vernada, arial; margin: 0; 
-		border-top: 34px solid #f1f1f1; }
-	#header { background: #351a0a; color: black; height: 50px;
-		border-top: 1px solid black; border-bottom: 1px solid black; }
-	#content { margin: 0px 50px 26px 50px; }
-	h1 { margin: 14px 0px 0px 16px; color: #fff; margin: 10px; }
-	h3 { font-weight: bold; color: #666666; }
-	li { line-height: 1.4em; }
-	pre { padding: 5px; color: black; background: #e1e0b0;
-		border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
-	code { font-size: 100%; color: #669900; background: transparent; }
-	hr { color: white; background: white; height: 1px; border: 0; }
-	--></style>
+	<title>TazLito Manual - SliTaz Live Tool</title>
+	<meta charset="utf-8" />
+	<link rel="shortcut icon" href="favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="style.css" />
 </head>
-<body bgcolor="#ffffff">
+<body>
+
+<!-- Header -->
 <div id="header">
 	<h1>Tazlito Manual</h1>
 </div>
-<hr />
+
 <!-- Start content -->
 <div id="content">
 
@@ -43,14 +29,14 @@ tazlito [command] [list|iso|flavor] [dir]
 <h2>DESCRIPTION</h2>
 <p>
 Tazlito is a small utility to extract a LiveCD, rebuild the
-ISO image and regenerate the root filesystem of the LiveCD. 
-Tazlito can also generate a distribution from a list of packages 
-previously downloaded. To run, Tazlito uses the configuration file 
-/etc/tazlito/tazlito.conf or an easily generated tazlito.conf 
-found in the current directory. 
-It specifies the name of the ISO, volume, maintainer and 
-the paths of the packages to distribute and the generated ISO. 
-Tazlito can also set up a directory containing additional files 
+ISO image and regenerate the root filesystem of the LiveCD.
+Tazlito can also generate a distribution from a list of packages
+previously downloaded. To run, Tazlito uses the configuration file
+/etc/tazlito/tazlito.conf or an easily generated tazlito.conf
+found in the current directory.
+It specifies the name of the ISO, volume, maintainer and
+the paths of the packages to distribute and the generated ISO.
+Tazlito can also set up a directory containing additional files
 which will be copied to the LiveCD when generating the distribution.
 </p>
 <p>
@@ -108,11 +94,11 @@ file or one found in the current directory:
 <a name="gen-iso"></a>
 <h3>gen-iso</h3>
 <p>
-The 'gen-iso' command can generate a 
-new LiveCD image following modifications and additions to the 
-root filesystem of the cdrom. To function, this command needs 
-a directory containing the distro-tree of the Live system. 
-This tree can easily be built with the 'extract-distro' command, 
+The 'gen-iso' command can generate a
+new LiveCD image following modifications and additions to the
+root filesystem of the cdrom. To function, this command needs
+a directory containing the distro-tree of the Live system.
+This tree can easily be built with the 'extract-distro' command,
 modified and rebuilt via:
 </p>
 <pre>
@@ -134,7 +120,7 @@ must be rebuilt if modified:
 <a name="list-flavors"></a>
 <h3>list-flavors</h3>
 <p>
-The 'list-flavors' command downloads (if necessary) and displays 
+The 'list-flavors' command downloads (if necessary) and displays
 a list of the different flavors available. You can force the
 download with the --recharge option:
 </p>
@@ -156,12 +142,12 @@ files for 'gen-distro' to generate a flavor:
 <a name="show-flavors"></a>
 <h3>show-flavor</h3>
 <p>
-The 'show-flavor' command displays the description of the 
+The 'show-flavor' command displays the description of the
 flavor and its size after regeneration. The options
 --brief and --noheader reduce the output displayed:
 </p>
 <pre>
- # tazlito show-flavor particular-flavor 
+ # tazlito show-flavor particular-flavor
  # tazlito show-flavor particular-flavor --brief
  # tazlito show-flavor particular-flavor --brief --noheader
 </pre>
@@ -181,7 +167,7 @@ The .flavor file can then be sent to slitaz.org:
 <h3>gen-liveflavor</h3>
 <p>
 The 'gen-liveflavor' command creates a description file of a new
-flavor from the results of generating a distro based on the 
+flavor from the results of generating a distro based on the
 current system. The --help option provides more information:
 </p>
 <pre> # tazlito gen-liveflavor
@@ -227,7 +213,7 @@ The 'pack-flavor' command converts a tree structure in /home/slitaz/VERSION/flav
 The 'extract-distro' command is used to extract an ISO image
 from the LiveCD to rebuild the structure of the root cdrom
 and system. It is then possible to make the desired changes
-or additions and rebuild the ISO image via 'gen-iso' or 
+or additions and rebuild the ISO image via 'gen-iso' or
 'gen-initiso'. Example of use:
 </p>
 <pre>
@@ -245,7 +231,7 @@ generate the distribution. The list of packages can be extracted
 from a flavor with the 'get-flavor' command. If one uses the
 LiveCD, the options --cdrom and --iso= permit the regeneration
 of packages that place files in /boot without being obliged
-to download them and recovers the additional files of the 
+to download them and recovers the additional files of the
 LiveCD. The path to the various directories are configured
 in the configuration file and packages can be downloaded
 from the SliTaz mirrors or generated by Cookutils. To generate
@@ -281,11 +267,11 @@ by the packages are present on the system:
 <a name="writeiso"></a>
 <h3>writeiso</h3>
 <p>
-This command will write the current filesystem to a cpio archive 
-(rootfs.gz) and then generate a bootable ISO image. Writeiso can 
-be used in a HD install or in live mode and will also archive your 
-current /home directory. This command lets you easily remaster and 
-build your own LiveCD image, just boot, modify any files, and then: 
+This command will write the current filesystem to a cpio archive
+(rootfs.gz) and then generate a bootable ISO image. Writeiso can
+be used in a HD install or in live mode and will also archive your
+current /home directory. This command lets you easily remaster and
+build your own LiveCD image, just boot, modify any files, and then:
 
 </p>
 <pre>
@@ -297,11 +283,11 @@ build your own LiveCD image, just boot, modify any files, and then:
 <a name="frugal-install"></a>
 <h3>frugal-install</h3>
 <p>
-Perfom a frugal installation into /boot/frugal and add a GRUB entry 
-if needed. Frugal mode will make SliTaz work completely in memory 
-(RAM) - useful to test a distro without burning an ISO or to have a 
-rescue system ready to use when the computer powers on. To install 
-all needed files from a distro tree or an ISO image: 
+Perfom a frugal installation into /boot/frugal and add a GRUB entry
+if needed. Frugal mode will make SliTaz work completely in memory
+(RAM) - useful to test a distro without burning an ISO or to have a
+rescue system ready to use when the computer powers on. To install
+all needed files from a distro tree or an ISO image:
 </p>
 <pre>
  # tazlito frugal-install
@@ -332,7 +318,7 @@ Recompresses the rootfs with the best possible compression:
 <p>
 Combines several flavors like nested Russian dolls. Each rootfs is a
 subset of the previous. The first rootfs is extracted from the ISO image
-used in the third argument. The flavor will then be chosen to launch at 
+used in the third argument. The flavor will then be chosen to launch at
 startup according to the amount of RAM available:
 </p>
 <pre>
@@ -378,7 +364,7 @@ command line:
 
 <h2>FLAVORS</h2>
 <p>
-A <i>.flavor</i> file contains just a few KB of information needed to 
+A <i>.flavor</i> file contains just a few KB of information needed to
 (re)manufacture a custom LiveCD of SliTaz.
 </p>
 
@@ -401,7 +387,7 @@ eeepc             31.2M 105.4M  SliTaz eeepc system
 justX             16.1M  51.2M  SliTaz with a minimal X environment
 </pre>
 <p>
-We will start by remanufacturing the <i>eeepc</i> flavor which uses 105.4M of RAM 
+We will start by remanufacturing the <i>eeepc</i> flavor which uses 105.4M of RAM
 and has a CD-ROM size of 31.2M:
 </p>
 <pre>
@@ -421,7 +407,7 @@ To create a flavor, you must:
 	<li>Either directly create the tree structure that defines the flavor
 	(see <b>tazlito extract-flavor</b>) and then create the flavor with
 	<b>tazlito pack-flavor</b></li>
-	<li>Either use the 
+	<li>Either use the
 	<a href="http://pizza.slitaz.org/">online builder</a></li>
 </ul>
 
@@ -530,7 +516,7 @@ Using the previous example:
 <p>
 A meta flavor contains several flavors like nested Russian dolls. The flavor
 will be launched at startup according to the amount of RAM available.
-The ROOTFS_SELECTION variable defines the minimim RAM and corresponding 
+The ROOTFS_SELECTION variable defines the minimim RAM and corresponding
 flavor parameters, <a href="http://hg.slitaz.org/flavors/file/tip/core-3in1/receipt">
 example</a>:
 </p>
@@ -544,7 +530,8 @@ kernels prior to 2.6.30 do not support meta flavors.
 
 <h2>MAINTAINER</h2>
 <p>
-Christophe Lincoln &lt;pankso at slitaz.org&gt;
+Christophe Lincoln &lt;pankso at slitaz.org&gt;<br />
+Pascal bellard &lt;pascal.bellard at slitaz.org&gt;
 </p>
 
 <!-- End content -->

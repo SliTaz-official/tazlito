@@ -1,32 +1,17 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-	<title>Tazlito Manual - SliTaz Live Tool</title>
-	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
-	<meta name="description" content="" />
-	<meta name="expires" content="never" />
-	<meta name="modified" content="2011-02-24 13:30:00" />
-	<style type="text/css"><!--
-	body { font: 90% sans-serif, vernada, arial; margin: 0; 
-		border-top: 34px solid #f1f1f1; }
-	#header { background: #351a0a; color: black; height: 50px;
-		border-top: 1px solid black; border-bottom: 1px solid black; }
-	#content { margin: 0px 50px 26px 50px; }
-	h1 { margin: 14px 0px 0px 16px; color: #fff; margin: 10px; }
-	h3 { font-weight: bold; color: #666666; }
-	li { line-height: 1.4em; }
-	pre { padding: 5px; color: black; background: #e1e0b0;
-		border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
-	code { font-size: 100%; color: #669900; background: transparent; }
-	hr { color: white; background: white; height: 1px; border: 0; }
-	--></style>
+	<title>Manuel de TazLito</title>
+	<meta charset="utf-8" />
+	<link rel="shortcut icon" href="favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="style.css" />
 </head>
-<body bgcolor="#ffffff">
+<body>
+
 <div id="header">
 	<h1>Tazlito Manual</h1>
 </div>
-<hr />	
+
 <!-- Start content -->
 <div id="content">
 
@@ -56,8 +41,8 @@ contenant des fichiers additionnels, qui seront copiés dans le LiveCD lors
 de la génération de la distribution.
 </p>
 <p>
-Tazlito est, distribué sous licence libre GNU gpl v3, installé par défaut sur 
-SliTaz et installé/testé avec succès sur Debian GNU/Linux. Vous trouverez 
+Tazlito est, distribué sous licence libre GNU gpl v3, installé par défaut sur
+SliTaz et installé/testé avec succès sur Debian GNU/Linux. Vous trouverez
 aussi un complément d'informations au sujet de création de sa propre version
 du LiveCD, via le livre de cuisine (Cookbook) de SliTaz
 (http://www.slitaz.org/doc/cookbook/) et le Handbook.
@@ -146,10 +131,10 @@ différentes saveurs disponibles. On peut forcer le téléchargement avec
 <h3>get-flavor</h3>
 <p>
 La commande 'get-flavor' télécharge si nécessaire et prépare les fichiers
-nécessaires à 'gen-distro' pour refabriquer une saveur. 
+nécessaires à 'gen-distro' pour refabriquer une saveur.
 </p>
 <pre>
- # tazlito get-flavor saveur-particuliere 
+ # tazlito get-flavor saveur-particuliere
 </pre>
 
 <a name="show-flavor"></a>
@@ -160,7 +145,7 @@ dimensions après refabrication. Les options '--brief' et '--noheader' réduisent
 l'affichage produit.
 </p>
 <pre>
- # tazlito show-flavor saveur-particuliere 
+ # tazlito show-flavor saveur-particuliere
  # tazlito show-flavor saveur-particuliere --brief
  # tazlito show-flavor saveur-particuliere --brief --noheader
 </pre>
@@ -182,7 +167,7 @@ produit pourra être ensuite envoyé à slitaz.org.
 La commande 'gen-liveflavor' crée une image ISO et un fichier de description
 d'une nouvelle saveur à partir de la distribution courante. Un fichier texte
 optionnel permetde décrire les modifications à faire par rapport à la
-distribution courante. Le format de chacune de ses lignes est 
+distribution courante. Le format de chacune de ses lignes est
 [code][tabulation][caractères]. Les valeurs possibles de code sont +,-,@,! et ?
 pour ajouter un paquet, le retirer, décrire la saveur, ajouter un paquet non
 libre, et afficher un message à l'écran.
@@ -392,7 +377,7 @@ nécessaires pour refabriquer un Live CD customisé de SliTaz.
 On choisit la saveur à refabriquer parmi celles disponibles.
 </p>
 <pre>
-# tazlito list-flavors   
+# tazlito list-flavors
 
 List of flavors
 ================================================================================
@@ -426,10 +411,10 @@ correspondante avec <b>tazlito gen-flavor</b>.
 </li>
 <li>
 Soit créer directement l'arboscence qui définie la saveur (voir la commande
-<b>tazlito extract-flavor</b>) puis créer la saveur avec 
+<b>tazlito extract-flavor</b>) puis créer la saveur avec
 <b>tazlito pack-flavor</b>.
 </li>
-<li>Soit utiliser le 
+<li>Soit utiliser le
 <a href="http://pizza.slitaz.org/">générateur de saveur en ligne</a> :
 </li>
 </ul>
@@ -488,12 +473,12 @@ préciser leur version (tazlito utilisera la dernière disponible)
 Ce fichier est absent si ROOTFS_SELECTION est précisé dans receipt.
 </li>
 <li>
-Le fichier optionnel <b>mirrors</b> contenant la liste des miroirs non 
+Le fichier optionnel <b>mirrors</b> contenant la liste des miroirs non
 officiels (undigest) à ajouter pour inclure des paquets personnels.
 </li>
 <li>
 Le répertoire optionnel <b>rootfs</b> contenant l'arborescence à ajouter dans
-le système de fichier racine rootfs.gz (des fichiers de configuration 
+le système de fichier racine rootfs.gz (des fichiers de configuration
 habituellement).
 </li>
 <li>
@@ -546,7 +531,7 @@ saveur correspondante), <a href="http://hg.slitaz.org/flavors/file/tip/core-3in1
 exemple</a>&nbsp;:
 </p>
 <pre>
-ROOTFS_SELECTION="160M core 96M justX 32M base" 
+ROOTFS_SELECTION="160M core 96M justX 32M base"
 </pre>
 <p>
 Une meta saveur n'a pas de liste de paquets <i>(packages.list)</i>.
@@ -556,7 +541,8 @@ meta saveurs.
 
 <h2>MAINTENEUR</h2>
 <p>
-Christophe Lincoln &lt;pankso at slitaz.org&gt;
+Christophe Lincoln &lt;pankso at slitaz.org&gt;<br />
+Pascal bellard &lt;pascal.bellard at slitaz.org&gt;
 </p>
 
 <!-- End content -->
