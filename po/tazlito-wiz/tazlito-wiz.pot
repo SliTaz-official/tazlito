@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-03-14 00:12+0100\n"
+"POT-Creation-Date: 2012-07-01 22:34+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,77 +17,76 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: tazlito-wiz:48
+#: tazlito-wiz:47
 msgid "Edit the distro packages list"
 msgstr ""
 
-#: tazlito-wiz:57
+#: tazlito-wiz:56
 msgid "SliTaz Live system creator wizard"
 msgstr ""
 
-#: tazlito-wiz:59
+#: tazlito-wiz:58
 msgid "Distro name:"
 msgstr ""
 
-#: tazlito-wiz:60
+#: tazlito-wiz:59
 msgid "Based on:"
 msgstr ""
 
-#: tazlito-wiz:78
+#: tazlito-wiz:79
 msgid "Getting flavor file and packages list..."
 msgstr ""
 
-#: tazlito-wiz:96
+#: tazlito-wiz:97
 #, sh-format
-msgid "Packages - The $skel have $pkgs packages"
-msgstr ""
-
-#: tazlito-wiz:98
-msgid "Additionnal packages separate by space or one by line:"
+msgid "Packages - The $skel has $pkgs packages"
 msgstr ""
 
 #: tazlito-wiz:99
+msgid "Additional packages separated by space or by line:"
+msgstr ""
+
+#: tazlito-wiz:100
 msgid "Edit packages list"
 msgstr ""
 
-#: tazlito-wiz:125
+#: tazlito-wiz:126
 msgid "SliTaz desktop wallpaper"
 msgstr ""
 
-#: tazlito-wiz:127
+#: tazlito-wiz:128
 msgid "Wallpaper JPG image:"
 msgstr ""
 
-#: tazlito-wiz:147
+#: tazlito-wiz:148
 msgid ""
 "\n"
 "Now it's time to generate the distro. Last chance to start over or stop. "
-"Creating a Live system use quiet a lot of resources and take some time.\\n"
-"\\n\n"
-"Note you can still add some file to the SliTaz root filesystem or on the "
+"Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the "
 "cdrom."
 msgstr ""
 
-#: tazlito-wiz:152
+#: tazlito-wiz:153
 msgid "<b>Generate the distribution</b>"
 msgstr ""
 
-#: tazlito-wiz:166
+#: tazlito-wiz:167
 msgid "Building the Live system..."
 msgstr ""
 
-#: tazlito-wiz:175
+#: tazlito-wiz:176
 msgid "Live system summary"
 msgstr ""
 
-#: tazlito-wiz:177
+#: tazlito-wiz:178
 msgid "Generated ISO "
 msgstr ""
 
-#: tazlito-wiz:178
+#: tazlito-wiz:179
 msgid "Image size"
 msgstr ""
 
-#: tazlito-wiz:179
+#: tazlito-wiz:180
 msgid "Uncompressed size"
 msgstr ""

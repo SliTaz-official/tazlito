@@ -55,3 +55,5 @@ uninstall:
 
 clean:
 	rm -rf po/mo
+	rm -f po/tazlito-wiz/*.mo
+	rm -f po/tazlito-wiz/*.*~

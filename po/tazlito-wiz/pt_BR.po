@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-03-14 00:12+0100\n"
+"POT-Creation-Date: 2012-07-01 22:29+0000\n"
 "PO-Revision-Date: 2012-03-14 03:28+0100\n"
 "Last-Translator: Claudinei Pereira <claudinei@slitaz.org>\n"
 "Language-Team: Portuguese <i18n@slitaz.org>\n"
@@ -18,84 +18,84 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: tazlito-wiz:48
+#: tazlito-wiz:47
 msgid "Edit the distro packages list"
 msgstr "Edita a lista de pacotes"
 
-#: tazlito-wiz:57
+#: tazlito-wiz:56
 msgid "SliTaz Live system creator wizard"
 msgstr "Wizard do Criador de Sistema Live do SliTaz"
 
-#: tazlito-wiz:59
+#: tazlito-wiz:58
 msgid "Distro name:"
 msgstr "Nome da distribuição:"
 
-#: tazlito-wiz:60
+#: tazlito-wiz:59
 msgid "Based on:"
 msgstr "Baseado em:"
 
-#: tazlito-wiz:78
+#: tazlito-wiz:79
 msgid "Getting flavor file and packages list..."
 msgstr "Obtendo arquivo flavor e lista de pacotes..."
 
-#: tazlito-wiz:96
-#, sh-format
-msgid "Packages - The $skel have $pkgs packages"
+#: tazlito-wiz:97
+#, fuzzy, sh-format
+msgid "Packages - The $skel has $pkgs packages"
 msgstr "Pacotes - o $skel possui $pkgs pacotes"
 
-#: tazlito-wiz:98
-msgid "Additionnal packages separate by space or one by line:"
+#: tazlito-wiz:99
+#, fuzzy
+msgid "Additional packages separated by space or by line:"
 msgstr "Pacotes adicionais separados por espaço ou um por linha:"
 
-#: tazlito-wiz:99
+#: tazlito-wiz:100
 msgid "Edit packages list"
 msgstr "Editar lista de pacotes"
 
-#: tazlito-wiz:125
+#: tazlito-wiz:126
 msgid "SliTaz desktop wallpaper"
 msgstr "Papel de parede do SliTaz"
 
-#: tazlito-wiz:127
+#: tazlito-wiz:128
 msgid "Wallpaper JPG image:"
 msgstr "Imagem JPG do papel de parede:"
 
-#: tazlito-wiz:147
+#: tazlito-wiz:148
+#, fuzzy
 msgid ""
 "\n"
 "Now it's time to generate the distro. Last chance to start over or stop. "
-"Creating a Live system use quiet a lot of resources and take some time.\\n"
-"\\n\n"
-"Note you can still add some file to the SliTaz root filesystem or on the "
+"Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the "
 "cdrom."
 msgstr ""
 "\n"
-"Agora é o momento de gerar a distribuição. Última chance para prosseguir "
-"ou parar. Criar um sistema Live demanda a utilização de recursos da máquina "
-"e pode levar um certo tempo.\\n"
-"\\n\n"
+"Agora é o momento de gerar a distribuição. Última chance para prosseguir ou "
+"parar. Criar um sistema Live demanda a utilização de recursos da máquina e "
+"pode levar um certo tempo.\\n\\n\n"
 "Note que você ainda pode adicionar algum arquivo ao sistema de arquivos ou "
 "no cdrom."
 
-#: tazlito-wiz:152
+#: tazlito-wiz:153
 msgid "<b>Generate the distribution</b>"
 msgstr "<b>Geração da distribuição</b>"
 
-#: tazlito-wiz:166
+#: tazlito-wiz:167
 msgid "Building the Live system..."
 msgstr "Gerando o sistema Live..."
 
-#: tazlito-wiz:175
+#: tazlito-wiz:176
 msgid "Live system summary"
 msgstr "Resumo do sistema Live"
 
-#: tazlito-wiz:177
+#: tazlito-wiz:178
 msgid "Generated ISO "
 msgstr "ISO gerada "
 
-#: tazlito-wiz:178
+#: tazlito-wiz:179
 msgid "Image size"
 msgstr "Tamanho da imagem"
 
-#: tazlito-wiz:179
+#: tazlito-wiz:180
 msgid "Uncompressed size"
 msgstr "Tamanho sem compressão"
