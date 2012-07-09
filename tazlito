@@ -101,6 +101,7 @@ usage ()
   check-distro    Help to check if distro is ready to release.
   writeiso        Use running system to generate a bootable ISO (with /home).
   merge           Merge multiple rootfs into one iso.
+  deduplicate	  Deduplicate files in a tree.
   repack          Recompress rootfs into iso with maximum ratio.
   build-loram     Generate a live-CD for low ram systems.
   frugal-install  Frugal install in /boot/frugal from a distro or ISO.
@@ -357,18 +358,10 @@ write_initramfs()
 	echo 1 > /tmp/rootfs
 }
 
-# Generate a new initramfs from the root filesystem.
-gen_initramfs()
+# Deduplicate files (MUST be on the same filesystem).
+deduplicate()
 {
-	# Just in case CTRL+c
-	rm -f $DISTRO/gen
-
-	# Some packages may want to alter rootfs
-	genisohooks rootfs
-	cd $1
-
-	# Link duplicate files
-	find . -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
+	find "$@" -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
 	   sort | ( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 	   while read attr inode link file; do
 		   if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
@@ -383,6 +376,20 @@ gen_initramfs()
 	   done
 	   echo "$save bytes saved in duplicate files."
 	)
+}
+
+# Generate a new initramfs from the root filesystem.
+gen_initramfs()
+{
+	# Just in case CTRL+c
+	rm -f $DISTRO/gen
+
+	# Some packages may want to alter rootfs
+	genisohooks rootfs
+	cd $1
+
+	# Link duplicate files
+	deduplicate .
 
 	# Use lzma if installed. Display rootfs size in realtime.
 	rm -f /tmp/rootfs
@@ -2600,6 +2607,10 @@ EOT
 		echo -e "qemu $QEMU_OPTS $iso\n"
 		qemu $QEMU_OPTS $iso ;;
 
+	deduplicate)
+		# Deduplicate files in a tree
+		shift
+		deduplicate "$@" ;;
 	usage|*)
 		# Clear and print usage also for all unknown commands.
 		#
