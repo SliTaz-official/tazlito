@@ -2525,6 +2525,7 @@ EOT
 		fi
 		mkdir -p $TMP_DIR/iso
 		mount -o loop,ro -t iso9660 $ISO $TMP_DIR/iso
+		loopdev=$(losetup | grep $ISO | cut -d: -f1)
 		if ! check_iso_for_loram ; then
 			echo "$2 is not a valid SliTaz live CD. Abort."
 			umount -d $TMP_DIR/iso
@@ -2538,7 +2539,8 @@ EOT
 		http)		build_loram_http ;;
 		*)		build_loram_ram ;;
 		esac
-		umount -d $TMP_DIR/iso
+		umount $TMP_DIR/iso	# no -d: needs /proc
+		losetup -d $loopdev
 		rm -rf $TMP_DIR ;;
 
 
