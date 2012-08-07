@@ -364,8 +364,9 @@ deduplicate()
 	find "$@" -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
 	   sort | ( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 	   while read attr inode link file; do
+	   	   [ -L "$file" ] && continue
 		   if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
-			   if cmp "$file" "$old_file" >/dev/null; then
+			   if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
 				   rm -f "$file"
 				   ln "$old_file" "$file"
 				   inode="$old_inode"
