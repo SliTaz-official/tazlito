@@ -323,6 +323,14 @@ lzma_set_size()
 	done | xargs echo -en | dd of=$1 conv=notrunc bs=1 seek=5 2> /dev/null
 }
 
+align_to_32bits()
+{
+	local size
+	size=$(stat -c %s $1)
+	[ $(($size & 3)) -ne 0 ] &&
+	dd if=/dev/zero bs=1 count=$((4 - ($size & 3))) >> $1 2> /dev/null
+}
+
 # Pack rootfs
 pack_rootfs()
 {
@@ -338,6 +346,7 @@ pack_rootfs()
 		echo "Generating gziped initramfs... "
 		gzip -9 > $2
 	fi
+	align_to_32bits $2
 	echo 1 > /tmp/rootfs
 }
 
@@ -355,6 +364,7 @@ write_initramfs()
 		echo "Creating rootfs.gz without compression... "
 		cat /tmp/list | cpio -o -H newc > /rootfs.gz
 	fi
+	align_to_32bits $2
 	echo 1 > /tmp/rootfs
 }
 
@@ -750,32 +760,27 @@ EOT
 	fi
 	[ -s /usr/share/boot/busybox-static ] || install_package busybox-static
 	need_lib=false
-	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/lib \
+	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/run \
 		 $TMP_DIR/initfs/mnt $TMP_DIR/initfs/proc $TMP_DIR/initfs/tmp \
-		 $TMP_DIR/initfs/sys
-	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz ]; do
+		 $TMP_DIR/initfs/sys $TMP_DIR/initfs/lib/modules
+	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z ]; do
 		install_package aufs $version || return 1
 	done
-	# bootfloppybox will need floppy.ko.gz, /dev/fd0, /dev/tty0
-	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.gz \
-		$TMP_DIR/initfs/lib 2> /dev/null
+	cp /init $TMP_DIR/initfs/
+	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
+	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
+		$TMP_DIR/initfs/lib/modules 2> /dev/null
 	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2> /dev/null
-	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.gz \
-		$TMP_DIR/initfs/lib
-	if [ -f /bin/cromfs-driver ]; then
-		cp /bin/cromfs-driver $TMP_DIR/initfs/bin
-		ls /bin/unmkcromfs | \
-			cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
-	else
-		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
-		while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.gz ]; do
-			install_package linux-squashfs $version || return 1
-		done
-		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.gz \
-			 $TMP_DIR/initfs/lib
-		ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
-			cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
-	fi
+	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z \
+		$TMP_DIR/initfs/lib/modules
+	[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
+	while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z ]; do
+		install_package linux-squashfs $version || return 1
+	done
+	cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
+		 $TMP_DIR/initfs/lib/modules
+	ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
+		cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	if [ "$1" == "cdrom" ]; then
 		for i in $(ls /dev/[hs]d[a-f]*); do
 			cp -a $i $TMP_DIR/initfs/dev
@@ -820,6 +825,7 @@ EOT
 	fi
 	if ! $need_lib && [ -x /usr/share/boot/busybox-static ]; then
 		cp /usr/share/boot/busybox-static $TMP_DIR/initfs/bin/busybox
+		sed -i 's/LD_T.*ot/echo ""/;s/".*ld-.) /"/' $TMP_DIR/initfs/init
 	else
 		cp /bin/busybox $TMP_DIR/initfs/bin
 		need_lib=true
@@ -835,7 +841,7 @@ EOT
 	$need_lib && for i in /lib/ld-* /lib/lib[cm].so* /lib/lib[cm]-* ; do
 		cp -a $i $TMP_DIR/initfs/lib
 	done
-	cat > $TMP_DIR/initfs/init <<EOTEOT
+	false && cat > $TMP_DIR/initfs/init <<EOTEOT
 #!/bin/sh
 
 getarg()
@@ -963,12 +969,8 @@ for i in \${path}rootfs* ; do
 	fs=\${i#*root}
 	branch=\$branch:/mnt/.\$fs
 	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs /mnt/.rw/mnt/.cdrom
-	if [ -f /bin/cromfs-driver ]; then
-		cromfs-driver \${path}root\$fs /mnt/.\$fs -o ro,dev,suid,allow_other
-	else
-		insmod /lib/squashfs.ko.gz 2> /dev/null
-		mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
-	fi
+	insmod /lib/squashfs.ko.gz 2> /dev/null
+	mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
 done
 else
 mkdir -p /mnt/.rw/mnt/.httpfs
@@ -984,13 +986,11 @@ EOTEOT
 	lzma e $TMP_DIR/initfs.gz -si
 	lzma_set_size $TMP_DIR/initfs.gz
 	rm -rf $TMP_DIR/initfs
-	rem=$(( $(stat -c "%s" $TMP_DIR/initfs.gz) % 4 ))
-	[ $rem -ne 0 ] &&
-	dd if=/dev/zero bs=1 count=$(( 4 - $rem )) >> $TMP_DIR/initfs.gz 2> /dev/null
+	align_to_32bits $TMP_DIR/initfs.gz
 	return 0
 }
 
-# Move each initramfs to squashfs (or cromfs)
+# Move each initramfs to squashfs
 build_loram_rootfs()
 {
 	rootfs_sizes=""
@@ -1000,11 +1000,7 @@ build_loram_rootfs()
 		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idm
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i)
-		if [ -x /usr/bin/mkcromfs ]; then
-			/usr/bin/mkcromfs -qq -f 262144 -b 16384 $TMP_DIR/fs $rootfs
-		else
-			/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
-		fi
+		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
 		( cd $(dirname $rootfs); echo $(basename $rootfs) | \
@@ -1016,7 +1012,7 @@ build_loram_rootfs()
 	done
 }
 
-# Move each initramfs to squashfs (or cromfs)
+# Move each initramfs to squashfs
 build_loram_rootfs_cdrom()
 {
 	mkdir -p $TMP_DIR/fs
@@ -1025,11 +1021,7 @@ build_loram_rootfs_cdrom()
 		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idmu
 	done
 	rootfs=$TMP_DIR/rootfs.gz
-	if [ -x /usr/bin/mkcromfs ]; then
-		/usr/bin/mkcromfs -qq -f 262144 -b 16384 $TMP_DIR/fs $rootfs
-	else
-		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
-	fi
+	/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
 	rm -rf $TMP_DIR/fs
 	cd - > /dev/null
 }
@@ -1137,9 +1129,7 @@ build_loram_ram()
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
 	rm -f $TMP_DIR/loramiso/boot/bzImage
 	ln $TMP_DIR/loramiso/boot/vmlinuz* $TMP_DIR/loramiso/boot/bzImage
-	rootfs=$(ls $TMP_DIR/rootfs* | sort | tail -n 1)
-	cat $rootfs >> $TMP_DIR/initfs.gz
-	mv $TMP_DIR/initfs.gz $rootfs
+	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	cp $TMP_DIR/rootfs* $TMP_DIR/loramiso/boot
 	update_metaiso_sizes
 	create_iso $OUTPUT $TMP_DIR/loramiso
@@ -2508,6 +2498,7 @@ EOT
 				2>/dev/null > $TMP_DIR/rootfs
 			lzma e $TMP_DIR/rootfs $i \
 				 $(lzma_switches $TMP_DIR/rootfs)
+			align_to_32bits $i
 			status
 		done
 
