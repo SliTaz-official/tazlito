@@ -2284,7 +2284,8 @@ Archive compression: $COMPRESSION"
 		# and some new users might have been added.
 		find bin etc init sbin var dev lib root usr home >/tmp/list
 
-		for dir in proc sys tmp mnt media media/cdrom media/flash media/usbdisk
+		for dir in proc sys tmp mnt media media/cdrom media/flash \
+			media/usbdisk run run/udev
 		do
 			echo $dir >>/tmp/list
 		done
