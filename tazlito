@@ -2272,8 +2272,7 @@ Archive compression: $COMPRESSION"
 			y|Y|yes|Yes)
 				echo -n "Removing current sound card and screen configurations..."
 				rm -f /var/lib/sound-card-driver
-				rm -f /etc/asound.state
-				rm -f /etc/X11/screen.conf
+				rm -f /var/lib/alsa/asound.state
 				rm -f /etc/X11/xorg.conf ;;
 			*)
 				echo -n "Keeping current sound card and screen configurations..." ;;
