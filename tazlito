@@ -1948,7 +1948,11 @@ EOT
 		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
 		# Build list with installed packages
 			for i in $(ls $INSTALLED); do
-				eval $(grep ^VERSION= $INSTALLED/$i/receipt)
+				if grep -q ^_realver $INSTALLED/$i/receipt ; then
+					VERSION=$(. $INSTALLED/$i/receipt 2>/dev/null ; echo $VERSION) 
+				else
+					eval $(grep ^VERSION= $INSTALLED/$i/receipt)
+				fi
 				EXTRAVERSION=""
 				eval $(grep ^EXTRAVERSION= $INSTALLED/$i/receipt)
 				echo "$i-$VERSION$EXTRAVERSION" >> $LIST_NAME
