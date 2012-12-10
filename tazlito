@@ -2415,6 +2415,7 @@ $ tazlito merge 160M slitaz-core.iso 96M rootfs-justx.gz 32M rootfs-base.gz
 
 Will start slitaz-core with 160M+ RAM, slitaz-justX with 96M-160M RAM,
 slitaz-base with 32M-96M RAM and display an error message if RAM < 32M.
+
 EOT
 			exit 2
 		fi
