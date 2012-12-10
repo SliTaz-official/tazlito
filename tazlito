@@ -1945,19 +1945,33 @@ EOT
 				exit 0
 			fi
 		fi
+		
 		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
+		
 		# Build list with installed packages
+			
 			for i in $(ls $INSTALLED); do
-				if grep -q ^_realver $INSTALLED/$i/receipt ; then
-					VERSION=$(. $INSTALLED/$i/receipt 2>/dev/null ; echo $VERSION) 
-				else
-					eval $(grep ^VERSION= $INSTALLED/$i/receipt)
-				fi
-				EXTRAVERSION=""
-				eval $(grep ^EXTRAVERSION= $INSTALLED/$i/receipt)
-				echo "$i-$VERSION$EXTRAVERSION" >> $LIST_NAME
+			
+			if grep -q ^_realver $INSTALLED/$i/receipt ; then
+			
+			VERSION=$(. $INSTALLED/$i/receipt 2>/dev/null ; echo $VERSION) 
+			
+			else
+			
+			eval $(grep ^VERSION= $INSTALLED/$i/receipt)
+			
+			fi
+			
+			EXTRAVERSION=""
+			
+			eval $(grep ^EXTRAVERSION= $INSTALLED/$i/receipt)
+			
+			echo "$i-$VERSION$EXTRAVERSION" >> $LIST_NAME
+			
 			done
+		
 		fi
+		
 		# Exit if no list name.
 		if [ ! -f "$LIST_NAME" ]; then
 			echo -e "\nNo packages list found or specified. Please read the docs.\n"
