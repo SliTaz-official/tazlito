@@ -249,6 +249,11 @@ create_iso()
 		/usr/bin/isohybrid $1 -entry 2 2> /dev/null
 		status
 	fi
+	if [ -x /usr/bin/iso2exe ]; then
+		echo -n "Creating EXE header..."
+		/usr/bin/iso2exe $1 2> /dev/null
+		status
+	fi
 	if [ -s /etc/tazlito/info ]; then
 		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
 			echo -n "Storing ISO info..."
