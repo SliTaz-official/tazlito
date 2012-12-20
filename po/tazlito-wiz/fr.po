@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-07-01 22:29+0000\n"
-"PO-Revision-Date: 2012-03-14 00:27+0100\n"
-"Last-Translator: Christophe Lincoln <pankso@slitaz.org>\n"
+"PO-Revision-Date: 2012-12-20 10:10+0100\n"
+"Last-Translator: Stanislas Leduc <shann@slitaz.org>\n"
 "Language-Team: French\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -53,7 +53,7 @@ msgstr "Editer la liste des paquets"
 
 #: tazlito-wiz:126
 msgid "SliTaz desktop wallpaper"
-msgstr "Fond d'écrand du bureau SliTaz"
+msgstr "Fond d'écran du bureau SliTaz"
 
 #: tazlito-wiz:128
 msgid "Wallpaper JPG image:"
@@ -69,7 +69,7 @@ msgid ""
 "cdrom."
 msgstr ""
 "\n"
-"Maintemant il temps de générer la distro. C'est le dernier moment pour "
+"Maintenant il temps de générer la distro. C'est le dernier moment pour "
 "recommencer ou stoper. La création d'un Live CD est gourmande en ressources "
 "et prend du temps.\\n\\n\n"
 "Notez que vous pouvez encore ajouter des fichiers dans le répertoire racine "
@@ -77,11 +77,11 @@ msgstr ""
 
 #: tazlito-wiz:153
 msgid "<b>Generate the distribution</b>"
-msgstr "<b>Génère la distribution</b>"
+msgstr "<b>Générer la distribution</b>"
 
 #: tazlito-wiz:167
 msgid "Building the Live system..."
-msgstr "Création du système Live"
+msgstr "Création du système Live..."
 
 #: tazlito-wiz:176
 msgid "Live system summary"
