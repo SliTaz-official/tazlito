@@ -1,4 +1,4 @@
-# TazLito Wiz Portuguese Translation.
+# TazLito Wiz Brazilian Portuguese Translation.
 # Copyright (C) 2012 www.slitaz.org 
 # This file is distributed under the same license as the TazLito Wiz package.
 # Claudinei Pereira <claudinei@slitaz.org>, 2012.
@@ -9,9 +9,9 @@ msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-07-01 22:29+0000\n"
-"PO-Revision-Date: 2012-03-14 03:28+0100\n"
+"PO-Revision-Date: 2013-01-27 01:45-0300\n"
 "Last-Translator: Claudinei Pereira <claudinei@slitaz.org>\n"
-"Language-Team: Portuguese <i18n@slitaz.org>\n"
+"Language-Team: Brazilian Portuguese <i18n@slitaz.org>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -39,12 +39,11 @@ msgid "Getting flavor file and packages list..."
 msgstr "Obtendo arquivo flavor e lista de pacotes..."
 
 #: tazlito-wiz:97
-#, fuzzy, sh-format
+#, sh-format
 msgid "Packages - The $skel has $pkgs packages"
 msgstr "Pacotes - o $skel possui $pkgs pacotes"
 
 #: tazlito-wiz:99
-#, fuzzy
 msgid "Additional packages separated by space or by line:"
 msgstr "Pacotes adicionais separados por espaço ou um por linha:"
 
@@ -61,7 +60,6 @@ msgid "Wallpaper JPG image:"
 msgstr "Imagem JPG do papel de parede:"
 
 #: tazlito-wiz:148
-#, fuzzy
 msgid ""
 "\n"
 "Now it's time to generate the distro. Last chance to start over or stop. "
@@ -72,7 +70,7 @@ msgstr ""
 "\n"
 "Agora é o momento de gerar a distribuição. Última chance para prosseguir ou "
 "parar. Criar um sistema Live demanda a utilização de recursos da máquina e "
-"pode levar um certo tempo.\\n\\n\n"
+"pode levar um certo tempo.\n"
 "Note que você ainda pode adicionar algum arquivo ao sistema de arquivos ou "
 "no cdrom."
 
