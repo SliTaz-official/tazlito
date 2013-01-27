@@ -3,7 +3,6 @@
 # This file is distributed under the same license as the TazLito Wiz package.
 # Claudinei Pereira <claudinei@slitaz.org>, 2012.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
