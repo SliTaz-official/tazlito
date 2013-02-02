@@ -376,21 +376,26 @@ write_initramfs()
 # Deduplicate files (MUST be on the same filesystem).
 deduplicate()
 {
-	find "$@" -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | \
-	   sort | ( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
+	find "$@" -type f -size +0c -xdev \
+		-exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
+	( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 	   while read attr inode link file; do
-	   	   [ -L "$file" ] && continue
-		   if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
-			   if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
-				   rm -f "$file"
-				   ln "$old_file" "$file"
-				   inode="$old_inode"
-				   [ "$link" = "1" ] && save="$(expr $save + ${attr%%-*})"
-			   fi
-		   fi
-		   old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
+		[ -L "$file" ] && continue
+		if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
+			if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
+				rm -f "$file"
+				if ln "$old_file" "$file" 2> /dev/null; then
+					inode="$old_inode"
+					[ "$link" = "1" ] && 
+					save="$(($save+(${attr%%-*}+512)/1024))"
+				else
+					cp "$old_file" "$file"
+				fi
+			fi
+		fi
+		old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
 	   done
-	   echo "$save bytes saved in duplicate files."
+	   echo "$save Kbytes saved in duplicate files."
 	)
 }
 
@@ -2126,7 +2131,9 @@ EOT
 			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
 			sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
 			  $ROOTCD/boot/isolinux/isolinux.msg 2> /dev/null
-			[ -f $ROOTCD/boot/isolinux/ifmem.c32 ] ||
+			[ -f $ROOTCD/boot/isolinux/ifmem.c32 -o \
+			  -f $ROOTCD/boot/isolinux/c32box.c32 ] ||
+			cp /boot/isolinux/c32box.c32 $ROOTCD/boot/isolinux 2> /dev/null ||
 			cp /boot/isolinux/ifmem.c32 $ROOTCD/boot/isolinux
 			n=0
 			last=$ROOTFS
