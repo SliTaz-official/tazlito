@@ -331,7 +331,7 @@ lzma_set_size()
 align_to_32bits()
 {
 	local size
-	size=$(stat -c %s $1)
+	size=$(stat -c %s ${1:-/dev/null})
 	[ $(($size & 3)) -ne 0 ] &&
 	dd if=/dev/zero bs=1 count=$((4 - ($size & 3))) >> $1 2> /dev/null
 }
@@ -369,7 +369,7 @@ write_initramfs()
 		echo "Creating rootfs.gz without compression... "
 		cat /tmp/list | cpio -o -H newc > /rootfs.gz
 	fi
-	align_to_32bits $2
+	align_to_32bits /rootfs.gz
 	echo 1 > /tmp/rootfs
 }
 
