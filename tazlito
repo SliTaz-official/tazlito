@@ -332,7 +332,7 @@ align_to_32bits()
 {
 	local size
 	size=$(stat -c %s ${1:-/dev/null})
-	[ $(($size & 3)) -ne 0 ] &&
+	[ $((${size:-0} & 3)) -ne 0 ] &&
 	dd if=/dev/zero bs=1 count=$((4 - ($size & 3))) >> $1 2> /dev/null
 }
 
@@ -773,6 +773,7 @@ EOT
 	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/run \
 		 $TMP_DIR/initfs/mnt $TMP_DIR/initfs/proc $TMP_DIR/initfs/tmp \
 		 $TMP_DIR/initfs/sys $TMP_DIR/initfs/lib/modules
+	ln -s bin $TMP_DIR/initfs/sbin
 	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z ]; do
 		install_package aufs $version || return 1
 	done
@@ -790,12 +791,10 @@ EOT
 	cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
 		 $TMP_DIR/initfs/lib/modules
 	ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
-		cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
-	if [ "$1" == "cdrom" ]; then
-		for i in $(ls /dev/[hs]d[a-f]*); do
-			cp -a $i $TMP_DIR/initfs/dev
-		done
-	fi
+	cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
+	for i in $(ls /dev/[hs]d[a-f]*); do
+		cp -a $i $TMP_DIR/initfs/dev
+	done
 	if [ "$1" == "http" ]; then
 		mkdir $TMP_DIR/initfs/etc
 		ln -s /proc/mounts $TMP_DIR/initfs/etc/mtab
@@ -992,6 +991,10 @@ mount -t aufs -o \$branch none /mnt
 [ -x /mnt/sbin/init ] && exec /bin/switch_root mnt /sbin/init || sh
 EOTEOT
 	chmod +x $TMP_DIR/initfs/init
+	for i in $TMP_DIR/initfs/lib/modules/*z ; do
+		unxz $i || gunzip $i || lzma d $i ${i%.gz}
+		rm -f $i
+	done 2> /dev/null
 	( cd $TMP_DIR/initfs ; find | busybox cpio -o -H newc 2> /dev/null) | \
 	lzma e $TMP_DIR/initfs.gz -si
 	lzma_set_size $TMP_DIR/initfs.gz
@@ -1127,6 +1130,8 @@ update_metaiso_sizes()
 		done
 		sed -i -e "/append [0-9]/s/append .*/append$new $1/" -e \
 			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
+		sed -i 's|\(initrd=\)\(/boot/rootfs.\.gz\)|\1/boot/rootfs.gz,\2|' $cfg
+		sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
 	done
 }
 
