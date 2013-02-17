@@ -774,6 +774,7 @@ EOT
 		 $TMP_DIR/initfs/mnt $TMP_DIR/initfs/proc $TMP_DIR/initfs/tmp \
 		 $TMP_DIR/initfs/sys $TMP_DIR/initfs/lib/modules
 	ln -s bin $TMP_DIR/initfs/sbin
+	ln -s . $TMP_DIR/initfs/usr
 	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z ]; do
 		install_package aufs $version || return 1
 	done
@@ -784,14 +785,18 @@ EOT
 	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2> /dev/null
 	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z \
 		$TMP_DIR/initfs/lib/modules
-	[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
-	while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z ]; do
-		install_package linux-squashfs $version || return 1
-	done
-	cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
-		 $TMP_DIR/initfs/lib/modules
-	ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
-	cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
+	if [ "$1" == "cdrom" ]; then
+		sed -i 's/mod squashfs//' $TMP_DIR/initfs/init
+	else
+		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
+		while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z ]; do
+			install_package linux-squashfs $version || return 1
+		done
+		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
+			 $TMP_DIR/initfs/lib/modules
+		ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
+		cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
+	fi
 	for i in $(ls /dev/[hs]d[a-f]*); do
 		cp -a $i $TMP_DIR/initfs/dev
 	done
@@ -834,7 +839,7 @@ EOT
 	fi
 	if ! $need_lib && [ -x /usr/share/boot/busybox-static ]; then
 		cp /usr/share/boot/busybox-static $TMP_DIR/initfs/bin/busybox
-		sed -i 's/LD_T.*ot/echo ""/;s/".*ld-.) /"/' $TMP_DIR/initfs/init
+		sed -i 's/LD_T.*ot/echo ""/;s/".*ld-.*) /"/' $TMP_DIR/initfs/init
 	else
 		cp /bin/busybox $TMP_DIR/initfs/bin
 		need_lib=true
@@ -850,7 +855,7 @@ EOT
 	$need_lib && for i in /lib/ld-* /lib/lib[cm].so* /lib/lib[cm]-* ; do
 		cp -a $i $TMP_DIR/initfs/lib
 	done
-	false && cat > $TMP_DIR/initfs/init <<EOTEOT
+	[ "$1" == "http" ] && cat > $TMP_DIR/initfs/init <<EOTEOT
 #!/bin/sh
 
 getarg()
@@ -879,8 +884,6 @@ mount -t proc proc /proc
 size="\$(grep rootfssize= < /proc/cmdline | \\
 	sed 's/.*rootfssize=\\([0-9]*[kmg%]\\).*/-o size=\\1/')"
 [ -n "\$size" ] || size="-o size=90%"
-
-if [ -x /bin/httpfs ]; then	# loram-http
 
 while read var default; do
 	eval \$var=\$default
@@ -921,53 +924,6 @@ while [ ! -d \$path/boot ]; do
 	done
 	mount -o loop,ro -t iso9660 \$path2/*.iso \$path
 done
-#copy_rootfs && umount -d \$path && umount -d \$path2
-
-elif [ -f \$(echo /rootfs*.gz | cut -f1 -d' ') ]; then	# loram-ram
-
-total=\$(grep MemTotal /proc/meminfo | sed 's/[^0-9]//g')
-free=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
-if [ \$(( \$total/\$free )) -gt 1 ] || ! mount -t tmpfs \$size tmpfs /mnt; then
-	echo "No tmpfs for /mnt"
-	mkdir -p /mnt/.rw
-	mount -t tmpfs tmpfs /mnt/.rw
-	mkdir -p /mnt/.rw/mnt/.rw
-	path=/
-else
-	mkdir -p /mnt/.rw
-	path=/mnt/.
-	for i in rootfs* ; do
-		mv /\$i \$path\$i
-	done
-fi
-
-else				# loram-cdrom
-
-getarg cdrom DRIVE_NAME ||
-DRIVE_NAME=\$(grep "drive name" < /proc/sys/dev/cdrom/info | cut -f 3)
-DEVICE=/dev/\$DRIVE_NAME
-DIR=fs
-if getarg loram DIR; then
-	DEVICE=\${DIR%,*}
-	DIR=/\${DIR#*,}
-fi
-mount -t tmpfs \$size tmpfs /mnt
-mkdir -p /mnt/.rw /mnt/.cdrom /mnt/mnt/.cdrom
-i=0
-while [ \$i -lt 5 ] && ! mount -r \$DEVICE /mnt/.cdrom; do
-	case "\$DEVICE" in
-	/dev/sd*|UUID=*|LABEL=*)
-		mount -t sysfs sysfs /sys
-		USBDELAY=\$(cat /sys/module/usb_storage/parameters/delay_use)
-		umount /sys
-		sleep \$((1+\$USBDELAY)) ;;
-	esac
-	i=\$((i+1))
-done
-path=/mnt/.cdrom/
-copy_rootfs && umount -d /mnt/.cdrom
-
-fi
 
 memfree=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
 umount /proc
@@ -1025,20 +981,6 @@ build_loram_rootfs()
 	done
 }
 
-# Move each initramfs to squashfs
-build_loram_rootfs_cdrom()
-{
-	mkdir -p $TMP_DIR/fs
-	cd $TMP_DIR/fs
-	for i in $(ls -r $TMP_DIR/iso/boot/rootfs*.gz); do
-		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idmu
-	done
-	rootfs=$TMP_DIR/rootfs.gz
-	/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
-	rm -rf $TMP_DIR/fs
-	cd - > /dev/null
-}
-
 # Move meta boot configuration files to basic configuration files
 # because meta loram flavor is useless when rootfs is not loaded in ram
 unmeta_boot()
@@ -1066,25 +1008,19 @@ unmeta_boot()
 build_loram_cdrom()
 {
 	build_initfs cdrom || return 1
-	build_loram_rootfs_cdrom
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
-	if [ "$1" == "small" ]; then
-		rm -f $TMP_DIR/loramiso/boot/root*
-	else
-		mkdir $TMP_DIR/loramiso/fs
-		cd $TMP_DIR/loramiso/fs
-		for i in $( ls ../boot/root* | sort -r ) ; do
-			( zcat $i 2> /dev/null || unlzma -c $i ) | cpio -idmu
-			rm -f $i
-		done
-		mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
-		cd - > /dev/null
-	fi
+	mkdir $TMP_DIR/loramiso/fs
+	cd $TMP_DIR/loramiso/fs
+	for i in $( ls ../boot/root* | sort -r ) ; do
+		( zcat $i 2> /dev/null || unlzma -c $i ) | cpio -idmu
+		rm -f $i
+	done
+	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
+	cd - > /dev/null
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
-	mv $TMP_DIR/rootfs*.gz $TMP_DIR/loramiso
 	unmeta_boot
 	VOLUM_NAME="SliTaz_LoRAM_CDROM"
-	sed -i "s/root=/loram=LABEL=$VOLUM_NAME,fs &/" \
+	sed -i "s|root=|isofs= rodev=/dev/cdrom/fs &|;s/.ive/cdrom/" \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
@@ -2549,7 +2485,6 @@ EOT
 
 		case "$4" in
 		cdrom)		build_loram_cdrom ;;
-		smallcdrom)	build_loram_cdrom small ;;
 		http)		build_loram_http ;;
 		*)		build_loram_ram ;;
 		esac
