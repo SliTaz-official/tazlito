@@ -1535,29 +1535,30 @@ code	data
 			echo -n "Extracting $FLAVOR..."
 			rm -rf $FLAVORS_REPOSITORY/$FLAVOR 2> /dev/null
 			mkdir -p $FLAVORS_REPOSITORY/$FLAVOR
-			echo "FLAVOR=\"$FLAVOR\"" > $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep ^Description $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/SHORT_DESC="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep ^Version $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/VERSION="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep ^Maintainer $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/MAINTAINER="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep -q '^Rootfs list' $TMP_DIR/$FLAVOR.desc && \
-			grep '^Rootfs list' $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/ROOTFS_SELECTION="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep '^Rootfs size' $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/ROOTFS_SIZE="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep ^Initramfs $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/INITRAMFS_SIZE="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
-			grep ^ISO $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/ISO_SIZE="\1"/' >> \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt
+			cp $TMP_DIR/$FLAVOR.receipt $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ echo "FLAVOR=\"$FLAVOR\"" > $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep ^Description $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/SHORT_DESC="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep ^Version $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/VERSION="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep ^Maintainer $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/MAINTAINER="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep -q '^Rootfs list' $TMP_DIR/$FLAVOR.desc && \
+			#~ grep '^Rootfs list' $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/ROOTFS_SELECTION="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep '^Rootfs size' $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/ROOTFS_SIZE="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep ^Initramfs $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/INITRAMFS_SIZE="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
+			#~ grep ^ISO $TMP_DIR/$FLAVOR.desc | \
+				#~ sed 's/.*: \(.*\)$/ISO_SIZE="\1"/' >> \
+				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
 			for i in rootcd rootfs; do
 				[ -f $TMP_DIR/$FLAVOR.$i ] || continue
 				mkdir $FLAVORS_REPOSITORY/$FLAVOR/$i
@@ -1598,10 +1599,16 @@ code	data
 					wget -O - $i/packages.list >> $TMP_DIR/packages.list
 				done
 			fi
-			#add distro;sh if exist
+			#add distro.sh if exist
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/distro.sh ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/distro.sh $TMP_DIR/$FLAVOR-distro.sh
 			fi
+			
+			# Get receipt in .flavor
+			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
+				cp $FLAVORS_REPOSITORY/$FLAVOR/receipt $TMP_DIR/$FLAVOR.receipt
+			fi
+			
 			[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] &&
 			get_pkglist $FLAVOR > $TMP_DIR/$FLAVOR.pkglist
 			if grep -q ^ROOTFS_SELECTION \
@@ -1709,6 +1716,11 @@ EOT
 			if [ -f "$TMP_DIR/$FLAVOR-distro.sh" ]; then
 				echo -n "Extracting distro.sh... "
 				mv $TMP_DIR/$FLAVOR-distro.sh  distro.sh 2> /dev/null
+				status
+			fi
+			if [ -f "$TMP_DIR/$FLAVOR.receipt" ]; then
+				echo -n "Extracting receipt... "
+				mv $TMP_DIR/$FLAVOR.receipt  receipt 2> /dev/null
 				status
 			fi
 			infos="$FLAVOR.desc"
@@ -2067,6 +2079,17 @@ EOT
 			echo "Executing distro script..."
 			sh $DISTRO_SCRIPT $DISTRO
 		fi
+		
+		# Execute the custom_rules found in receipt.
+		# 
+		if [ -s $TOP_DIR/receipt ]; then
+			if grep -q ^custom_rules $TOP_DIR/receipt; then
+				echo -e "Executing: custom_rules\n"
+				. $TOP_DIR/receipt
+				custom_rules || echo -e "\nERROR: custom_rules failed\n" 
+			fi
+		fi 
+		
 		if [ -s /etc/tazlito/rootfs.list ]; then
 			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
 			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
