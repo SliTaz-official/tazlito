@@ -12,7 +12,7 @@
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
 #
-VERSION=5.1
+VERSION=5.2
 
 . /lib/libtaz.sh
 
@@ -1608,9 +1608,22 @@ code	data
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/receipt $TMP_DIR/$FLAVOR.receipt
 			fi
-			
-			[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] &&
-			get_pkglist $FLAVOR > $TMP_DIR/$FLAVOR.pkglist
+
+			# Build the package list.
+			#
+			# On peut inclure une liste venant d'une autre saveur avec le mot clé @include
+			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ]; then
+				INCLUDE=$(grep '^@include' $FLAVORS_REPOSITORY/$FLAVOR/packages.list)
+				if [ ! -z "$INCLUDE" ]; then
+					INCLUDE=${INCLUDE#@include }
+					[ -s "$FLAVORS_REPOSITORY/$INCLUDE/packages.list" ] && \
+						get_pkglist $INCLUDE > $TMP_DIR/$FLAVOR.pkglist || \
+						echo -e "\nERROR: Can't find include package listfrom $INCLUDE\n"
+				fi
+				# Genrate the finale/initiale package list 
+				[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] && \
+					get_pkglist $FLAVOR >> $TMP_DIR/$FLAVOR.pkglist
+			fi
 			if grep -q ^ROOTFS_SELECTION \
 				$FLAVORS_REPOSITORY/$FLAVOR/receipt; then
 				. $FLAVORS_REPOSITORY/$FLAVOR/receipt
