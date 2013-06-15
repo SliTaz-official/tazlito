@@ -1618,9 +1618,9 @@ code	data
 					INCLUDE=${INCLUDE#@include }
 					[ -s "$FLAVORS_REPOSITORY/$INCLUDE/packages.list" ] && \
 						get_pkglist $INCLUDE > $TMP_DIR/$FLAVOR.pkglist || \
-						echo -e "\nERROR: Can't find include package listfrom $INCLUDE\n"
+						echo -e "\nERROR: Can't find include package list from $INCLUDE\n"
 				fi
-				# Genrate the finale/initiale package list 
+				# Generate the final/initial package list 
 				[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] && \
 					get_pkglist $FLAVOR >> $TMP_DIR/$FLAVOR.pkglist
 			fi
