@@ -703,8 +703,12 @@ F5 enhelp.txt
 F6 enopts.txt
 
 display isolinux.msg
-say Not enough RAM to boot slitaz. Give http://tiny.slitaz.org/ a try ?
-default reboot
+say Not enough RAM to boot slitaz. Trying hacker mode...
+default hacker
+label hacker
+	KERNEL /boot/bzImage
+	append rw root=/dev/null vga=normal
+
 label reboot
 EOT
 	if [ -s $1/c32box.c32 ]; then
@@ -786,7 +790,7 @@ EOT
 	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z \
 		$TMP_DIR/initfs/lib/modules
 	if [ "$1" == "cdrom" ]; then
-		sed -i 's/mod squashfs//' $TMP_DIR/initfs/init
+		sed -i '/mod squashfs/d' $TMP_DIR/initfs/init
 	else
 		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
 		while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z ]; do
