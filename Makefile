@@ -37,8 +37,11 @@ install: msgfmt
 	install -m 0755 -d $(DESTDIR)/etc/tazlito
 	install -m 0644 tazlito.conf $(DESTDIR)/etc/tazlito
 	install -m 0755 -d $(DESTDIR)/usr/share/doc
+	install -m 0755 -d $(DESTDIR)/var/www/tazpanel/menu.d
 	cp -a applications $(DESTDIR)/usr/share
 	cp -a doc $(DESTDIR)/usr/share/doc/tazlito
+	cp -a live.cgi $(DESTDIR)/var/www/tazpanel
+	cp -a live $(DESTDIR)/var/www/tazpanel/menu.d
 	# i18n
 	mkdir -p $(DESTDIR)$(PREFIX)/share/locale
 	cp -a po/mo/* $(DESTDIR)$(PREFIX)/share/locale
@@ -48,9 +51,11 @@ install: msgfmt
 uninstall:
 	rm -f $(PREFIX)/bin/tazlito
 	rm -f $(PREFIX)/bin/tazlito-wiz
-	rm -rf /etc/tazlito
-	rm -rf /usr/share/doc/tazlito
-	rm -rf /usr/share/applications/tazlito*.desktop
+	rm -f $(PREFIX)/var/www/tazpanel/menu.d/live
+	rm -f $(PREFIX)/var/www/tazpanel/live.cgi
+	rm -rf $(PREFIX)/etc/tazlito
+	rm -rf $(PREFIX)/usr/share/doc/tazlito
+	rm -rf $(PREFIX)/usr/share/applications/tazlito*.desktop
 	rm -rf $(PREFIX)/share/locale/*/LC_MESSAGES/tazlito*.mo
 
 clean:

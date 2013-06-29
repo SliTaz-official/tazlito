@@ -1,0 +1,11 @@
+cat <<EOT
+<li><a href="/live.cgi">$(gettext 'Live')</a>
+	<ul>
+		<li><a href="/live.cgi?liveusb">$(gettext 'Create a live USB key')</a></li>
+		<li><a href="/live.cgi#liveiso">$(gettext 'Create a live CD-ROM')</a></li>
+		<li><a href="/live.cgi#hybrid">$(gettext 'Create a hybrid ISO')</a></li>
+		<li><a href="/live.cgi#loram">$(gettext 'Convert ISO to loram')</a></li>
+		<li><a href="/live.cgi#meta">$(gettext 'Build a meta ISO')</a></li>
+	</ul>
+</li>
+EOT
