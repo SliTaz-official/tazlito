@@ -1,5 +1,5 @@
 cat <<EOT
-<li><a href="/live.cgi">$(gettext 'Live')</a>
+<li><a href="/live.cgi"><img src="/styles/default/images/tazlito.png" />$(gettext 'Live')</a>
 	<ul>
 		<li><a href="/live.cgi?liveusb">$(gettext 'Create a live USB key')</a></li>
 		<li><a href="/live.cgi#liveiso">$(gettext 'Create a live CD-ROM')</a></li>
