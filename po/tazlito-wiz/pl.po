@@ -1,0 +1,97 @@
+# Polish translation for TazLito Wiz package.
+# Copyright (C) 2013 SliTaz
+# This file is distributed under the same license as the TazLito Wiz package.
+# Paweł Pyrczak <support@pyrczak.pl>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TazLito Wiz\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-07-01 22:34+0000\n"
+"PO-Revision-Date: 2013-07-23 12:36+0100\n"
+"Last-Translator: Paweł Pyrczak <tkr.tkr.pl@gmail.com>\n"
+"Language-Team: Paweł Pyrczak <support@pyrczak.pl>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Poedit-Language: Polish\n"
+"X-Poedit-Country: POLAND\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: tazlito-wiz:47
+msgid "Edit the distro packages list"
+msgstr "Edycja listy pakietów dystrybucji"
+
+#: tazlito-wiz:56
+msgid "SliTaz Live system creator wizard"
+msgstr "Asystent Generowania systemu SliTaz Live"
+
+#: tazlito-wiz:58
+msgid "Distro name:"
+msgstr "Nazwa dystrybucji:"
+
+#: tazlito-wiz:59
+msgid "Based on:"
+msgstr "Bazujący na:"
+
+#: tazlito-wiz:79
+msgid "Getting flavor file and packages list..."
+msgstr "Pobieranie pliku konfiguracyjnego i listy pakietów..."
+
+#: tazlito-wiz:97
+#, sh-format
+msgid "Packages - The $skel has $pkgs packages"
+msgstr "Pakiety - $skel posiada $pkgs pakietów"
+
+#: tazlito-wiz:99
+msgid "Additional packages separated by space or by line:"
+msgstr "Dodatkowe pakiety oddzielone spacją, albo nową linią:"
+
+#: tazlito-wiz:100
+msgid "Edit packages list"
+msgstr "Edycja listy pakietów"
+
+#: tazlito-wiz:126
+msgid "SliTaz desktop wallpaper"
+msgstr "Tapeta pulpitu SliTaz"
+
+#: tazlito-wiz:128
+msgid "Wallpaper JPG image:"
+msgstr "Obraz JPG tapety:"
+
+#: tazlito-wiz:148
+msgid ""
+"\n"
+"Now it's time to generate the distro. Last chance to start over or stop. Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the cdrom."
+msgstr ""
+"\n"
+"Teraz przyszedł czas na wygenerowanie dystrybucji. Ostatnia szansta na wystartowanie albo rezygnację. Podczas tworzenia systemu Live zużywane\n"
+"są znaczne zasoby systemu i twa to jakiś czas. Nadal możesz dodać pliki do systemu plików SliTaz albo na cdrom."
+
+#: tazlito-wiz:153
+msgid "<b>Generate the distribution</b>"
+msgstr "<b>Wygeneruj dystrybucję</b>"
+
+#: tazlito-wiz:167
+msgid "Building the Live system..."
+msgstr "Budowanie systemu Live..."
+
+#: tazlito-wiz:176
+msgid "Live system summary"
+msgstr "Podsumowanie systemu Live"
+
+#: tazlito-wiz:178
+msgid "Generated ISO "
+msgstr "Wygenerowane ISO"
+
+#: tazlito-wiz:179
+msgid "Image size"
+msgstr "Rozmiar obrazu"
+
+#: tazlito-wiz:180
+msgid "Uncompressed size"
+msgstr "Rozmiar nieskompresowany"
+
