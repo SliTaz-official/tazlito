@@ -4,6 +4,6 @@ Name[fr]=Manuel de Tazlito
 Name[pt]=Manual do Tazlito
 Name[pt_BR]=Manual do Tazlito
 Exec=browser file:///usr/share/doc/tazlito/tazlito.html
-Icon=text-html
+Icon=slitaz-doc
 Type=Application
 Categories=Documentation;
