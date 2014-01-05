@@ -531,7 +531,7 @@ mergefs()
 	done
 
 	# cleanup directories
-	( cd $1; find -type d ) | sed '1!G;h;$!d' | while read file; do
+	( cd $1; find . -type d ) | sed '1!G;h;$!d' | while read file; do
 		[ -d $2/$file ] && rmdir $2/$file 2> /dev/null
 	done
 	true
