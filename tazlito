@@ -1358,7 +1358,7 @@ Distro directory    : $DISTRO"
 			exit 1
 		fi
 		mkdir $TMP_DIR
-		zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i > /dev/null)
+		zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i > /dev/null)
 		if [ "$3" = "--brief" ]; then
 			if [ "$4" != "--noheader" ]; then
 				echo "Name              ISO   Rootfs  Description"
@@ -1482,7 +1482,7 @@ code	data
 		FLAVOR=${2%.flavor}
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			mkdir $TMP_DIR
-			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
+			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			echo -n "Updating $FLAVOR package list..."
 			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
 			packed_size=0; unpacked_size=0
@@ -1508,14 +1508,14 @@ code	data
 				packed_size=$(($packed_size \
 					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
 				unpacked_size=$(($unpacked_size \
-					+ $(zcat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+					+ $(zcat < $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
 			fi
 			# Estimate lzma
 			packed_size=$(($packed_size * 2 / 3))
 			iso_size=$(( $packed_size + 26000 ))
 			if [ -s $TMP_DIR/$FLAVOR.rootcd ]; then
 				iso_size=$(($iso_size \
-					+ $(zcat $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
+					+ $(zcat < $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
 			fi
 			sed -i -e '/Image is ready/d' \
 			       -e "s/Rootfs size\( *:\) \(.*\)/Rootfs size\1 $(cent2human $unpacked_size)  (estimated)/" \
@@ -1534,7 +1534,7 @@ code	data
 		FLAVOR=${2%.flavor}
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
 			mkdir $TMP_DIR
-			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
+			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			echo -n "Extracting $FLAVOR..."
 			rm -rf $FLAVORS_REPOSITORY/$FLAVOR 2> /dev/null
 			mkdir -p $FLAVORS_REPOSITORY/$FLAVOR
@@ -1565,7 +1565,7 @@ code	data
 			for i in rootcd rootfs; do
 				[ -f $TMP_DIR/$FLAVOR.$i ] || continue
 				mkdir $FLAVORS_REPOSITORY/$FLAVOR/$i
-				zcat $TMP_DIR/$FLAVOR.$i | \
+				zcat < $TMP_DIR/$FLAVOR.$i | \
 				  (cd $FLAVORS_REPOSITORY/$FLAVOR/$i; \
 				   cpio -idm > /dev/null)
 			done
@@ -1661,14 +1661,14 @@ code	data
 				packed_size=$(($packed_size \
 					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
 				unpacked_size=$(($unpacked_size \
-					+ $(zcat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+					+ $(zcat < $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
 			fi
 			# Estimate lzma
 			packed_size=$(($packed_size * 2 / 3))
 			iso_size=$(( $packed_size + 26000 ))
 			if [ -s $TMP_DIR/$FLAVOR.rootcd ]; then
 				iso_size=$(($iso_size \
-					+ $(zcat $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
+					+ $(zcat < $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
 			fi
 			VERSION=""
 			MAINTAINER=""
@@ -1723,7 +1723,7 @@ EOT
 			status
 			mkdir $TMP_DIR
 			echo -n "Extracting flavor $FLAVOR.flavor... "
-			zcat $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
+			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
 			status
 			echo -n "Creating distro-packages.list..."
 			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
@@ -1744,9 +1744,9 @@ EOT
 				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
 					echo -n "Adding $i files... "
 					mkdir -p "$ADDFILES/$i"
-					zcat $TMP_DIR/$FLAVOR.$i | \
+					zcat < $TMP_DIR/$FLAVOR.$i | \
 						( cd "$ADDFILES/$i"; cpio -id > /dev/null)
-					zcat $TMP_DIR/$FLAVOR.$i | cpio -tv 2> /dev/null \
+					zcat < $TMP_DIR/$FLAVOR.$i | cpio -tv 2> /dev/null \
 						> $TMP_DIR/$FLAVOR.list$i
 					infos="$infos\n$FLAVOR.list$i"
 					status
@@ -2123,7 +2123,7 @@ EOT
 				[ -s $TOP_DIR/$flavor.flavor ] &&
 					cp $TOP_DIR/$flavor.flavor .
 				[ -s $flavor.flavor ] || download $flavor.flavor
-				zcat $flavor.flavor | cpio -i \
+				zcat < $flavor.flavor | cpio -i \
 					$flavor.pkglist $flavor.rootfs
 				sed 's/.*/&.tazpkg/' < $flavor.pkglist \
 					> $DISTRO/list-packages0$n
@@ -2136,7 +2136,7 @@ EOT
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
 					echo "Adding $flavor rootfs extra files..."
-					zcat $flavor.rootfs | \
+					zcat < $flavor.rootfs | \
 					( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
 				mv $flavor.pkglist ${ROOTFS}0$n/etc/tazlito/distro-packages.list
