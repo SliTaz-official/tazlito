@@ -257,7 +257,7 @@ create_iso()
 		fi
 	fi
 	if [ -x /usr/bin/iso2exe ]; then
-		echo -n "Creating EXE header..."
+		echo "Creating EXE header..."
 		/usr/bin/iso2exe $1 2> /dev/null
 		status
 	fi
@@ -2514,7 +2514,7 @@ EOT
 		fi
 		mkdir -p $TMP_DIR/iso
 		mount -o loop,ro -t iso9660 $ISO $TMP_DIR/iso
-		loopdev=$(losetup | grep $ISO | cut -d: -f1)
+		loopdev=$((losetup -a 2>/dev/null || losetup) | grep $ISO | cut -d: -f1)
 		if ! check_iso_for_loram ; then
 			echo "$2 is not a valid SliTaz live CD. Abort."
 			umount -d $TMP_DIR/iso
