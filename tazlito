@@ -359,15 +359,15 @@ write_initramfs()
 {
 	if [ "$COMPRESSION" = "lzma" ]; then
 		echo -n "Creating rootfs.gz with lzma compression... "
-		cat /tmp/list | cpio -o -H newc | lzma e -si -so > /rootfs.gz
+		cpio -o -H newc | lzma e -si -so > /rootfs.gz
 		lzma_set_size /rootfs.gz
 	elif [ "$COMPRESSION" = "gzip" ]; then
 		echo "Creating rootfs.gz with gzip compression... "
-		cat /tmp/list | cpio -o -H newc | gzip -9 > /rootfs.gz
+		cpio -o -H newc | gzip -9 > /rootfs.gz
 	else
 		echo "Creating rootfs.gz without compression... "
-		cat /tmp/list | cpio -o -H newc > /rootfs.gz
-	fi
+		cpio -o -H newc > /rootfs.gz
+	fi < /tmp/list
 	align_to_32bits /rootfs.gz
 	echo 1 > /tmp/rootfs
 }
@@ -953,6 +953,7 @@ EOTEOT
 	for i in $TMP_DIR/initfs/lib/modules/*z ; do
 		unxz $i || gunzip $i || lzma d $i ${i%.gz}
 		rm -f $i
+		gzip -9 ${i%.gz}
 	done 2> /dev/null
 	( cd $TMP_DIR/initfs ; find | busybox cpio -o -H newc 2> /dev/null) | \
 	lzma e $TMP_DIR/initfs.gz -si
@@ -1110,7 +1111,7 @@ find_flavor_rootfs()
 	cat $1$INSTALLED/*/md5sum | \
 	while read md5 file; do
 		[ -e $1$file ] || continue
-		[ "$(cat $1$file | md5sum)" == "$md5  -" ] &&
+		[ "$(md5sum < $1$file)" == "$md5  -" ] &&
 		rm -f $1$file
 	done
 
@@ -1506,7 +1507,7 @@ code	data
 			mv -f $TMP_DIR/$FLAVOR.pkglist.$$ $TMP_DIR/$FLAVOR.pkglist
 			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
 				packed_size=$(($packed_size \
-					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+					+ $(wc -c < $TMP_DIR/$FLAVOR.rootfs) / 100 ))
 				unpacked_size=$(($unpacked_size \
 					+ $(zcat < $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
 			fi
@@ -1659,7 +1660,7 @@ code	data
 			fi
 			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
 				packed_size=$(($packed_size \
-					+ $(cat $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
+					+ $(wc -c < $TMP_DIR/$FLAVOR.rootfs) / 100 ))
 				unpacked_size=$(($unpacked_size \
 					+ $(zcat < $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
 			fi
@@ -1768,7 +1769,7 @@ EOT
 				sed 's/.*: \(.*\)$/\1/' > /etc/tazlito/rootfs.list
 			echo -n "Updating tazlito.conf..."
 			[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
-			cat tazlito.conf | grep -v "^#VOLUM_NAME" | \
+			grep -v "^#VOLUM_NAME" < tazlito.conf | \
 			sed "s/^VOLUM_NA/VOLUM_NAME=\"SliTaz $FLAVOR\"\\n#VOLUM_NA/" \
 				> tazlito.conf.$$ && mv tazlito.conf.$$ tazlito.conf
 			sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$FLAVOR\"/" tazlito.conf
@@ -2378,8 +2379,8 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 		# Guess cdrom device, ask user and burn the ISO.
 		#
 		check_root
-		DRIVE_NAME=`cat /proc/sys/dev/cdrom/info | grep "drive name" | cut -f 3`
-		DRIVE_SPEED=`cat /proc/sys/dev/cdrom/info | grep "drive speed" | cut -f 3`
+		DRIVE_NAME=$(grep "drive name" < /proc/sys/dev/cdrom/info | cut -f 3)
+		DRIVE_SPEED=$(grep "drive speed" < /proc/sys/dev/cdrom/info | cut -f 3)
 		# We can specify an alternative ISO from the cmdline.
 		if [ -n "$2" ] ; then
 			iso=$2
@@ -2535,7 +2536,7 @@ EOT
 		fi
 		mkdir -p $TMP_DIR/iso
 		mount -o loop,ro -t iso9660 $ISO $TMP_DIR/iso
-		loopdev=$($(losetup -a 2>/dev/null || losetup) | grep $ISO | cut -d: -f1)
+		loopdev=$( (losetup -a 2>/dev/null || losetup) | grep $ISO | cut -d: -f1)
 		if ! check_iso_for_loram ; then
 			echo "$2 is not a valid SliTaz live CD. Abort."
 			umount -d $TMP_DIR/iso
