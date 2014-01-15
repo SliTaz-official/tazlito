@@ -2245,15 +2245,16 @@ EOT
 		fi
 		check_root
 		# Start info
-		echo ""
-		echo -e "\033[1mWrite filesystem to ISO\033[0m
-===============================================================================
+		newline
+		boldify "Write filesystem to ISO"
+		separator
+		cat << EOT
 The command writeiso will write the current filesystem into a suitable cpio
 archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso).
 
-Archive compression: $COMPRESSION"
-		echo ""
+$(boldify "Archive compression:") $(colorize 36 "$COMPRESSION")
 
+EOT
 		# Save some space
 		rm /var/cache/tazpkg/* -r -f
 		rm -rf /home/slitaz/distro
@@ -2273,11 +2274,31 @@ Archive compression: $COMPRESSION"
 			*)
 				echo -n "Keeping current sound card and screen configurations..." ;;
 		esac
+		status && newline
+		
+		# Optionally remove i18n settings
+		echo "Do you wish to remove local/keymap settings ? "
+		echo -n "Press ENTER to keep or answer (No|yes|exit): "
+		read anser
+		case $anser in
+			e|E|"exit"|Exit)
+				exit 0 ;;
+			y|Y|yes|Yes)
+				echo "Removing current locale/keymap settings..."
+				echo "" > /etc/locale.conf
+				echo "" > /etc/keymap.conf ;;
+			*)
+				echo "Keeping current locale/keymap settings..." ;;
+		esac
 		status
+		
+		# Clean-up files by default
+		echo "" > /etc/udev/rules.d/70-persistent-net.rules
+		echo "" > /etc/udev/rules.d/70-persistant-cd.rules
 
-		cd /
 		# Create list of files including default user files since it is defined in /etc/passwd
 		# and some new users might have been added.
+		cd /
 		find bin etc init sbin var dev lib root usr home >/tmp/list
 
 		for dir in proc sys tmp mnt media media/cdrom media/flash \
