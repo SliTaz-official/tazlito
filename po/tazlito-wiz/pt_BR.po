@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-01 22:29+0000\n"
+"POT-Creation-Date: 2014-02-16 15:29+0100\n"
 "PO-Revision-Date: 2013-01-27 01:45-0300\n"
 "Last-Translator: Claudinei Pereira <claudinei@slitaz.org>\n"
 "Language-Team: Brazilian Portuguese <i18n@slitaz.org>\n"
@@ -77,22 +77,22 @@ msgstr ""
 msgid "<b>Generate the distribution</b>"
 msgstr "<b>Geração da distribuição</b>"
 
-#: tazlito-wiz:167
+#: tazlito-wiz:169
 msgid "Building the Live system..."
 msgstr "Gerando o sistema Live..."
 
-#: tazlito-wiz:176
+#: tazlito-wiz:178
 msgid "Live system summary"
 msgstr "Resumo do sistema Live"
 
-#: tazlito-wiz:178
+#: tazlito-wiz:180
 msgid "Generated ISO "
 msgstr "ISO gerada "
 
-#: tazlito-wiz:179
+#: tazlito-wiz:181
 msgid "Image size"
 msgstr "Tamanho da imagem"
 
-#: tazlito-wiz:180
+#: tazlito-wiz:182
 msgid "Uncompressed size"
 msgstr "Tamanho sem compressão"

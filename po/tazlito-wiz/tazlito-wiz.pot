@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-01 22:34+0000\n"
+"POT-Creation-Date: 2014-02-16 15:29+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -71,22 +71,22 @@ msgstr ""
 msgid "<b>Generate the distribution</b>"
 msgstr ""
 
-#: tazlito-wiz:167
+#: tazlito-wiz:169
 msgid "Building the Live system..."
 msgstr ""
 
-#: tazlito-wiz:176
+#: tazlito-wiz:178
 msgid "Live system summary"
 msgstr ""
 
-#: tazlito-wiz:178
+#: tazlito-wiz:180
 msgid "Generated ISO "
 msgstr ""
 
-#: tazlito-wiz:179
+#: tazlito-wiz:181
 msgid "Image size"
 msgstr ""
 
-#: tazlito-wiz:180
+#: tazlito-wiz:182
 msgid "Uncompressed size"
 msgstr ""

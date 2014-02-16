@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-01 22:34+0000\n"
+"POT-Creation-Date: 2014-02-16 15:29+0100\n"
 "PO-Revision-Date: 2013-07-23 12:36+0100\n"
 "Last-Translator: Paweł Pyrczak <tkr.tkr.pl@gmail.com>\n"
 "Language-Team: Paweł Pyrczak <support@pyrczak.pl>\n"
@@ -15,7 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
 "X-Poedit-Language: Polish\n"
 "X-Poedit-Country: POLAND\n"
 "X-Poedit-SourceCharset: utf-8\n"
@@ -64,34 +65,37 @@ msgstr "Obraz JPG tapety:"
 #: tazlito-wiz:148
 msgid ""
 "\n"
-"Now it's time to generate the distro. Last chance to start over or stop. Creating a Live system uses quite a lot of resources and takes some time.\n"
-"Note you can still add some files to the SliTaz root filesystem or on the cdrom."
+"Now it's time to generate the distro. Last chance to start over or stop. "
+"Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the "
+"cdrom."
 msgstr ""
 "\n"
-"Teraz przyszedł czas na wygenerowanie dystrybucji. Ostatnia szansta na wystartowanie albo rezygnację. Podczas tworzenia systemu Live zużywane\n"
-"są znaczne zasoby systemu i twa to jakiś czas. Nadal możesz dodać pliki do systemu plików SliTaz albo na cdrom."
+"Teraz przyszedł czas na wygenerowanie dystrybucji. Ostatnia szansta na "
+"wystartowanie albo rezygnację. Podczas tworzenia systemu Live zużywane\n"
+"są znaczne zasoby systemu i twa to jakiś czas. Nadal możesz dodać pliki do "
+"systemu plików SliTaz albo na cdrom."
 
 #: tazlito-wiz:153
 msgid "<b>Generate the distribution</b>"
 msgstr "<b>Wygeneruj dystrybucję</b>"
 
-#: tazlito-wiz:167
+#: tazlito-wiz:169
 msgid "Building the Live system..."
 msgstr "Budowanie systemu Live..."
 
-#: tazlito-wiz:176
+#: tazlito-wiz:178
 msgid "Live system summary"
 msgstr "Podsumowanie systemu Live"
 
-#: tazlito-wiz:178
+#: tazlito-wiz:180
 msgid "Generated ISO "
 msgstr "Wygenerowane ISO"
 
-#: tazlito-wiz:179
+#: tazlito-wiz:181
 msgid "Image size"
 msgstr "Rozmiar obrazu"
 
-#: tazlito-wiz:180
+#: tazlito-wiz:182
 msgid "Uncompressed size"
 msgstr "Rozmiar nieskompresowany"
-

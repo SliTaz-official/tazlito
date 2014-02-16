@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-01 22:34+0000\n"
+"POT-Creation-Date: 2014-02-16 15:29+0100\n"
 "PO-Revision-Date: 2012-12-16 01:00+0200\n"
 "Last-Translator: Constantine Mousafiris <kvisitor@gnugr.org>\n"
 "Language-Team: Kostis Mousafiris\n"
@@ -76,22 +76,22 @@ msgstr ""
 msgid "<b>Generate the distribution</b>"
 msgstr "<b>Δημιουργήστε τη διανομή</b>"
 
-#: tazlito-wiz:167
+#: tazlito-wiz:169
 msgid "Building the Live system..."
 msgstr "Γίνεται το χτίσιμο του συστήματος live..."
 
-#: tazlito-wiz:176
+#: tazlito-wiz:178
 msgid "Live system summary"
 msgstr "Περίληψη του συστήματος live"
 
-#: tazlito-wiz:178
+#: tazlito-wiz:180
 msgid "Generated ISO "
 msgstr "Δημιουργήθηκε το ISO "
 
-#: tazlito-wiz:179
+#: tazlito-wiz:181
 msgid "Image size"
 msgstr "Μέγεθος εικόνας"
 
-#: tazlito-wiz:180
+#: tazlito-wiz:182
 msgid "Uncompressed size"
 msgstr "Ασυμπίεστο μέγεθος"

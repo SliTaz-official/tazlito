@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-01 22:34+0000\n"
+"POT-Creation-Date: 2014-02-16 15:29+0100\n"
 "PO-Revision-Date: 2012-07-05 03:17-0300\n"
 "Last-Translator: Rene Rivero <arca2@hotmail.com>\n"
 "Language-Team: Argentinian\n"
@@ -70,29 +70,29 @@ msgstr ""
 "Es el momento de generar la distro. Ultima oprtunidad para continuar o "
 "detenerse. Crear un sistema Live, demanda recursos de la maquina y puede "
 "llevar cierto tiempo.\n"
-"Tenga en cuenta que todavía puede agregar algún archivo a la raíz del sistema "
-"Slitaz o al CD-ROM."
+"Tenga en cuenta que todavía puede agregar algún archivo a la raíz del "
+"sistema Slitaz o al CD-ROM."
 
 #: tazlito-wiz:153
 msgid "<b>Generate the distribution</b>"
 msgstr "<b>Generar la distribución</b>"
 
-#: tazlito-wiz:167
+#: tazlito-wiz:169
 msgid "Building the Live system..."
 msgstr "Generando un sistema Live..."
 
-#: tazlito-wiz:176
+#: tazlito-wiz:178
 msgid "Live system summary"
 msgstr "Resumen del sistema Live"
 
-#: tazlito-wiz:178
+#: tazlito-wiz:180
 msgid "Generated ISO "
 msgstr "Generar ISO "
 
-#: tazlito-wiz:179
+#: tazlito-wiz:181
 msgid "Image size"
 msgstr "Tamaño de la imagen"
 
-#: tazlito-wiz:180
+#: tazlito-wiz:182
 msgid "Uncompressed size"
 msgstr "Tamaño sin comprimir"
