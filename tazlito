@@ -2114,10 +2114,12 @@ EOT
 				status
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
-					echo "Adding $flavor rootfs extra files..."
+					echo -n "Adding $flavor rootfs extra files..."
 					zcat < $flavor.rootfs | \
 					( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
+				# BUGGY
+				echo "Moving $flavor.pkglist to rootfs"
 				mv $flavor.pkglist ${ROOTFS}0$n/etc/tazlito/distro-packages.list
 				rm -f $flavor.flavor install-list
 				mergefs ${ROOTFS}0$n $last
