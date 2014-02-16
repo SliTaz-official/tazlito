@@ -74,8 +74,7 @@ ROOTCD=$DISTRO/rootcd
 #####################
 
 # Print the usage.
-usage ()
-{
+usage () {
 	echo -e "\nSliTaz Live Tool - Version: $VERSION\n
 \033[1mUsage: \033[0m `basename $0` [command] [list|iso|flavor|compression] [dir|iso]
 \033[1mCommands: \033[0m\n
@@ -112,9 +111,9 @@ yesorno()
 {
 	echo -n "$1"
 	case "$DEFAULT_ANSWER" in
-	Y|y) answer="y";;
-	N|n) answer="n";;
-	*) read answer;;
+		Y|y) answer="y";;
+		N|n) answer="n";;
+		*) read answer;;
 	esac
 }
 
@@ -137,15 +136,14 @@ download_from()
 	shift
 	for i in $mirrors; do
 		case "$i" in
-		http://*|ftp://*) wget -c $i$@ && break;;
+		http://*|ftp://*) busybox wget -c $i$@ && break;;
 		*) cp $i/$1 . && break;;
 		esac
 	done
 }
 
 # Download a file trying all mirrors
-download()
-{
+download() {
 	local i
 	for i in $(cat $MIRROR $LOCALSTATE/undigest/*/mirror 2> /dev/null); do
 		download_from "$i" "$@" && break
@@ -153,8 +151,7 @@ download()
 }
 
 # Execute hooks provided by some packages
-genisohooks()
-{
+genisohooks() {
 	local here=`pwd`
 	for i in $(ls $ROOTFS/etc/tazlito/*.$1 2> /dev/null); do
 		cd $ROOTFS
@@ -163,8 +160,7 @@ genisohooks()
 	cd $here
 }
 
-cleanup()
-{
+cleanup() {
 	if [ -d $TMP_MNT ]; then
 		umount $TMP_MNT
 		rmdir $TMP_MNT
@@ -426,8 +422,7 @@ gen_initramfs()
 	mv $(basename $1).gz $ROOTCD/boot
 }
 
-distro_sizes()
-{
+distro_sizes() {
 	if [ "$time" ]; then
 		time=$(($(date +%s) - $time))
 		sec=$time
@@ -441,17 +436,15 @@ Packages        : $(ls -1 $ROOTFS*$INSTALLED/*/receipt | wc -l)
 Rootfs size     : $(du -csh $ROOTFS*/ | awk '{ s=$1 } END { print s }')
 Initramfs size  : $(du -csh $ROOTCD/boot/rootfs*.gz | awk '{ s=$1 } END { print s }')
 ISO image size  : $(du -sh $ISO_NAME.iso | awk '{ print $1 }')
-================================================================================
-Image is ready: $ISO_NAME.iso
-
 EOT
+	separator
+	echo "Image is ready: $ISO_NAME.iso"
 }
 
 # Print ISO and rootfs size.
-distro_stats()
-{
-	echo ""
-	echo -e "\033[1mDistro statistics\033[0m ($DISTRO)"
+distro_stats() {
+	newline
+	boldify "Distro statistics ($DISTRO)"
 	separator
 	distro_sizes
 }

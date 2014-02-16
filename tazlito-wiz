@@ -8,7 +8,7 @@
 
 width="560"
 icon="/usr/share/pixmaps/slitaz-icon.png"
-opts="--height=300 --width=$width --image=$icon  
+opts="--height=300 --width=$width --image=$icon --center
 --image-on-top --window-icon=$icon --title=LiveWizard"
 rel=$(cat /etc/slitaz-release)
 [ "$rel" != "cooking" ] && rel=stable
@@ -38,7 +38,7 @@ mkdir -p $live && cd $live
 #
 
 progress() {
-	yad --progress --height="140" --width="$width" \
+	yad --progress --height="140" --width="$width" --center \
 		--image=$icon --image-on-top --window-icon=$icon \
 		--text="<b>$text</b>" --title="SliTaz Live progress" --auto-close
 }
@@ -162,7 +162,9 @@ gen_distro() {
 	# Deal with --button values
 	case $? in
 		1) exit 0 ;;
-		*) echo -e "\n" | tazlito gen-distro 2>&1 | yad \
+		*)
+			export output=gtk
+			echo -e "\n" | tazlito gen-distro 2>&1 | yad \
 			--text-info $opts --tail \
 			--text="<b>$(gettext "Building the Live system...")</b>" ;;
 	esac
