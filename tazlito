@@ -453,8 +453,7 @@ distro_stats() {
 empty_config_file()
 {
 	cat >> tazlito.conf << "EOF"
-# tazlito.conf: Tazlito (SliTaz Live Tool)
-# configuration file.
+# tazlito.conf: Tazlito (SliTaz Live Tool) configuration file.
 #
 
 # Name of the ISO image to generate.
@@ -1340,7 +1339,7 @@ Distro directory    : $DISTRO"
 			download flavors.list -O - > /etc/tazlito/flavors.list
 		fi
 		newline
-		echo -e "\033[1mList of flavors\033[0m"
+		boldify "List of flavors"
 		separator
 		cat /etc/tazlito/flavors.list
 		newline ;;
@@ -1418,7 +1417,7 @@ code	data
 		# Generate a new flavor from the last iso image generated.
 		FLAVOR=${2%.flavor}
 		newline
-		echo -e "\033[1mFlavor generation\033[0m"
+		boldify "Flavor generation"
 		separator
 		if [ -z "$FLAVOR" ]; then
 			echo -n "Flavor name : "
@@ -1863,9 +1862,9 @@ EOT
 		[ -f "$2" ] && DISTRO_PKGS_LIST=$2
 		[ ! -f $DISTRO_PKGS_LIST ] && echo "No packages list found." && exit 0
 		newline
-		echo -e "\033[1mLiveCD packages list check\033[0m"
+		boldify "LiveCD packages list check"
 		separator
-		for pkg in `cat $DISTRO_PKGS_LIST`
+		for pkg in $(cat $DISTRO_PKGS_LIST)
 		do
 			if ! grep -q "$pkg" $LOCALSTATE/packages.list; then
 				echo "Updating: $pkg"
@@ -1903,8 +1902,9 @@ EOT
 				exit 0
 			fi
 		fi
-		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
+		
 		# Build list with installed packages
+		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
 			for i in $(ls $INSTALLED); do
 				if grep -q ^_realver $INSTALLED/$i/receipt ; then
 					VERSION=$(. $INSTALLED/$i/receipt 2>/dev/null ; echo $VERSION) 
@@ -2034,7 +2034,7 @@ EOT
 		for pkg in $(cat $DISTRO/list-packages)
 		do
 			echo -n "Installing package: $pkg"
-			yes y | tazpkg install $pkg --root=$ROOTFS 2>&1 >> $log || exit 1
+			yes y | tazpkg -i $pkg --root=$ROOTFS 2>&1 >> $log || exit 1
 			status
 		done
 		rm -f $ROOTFS/var/lib/tazpkg/packages.*
@@ -2126,15 +2126,11 @@ EOT
 					status
 				done
 				rm -rf ${ROOTFS}0$n/boot ${ROOTFS}0$n/var/lib/tazpkg/packages.*
-				
 				cd $DISTRO
-				
 				if [ -s $flavor.rootfs ]; then
 					echo -n "Adding $flavor rootfs extra files..."
-					zcat < $flavor.rootfs | \
-					( cd ${ROOTFS}0$n ; cpio -idmu )
+					zcat < $flavor.rootfs | ( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
-				
 				echo -n "Moving list-packages0$n to rootfs0$n"
 				mv $DISTRO/list-packages0$n ${ROOTFS}0$n/etc/tazlito/distro-packages.list
 				status
@@ -2359,8 +2355,8 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 		md5sum $ISO_NAME.iso > $ISO_NAME.md5
 		status
 
-		echo "==============================================================================="
-		echo "ISO image: `du -sh /home/slitaz/distro/$ISO_NAME.iso`"
+		separator
+		echo "ISO image: $(du -sh /home/slitaz/distro/$ISO_NAME.iso)"
 		newline
 		echo -n "Exit or burn ISO to cdrom (Exit|burn)? "; read anser
 		case $anser in
@@ -2391,7 +2387,7 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 			exit 0
 		fi
 		newline
-		echo -e "\033[1mTazlito burn ISO\033[0m "
+		boldify "Tazlito burn ISO"
 		separator
 		echo "Cdrom device  : /dev/$DRIVE_NAME"
 		echo "Drive speed   : $DRIVE_SPEED"
