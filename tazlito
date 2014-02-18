@@ -1923,7 +1923,7 @@ EOT
 		fi
 		# Start generation.
 		newline
-		echo -e "\033[1mTazlito generating a distro\033[0m"
+		boldify "Tazlito generating a distro"
 		separator
 		# Misc checks
 		[ -n "$PACKAGES_REPOSITORY" ] || PACKAGES_REPOSITORY="."
@@ -1979,7 +1979,7 @@ EOT
 			fi
 		fi
 
-		# Root fs stuff.
+		# Rootfs stuff.
 		echo "Preparing the rootfs directory..."
 		mkdir -p $ROOTFS
 		for pkg in $LIST
@@ -2006,7 +2006,7 @@ EOT
 				mv $pkg.tazpkg $PACKAGES_REPOSITORY
 			fi
 			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
-				echo "Missing package $pkg."
+				echo "Missing package: $pkg"
 				cleanup
 				exit 1
 			fi
@@ -2076,7 +2076,6 @@ EOT
 		fi
 		
 		# Execute the custom_rules found in receipt.
-		# 
 		if [ -s $TOP_DIR/receipt ]; then
 			if grep -q ^custom_rules $TOP_DIR/receipt; then
 				echo -e "Executing: custom_rules\n"
@@ -2085,6 +2084,7 @@ EOT
 			fi
 		fi 
 		
+		# Multi-rootfs
 		if [ -s /etc/tazlito/rootfs.list ]; then
 			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
 			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
@@ -2098,29 +2098,46 @@ EOT
 			last=$ROOTFS
 			while read flavor; do
 				n=$(($n+1))
-				echo "Building $flavor rootfs..."
+				newline
+				boldify "Building $flavor rootfs..."
 				[ -s $TOP_DIR/$flavor.flavor ] &&
 					cp $TOP_DIR/$flavor.flavor .
-				[ -s $flavor.flavor ] || download $flavor.flavor
-				zcat < $flavor.flavor | cpio -i \
+				if [ ! -s $flavor.flavor ]; then
+					# We may have it in $FLAVORS_REPOSITORY
+					if [ -d "$FLAVORS_REPOSITORY/$flavor" ]; then
+						tazlito pack-flavor $flavor
+					else
+						download $flavor.flavor
+					fi
+				fi
+				echo -n "Extracting $flavor.pkglist and $flavor.rootfs..."
+				zcat < $flavor.flavor | cpio -i --quiet \
 					$flavor.pkglist $flavor.rootfs
 				sed 's/.*/&.tazpkg/' < $flavor.pkglist \
 					> $DISTRO/list-packages0$n
-				mkdir ${ROOTFS}0$n
-				cd $PACKAGES_REPOSITORY
-				yes y | tazpkg install-list \
-					$DISTRO/list-packages0$n --root=${ROOTFS}0$n
-				rm -rf ${ROOTFS}0$n/boot ${ROOTFS}0$n/var/lib/tazpkg/packages.*
 				status
+				mkdir ${ROOTFS}0$n
+				# Install packages
+				cd ${PACKAGES_REPOSITORY}
+				for pkg in $(cat $DISTRO/list-packages0$n)
+				do
+					echo -n "Installing package: $pkg"
+					yes y | tazpkg -i $pkg --root=${ROOTFS}0$n 2>&1 >> $log || exit 1
+					status
+				done
+				rm -rf ${ROOTFS}0$n/boot ${ROOTFS}0$n/var/lib/tazpkg/packages.*
+				
 				cd $DISTRO
+				
 				if [ -s $flavor.rootfs ]; then
 					echo -n "Adding $flavor rootfs extra files..."
 					zcat < $flavor.rootfs | \
 					( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
-				# BUGGY
-				echo "Moving $flavor.pkglist to rootfs"
-				mv $flavor.pkglist ${ROOTFS}0$n/etc/tazlito/distro-packages.list
+				
+				echo -n "Moving list-packages0$n to rootfs0$n"
+				mv $DISTRO/list-packages0$n ${ROOTFS}0$n/etc/tazlito/distro-packages.list
+				status
 				rm -f $flavor.flavor install-list
 				mergefs ${ROOTFS}0$n $last
 				last=${ROOTFS}0$n
@@ -2130,7 +2147,7 @@ EOT
 			i=$(($n+1))
 			while [ $n -gt 0 ]; do
 				mv ${ROOTFS}0$n ${ROOTFS}$i
-				echo "Compression ${ROOTFS}0$n ($(du -hs ${ROOTFS}$i | awk '{ print $1 }')) ..."
+				echo "Compressing ${ROOTFS}0$n ($(du -hs ${ROOTFS}$i | awk '{ print $1 }'))..."
 				gen_initramfs ${ROOTFS}$i
 				n=$(($n-1))
 				i=$(($i-1))
