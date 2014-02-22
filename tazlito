@@ -998,7 +998,7 @@ unmeta_boot()
 }
 
 # Move rootfs to squashfs filesystem(s) to the cdrom writeable with aufs.
-# These squashfs may be loaded in ram a boot time.
+# These squashfs may be loaded in ram at boot time.
 # Rootfs are also copied to cdrom for tiny ramsize systems.
 # Meta flavors are converted to normal flavors.
 build_loram_cdrom()
@@ -1596,7 +1596,7 @@ code	data
 					wget -O - $i/packages.list >> $TMP_DIR/packages.list
 				done
 			fi
-			#add distro.sh if exist
+			# add distro.sh if exists
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/distro.sh ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/distro.sh $TMP_DIR/$FLAVOR-distro.sh
 			fi
@@ -2416,7 +2416,7 @@ Usage: tazlito merge size1 iso size2 rootfs2 [sizeN rootfsN]...
 
 Merge multiple rootfs into one iso. Rootfs are like russian dolls
 i.e: rootfsN is a subset of rootfsN-1
-rootfs1 is found in iso, sizeN is the RAM size need to launch rootfsN.
+rootfs1 is found in iso, sizeN is the RAM size needed to launch rootfsN.
 The boot loader will select the rootfs according to the RAM size detected.
 
 Example:

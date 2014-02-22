@@ -199,7 +199,7 @@ new ISO image requiring less RAM to run.")</p>
 
 <h4 id="hybrid">$(gettext 'Build a hybrid ISO')</h4>
 
-<p>$(gettext "Add a master boot sector and a EXE header to the ISO image. \
+<p>$(gettext "Add a master boot sector and an EXE header to the ISO image. \
 ")</p>
 
 <form method="get" action="$SCRIPT_NAME#hybrid">
