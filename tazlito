@@ -104,7 +104,7 @@ $(boldify "Commands:")
   check-distro    Help to check if distro is ready to release.
   writeiso        Use running system to generate a bootable ISO (with /home).
   merge           Merge multiple rootfs into one iso.
-  reduplicate	  Reduplicate files in a tree.
+  deduplicate	  Deduplicate files in a tree.
   repack          Recompress rootfs into iso with maximum ratio.
   build-loram     Generate a live-CD for low ram systems.
   emu-iso         Emulate an ISO image with Qemu.
@@ -367,8 +367,8 @@ write_initramfs()
 	echo 1 > /tmp/rootfs
 }
 
-# Reduplicate files (MUST be on the same filesystem).
-reduplicate()
+# Deduplicate files (MUST be on the same filesystem).
+deduplicate()
 {
 	find "$@" -type f -size +0c -xdev \
 		-exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
@@ -404,7 +404,7 @@ gen_initramfs()
 	cd $1
 
 	# Link duplicate files
-	reduplicate .
+	deduplicate .
 
 	# Use lzma if installed. Display rootfs size in realtime.
 	rm -f /tmp/rootfs
@@ -2563,10 +2563,10 @@ EOT
 		echo -e "qemu $QEMU_OPTS $iso\n"
 		qemu $QEMU_OPTS $iso ;;
 
-	reduplicate)
-		# Reduplicate files in a tree
+	deduplicate)
+		# Deduplicate files in a tree
 		shift
-		reduplicate "$@" ;;
+		deduplicate "$@" ;;
 	
 	usage|*)
 		# Print usage also for all unknown commands.
