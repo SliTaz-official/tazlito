@@ -12,7 +12,7 @@
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
 #
-VERSION=5.2
+VERSION=5.2.2
 
 . /lib/libtaz.sh
 
@@ -686,14 +686,9 @@ else print;
 implicit 0
 prompt 1
 timeout 80
-F1 help.txt
-F2 options.txt
-F3 isolinux.msg
-F4 display.txt
-F5 enhelp.txt
-F6 enopts.txt
+$(grep '^F[0-9]' $1/isolinux.cfg)
 
-display isolinux.msg
+$([ -s $1/isolinux.msg ] && echo display isolinux.msg)
 say Not enough RAM to boot slitaz. Trying hacker mode...
 default hacker
 label hacker
@@ -2088,6 +2083,7 @@ EOT
 		if [ -s /etc/tazlito/rootfs.list ]; then
 			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
 			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
+			[ -s $ROOTCD/boot/isolinux/isolinux.msg ] &&
 			sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
 			  $ROOTCD/boot/isolinux/isolinux.msg 2> /dev/null
 			[ -f $ROOTCD/boot/isolinux/ifmem.c32 -o \
