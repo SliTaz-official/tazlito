@@ -1,0 +1,95 @@
+# Traditional Chinese translations for SliTaz tazlito-wiz package.
+# Copyright (C) 2014 Slitaz Association
+# This file is distributed under the same license as the SliTaz tazlito-wiz package.
+# lunglungyu <lunglungyu2004@gmail.com>, 2014.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TazLito Wiz\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-06-08 01:29+0800\n"
+"PO-Revision-Date: 2014-06-08 01:29+0800\n"
+"Last-Translator: <lunglungyu2004@gmail.com>\n"
+"Language-Team: \n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: tazlito-wiz:47
+msgid "Edit the distro packages list"
+msgstr "編輯發行的包清單"
+
+#: tazlito-wiz:56
+msgid "SliTaz Live system creator wizard"
+msgstr "SliTaz Live 系統創建向導"
+
+#: tazlito-wiz:58
+msgid "Distro name:"
+msgstr "發行版名稱:"
+
+#: tazlito-wiz:59
+msgid "Based on:"
+msgstr "建構於:"
+
+#: tazlito-wiz:79
+msgid "Getting flavor file and packages list..."
+msgstr "正在取得偏好文件及包清單..."
+
+#: tazlito-wiz:97
+#, sh-format
+msgid "Packages - The $skel has $pkgs packages"
+msgstr "包 - 共有 $pkgs 包"
+
+#: tazlito-wiz:99
+msgid "Additional packages separated by space or by line:"
+msgstr "以空格或行分隔的額外包"
+
+#: tazlito-wiz:100
+msgid "Edit packages list"
+msgstr "編輯包清單"
+
+#: tazlito-wiz:126
+msgid "SliTaz desktop wallpaper"
+msgstr "SliTaz 桌布"
+
+#: tazlito-wiz:128
+msgid "Wallpaper JPG image:"
+msgstr "桌布JPG圖像"
+
+#: tazlito-wiz:148
+msgid ""
+"\n"
+"Now it's time to generate the distro. Last chance to start over or stop. "
+"Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the "
+"cdrom."
+msgstr ""
+"現在將生成發行版.這是最後重設或停止的檵會."
+"創建Live系統需要使用大量系統資源及時間.\n"
+"但你仍可加入文件到SliTaz的根文件系統或"
+"光碟上."
+
+#: tazlito-wiz:153
+msgid "<b>Generate the distribution</b>"
+msgstr "<b>生成發行版</b>"
+
+#: tazlito-wiz:169
+msgid "Building the Live system..."
+msgstr "正在構建Live系統..."
+
+#: tazlito-wiz:178
+msgid "Live system summary"
+msgstr "Live系統摘要"
+
+#: tazlito-wiz:180
+msgid "Generated ISO "
+msgstr "生成的ISO "
+
+#: tazlito-wiz:181
+msgid "Image size"
+msgstr "映像大小"
+
+#: tazlito-wiz:182
+msgid "Uncompressed size"
+msgstr "未壓縮前大小"
