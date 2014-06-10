@@ -2357,6 +2357,7 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 		echo -n "Exit or burn ISO to cdrom (Exit|burn)? "; read anser
 		case $anser in
 			burn)
+				umount /dev/cdrom 2> /dev/null
 				eject
 				echo -n "Please insert a blank cdrom and press ENTER..."
 				read i && sleep 2
