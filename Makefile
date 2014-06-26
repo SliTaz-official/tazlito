@@ -4,7 +4,7 @@
 SBINDIR?=/sbin
 PREFIX?=/usr
 DOCDIR?=/usr/share/doc
-LINGUAS?=el es fr pl pt_BR
+LINGUAS?=el es fr pl pt_BR ru zh_CN zh_TW
 
 all:
 
