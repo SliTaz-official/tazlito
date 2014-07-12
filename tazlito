@@ -2297,7 +2297,7 @@ EOT
 		do
 			echo $dir >>/tmp/list
 		done
-		sed -i '/^\/var\/run\/.*pid$/d' /tmp/list
+		sed -i '\/var\/run\/.*pid$/d' /tmp/list
 
 		# Generate initramfs with specified compression and display rootfs
 		# size in realtime.
