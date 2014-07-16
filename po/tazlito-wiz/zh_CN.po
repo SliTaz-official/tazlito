@@ -8,10 +8,10 @@ msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-06-08 01:29+0800\n"
-"PO-Revision-Date: 2014-06-26 15:05+0800\n"
-"Last-Translator: 张文宇 <jame987165702@gmail.com>\n"
+"PO-Revision-Date: 2014-07-13 09:07+0800\n"
+"Last-Translator: rhsky <rhsky@qq.com>\n"
 "Language-Team: \n"
-"Language: zh_Hans_CN\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -41,7 +41,7 @@ msgstr "正在取得偏好文件及包清单..."
 #: tazlito-wiz:97
 #, sh-format
 msgid "Packages - The $skel has $pkgs packages"
-msgstr "包 - 共有 $pkgs 包"
+msgstr "软件包 -  $skel 共有 $pkgs 软件包"
 
 #: tazlito-wiz:99
 msgid "Additional packages separated by space or by line:"
@@ -57,7 +57,7 @@ msgstr "SliTaz 桌布"
 
 #: tazlito-wiz:128
 msgid "Wallpaper JPG image:"
-msgstr "桌布JPG图像"
+msgstr "桌布 JPG 格式图片"
 
 #: tazlito-wiz:148
 msgid ""
@@ -68,9 +68,9 @@ msgid ""
 "cdrom."
 msgstr ""
 "\n"
-"现在将生成发行版.这是最后重设或停止的檵会.创建Live系统需要使用大量系统资源及"
-"时间.\n"
-"但你仍可加入文件到SliTaz的根文件系统或光碟上."
+"现在将生成发行版.这是最后重设或中止的机会.创建 Live 系统需要使用大量系统资源"
+"及时间.  \n"
+"注：你仍可加入文件到 SliTaz 的根文件系统或光碟上."
 
 #: tazlito-wiz:153
 msgid "<b>Generate the distribution</b>"
@@ -94,4 +94,4 @@ msgstr "映像大小"
 
 #: tazlito-wiz:182
 msgid "Uncompressed size"
-msgstr "未压缩前大小"
+msgstr "未压缩时大小"
