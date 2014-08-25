@@ -220,7 +220,7 @@ create_iso()
 {
 	cd $2
 	echo -n "Computing md5..."
-	find * -type f ! -name md5sum -exec md5sum {} \; > md5sum
+	find * -type f ! -name md5sum ! -name 'vmlinuz*' -exec md5sum {} \; > md5sum
 	sed -i  -e '/  boot\/isolinux\/isolinux.bin$/d' \
 		-e '/  boot\/isolinux\/boot.cat$/d' md5sum
 	status
@@ -238,7 +238,7 @@ create_iso()
 	genisoimage -R -o $1 -b boot/isolinux/isolinux.bin \
  		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
-		-boot-info-table $2
+		-copyright README -P "www.slitaz.org" -boot-info-table $2
 	if [ -x /usr/bin/isohybrid ]; then
 		echo -n "Creating hybrid ISO..."
 		/usr/bin/isohybrid $1 -entry 2 2> /dev/null
@@ -2342,7 +2342,8 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 		echo "Generating ISO image..."
 		genisoimage -R -o $ISO_NAME.iso -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-		-V "SliTaz" -input-charset iso8859-1 -boot-info-table $ROOTCD
+		-V "SliTaz" -p "$(id -un)" -input-charset iso8859-1 \
+		-P "$(hostname)" -boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
 			echo -n "Creating hybrid ISO..."
 			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2> /dev/null
