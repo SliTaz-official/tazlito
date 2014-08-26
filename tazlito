@@ -219,6 +219,7 @@ verify_rootcd()
 create_iso()
 {
 	cd $2
+	deduplicate .
 	echo -n "Computing md5..."
 	find * -type f ! -name md5sum ! -name 'vmlinuz*' -exec md5sum {} \; > md5sum
 	sed -i  -e '/  boot\/isolinux\/isolinux.bin$/d' \
