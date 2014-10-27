@@ -371,9 +371,9 @@ write_initramfs()
 # Deduplicate files (MUST be on the same filesystem).
 deduplicate()
 {
-	find "$@" -type f -size +0c -xdev \
+	find "$@" -type f -xdev \
 		-exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
-	( save=0; old_attr=""; old_inode=""; old_link=""; old_file=""
+	( save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 	   while read attr inode link file; do
 		[ -L "$file" ] && continue
 		if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
@@ -382,6 +382,7 @@ deduplicate()
 				if ln "$old_file" "$file" 2> /dev/null; then
 					inode="$old_inode"
 					[ "$link" = "1" ] && 
+					hardlinks=$(($hardlinks+1)) &&
 					save="$(($save+(${attr%%-*}+512)/1024))"
 				else
 					cp "$old_file" "$file"
@@ -390,7 +391,29 @@ deduplicate()
 		fi
 		old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
 	   done
-	   echo "$save Kbytes saved in duplicate files."
+	   echo "$save Kbytes saved in $hardlinks duplicate files."
+	)
+	find "$@" -type l -xdev \
+		-exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
+	( old_attr=""; hardlinks=0; while read attr inode link file; do
+		attr="${attr/-TARGET-/-$(readlink $file)}"
+		if [ "$attr" = "$old_attr" ]; then
+			if [ "$inode" != "$old_inode" ]; then
+				rm -f "$file"
+				if ln "$old_file" "$file" 2> /dev/null; then
+					[ "$link" = "1" ] && 
+					hardlinks=$(($hardlinks+1))
+				else
+					cp -a "$old_file" "$file"
+				fi
+			fi
+		else
+			old_file="$file"
+			old_attr="$attr"
+			old_inode="$inode"
+		fi
+	   done
+	   echo "$hardlinks duplicate symlinks."
 	)
 }
 
@@ -408,7 +431,7 @@ gen_initramfs()
 	deduplicate .
 
 	# Use lzma if installed. Display rootfs size in realtime.
-	rm -f /tmp/rootfs
+	rm -f /tmp/rootfs 2> /dev/null
 	pack_rootfs . $DISTRO/$(basename $1).gz &
 	sleep 2
 	echo -en "\nFilesystem size:"
@@ -418,6 +441,7 @@ gen_initramfs()
 		echo -en "\\033[18G`du -sh $DISTRO/$(basename $1).gz | awk '{print $1}'`    "
 	done
 	echo -e "\n"
+	rm -f /tmp/rootfs
 	cd $DISTRO
 	mv $(basename $1).gz $ROOTCD/boot
 }
@@ -1143,6 +1167,12 @@ find_flavor_rootfs()
 ####################
 # Tazlito commands #
 ####################
+
+case "$0" in
+	*deduplicate)
+		deduplicate "$@"
+		exit 0 ;;
+esac
 
 case "$COMMAND" in
 	stats)
@@ -2291,18 +2321,21 @@ EOT
 		# Create list of files including default user files since it is defined in /etc/passwd
 		# and some new users might have been added.
 		cd /
-		find bin etc init sbin var dev lib root usr home >/tmp/list
+		for dir in bin etc init sbin var dev lib root usr home opt
+		do
+			[ -d $dir ] && find $dir
+		done >/tmp/list
 
 		for dir in proc sys tmp mnt media media/cdrom media/flash \
 			media/usbdisk run run/udev
 		do
-			echo $dir >>/tmp/list
-		done
+			[ -d $dir ] && echo $dir
+		done >>/tmp/list
 		sed -i '\/var\/run\/.*pid$/d' /tmp/list
 
 		# Generate initramfs with specified compression and display rootfs
 		# size in realtime.
-		rm -f /tmp/rootfs
+		rm -f /tmp/rootfs 2> /dev/null
 		write_initramfs &
 		sleep 2
 		cd - > /dev/null
@@ -2313,6 +2346,7 @@ EOT
 			echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
 		done
 		echo -e "\n"
+		rm -f /tmp/rootfs
 
 		# Move freshly generated rootfs to the cdrom.
 		mkdir -p $ROOTCD/boot
