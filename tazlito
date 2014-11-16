@@ -216,6 +216,21 @@ verify_rootcd()
 	fi
 }
 
+# isolinux.conf doesn't know the kernel version.
+# We name then kernel image 'bzImage'.
+# isolinux/syslinux first try with '64' suffix with a 64bits cpu.
+make_bzImage_hardlink()
+{
+	if [ -s ${1:-.}/vmlinuz*slitaz ]; then
+		rm -f ${1:-.}/bzImage 2> /dev/null
+		ln ${1:-.}/vmlinuz*slitaz ${1:-.}/bzImage
+	fi
+	if [ -s ${1:-.}/vmlinuz*slitaz64 ]; then
+		rm -f ${1:-.}/bzImage64 2> /dev/null
+		ln ${1:-.}/vmlinuz*slitaz64 ${1:-.}/bzImage64
+	fi
+}
+
 create_iso()
 {
 	cd $2
@@ -230,12 +245,7 @@ create_iso()
 	boldify "Generating ISO image"
 	separator
 	echo "Generating $1"
-	if [ $(ls $2/boot/vmlinuz* $2/boot/bzImage | wc -l) -eq 2 ]; then
-		if cmp $2/boot/vmlinuz* $2/boot/bzImage > /dev/null; then
-			rm -f $2/boot/bzImage
-			ln $2/boot/vmlinuz* $2/boot/bzImage
-		fi
-	fi
+	make_bzImage_hardlink $2/boot
 	genisoimage -R -o $1 -b boot/isolinux/isolinux.bin \
  		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
@@ -385,7 +395,7 @@ deduplicate()
 					hardlinks=$(($hardlinks+1)) &&
 					save="$(($save+(${attr%%-*}+512)/1024))"
 				else
-					cp "$old_file" "$file"
+					cp -a "$old_file" "$file"
 				fi
 			fi
 		fi
@@ -1094,8 +1104,7 @@ build_loram_ram()
 	build_initfs ram || return 1
 	build_loram_rootfs
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
-	rm -f $TMP_DIR/loramiso/boot/bzImage
-	ln $TMP_DIR/loramiso/boot/vmlinuz* $TMP_DIR/loramiso/boot/bzImage
+	make_bzImage_hardlink $TMP_DIR/loramiso/boot
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	cp $TMP_DIR/rootfs* $TMP_DIR/loramiso/boot
 	update_metaiso_sizes
@@ -1112,7 +1121,7 @@ find_flavor_rootfs()
 
 	# Clean hardlinks and files patched by genisofs in /boot
 	for i in isolinux/isolinux.bin isolinux/boot.cat bzImage ; do
-		rm -f $1/boot/$i
+		rm -f $1/boot/$i*
 	done
 
 	# Clean files generated in post_install
@@ -1308,7 +1317,7 @@ Distro directory    : $DISTRO"
 		mkdir -p $TARGET/rootcd/boot
 		echo -n "Copying the Linux kernel..."
 		if cp $TMP_DIR/boot/vmlinuz* $TARGET/rootcd/boot 2> /dev/null; then
-			ln $TARGET/rootcd/boot/vmlinuz* $TARGET/rootcd/boot/bzImage
+			make_bzImage_hardlink $TARGET/rootcd/boot
 		else
 			cp $TMP_DIR/boot/bzImage $TARGET/rootcd/boot
 		fi
@@ -2083,7 +2092,7 @@ EOT
 			echo -n "Moving the boot directory..."
 			mv $ROOTFS/boot $ROOTCD
 			cd $ROOTCD/boot
-			ln vmlinuz-* bzImage
+			make_bzImage_hardlink
 			status
 		fi
 		cd $DISTRO
@@ -2354,12 +2363,12 @@ EOT
 
 		# Now we need the kernel and isolinux files.
 		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
-			cp /media/cdrom/boot/bzImage $ROOTCD/boot
+			cp /media/cdrom/boot/bzImage* $ROOTCD/boot
 			cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
 			unmeta_boot $ROOTCD
 			umount /media/cdrom
 	      elif  mount |grep /media/cdrom; then
-	                cp /media/cdrom/boot/bzImage $ROOTCD/boot
+	                cp /media/cdrom/boot/bzImage* $ROOTCD/boot
 		        cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
 			unmeta_boot $ROOTCD
 			umount /media/cdrom;
@@ -2474,8 +2483,7 @@ EOT
 		mount -o loop,ro $1 $TMP_DIR/mnt 2> /dev/null
 		status || cleanup_merge
 		cp -a $TMP_DIR/mnt $TMP_DIR/iso
-		rm -f $TMP_DIR/iso/boot/bzImage
-		ln $TMP_DIR/iso/boot/vmlinuz* $TMP_DIR/iso/boot/bzImage
+		make_bzImage_hardlink $TMP_DIR/iso/boot
 		umount -d $TMP_DIR/mnt
 		if [ -f $TMP_DIR/iso/boot/rootfs1.gz ]; then
 			echo "$1 is already a merged iso. Aborting."
