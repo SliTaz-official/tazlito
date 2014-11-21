@@ -217,8 +217,8 @@ verify_rootcd()
 }
 
 # isolinux.conf doesn't know the kernel version.
-# We name then kernel image 'bzImage'.
-# isolinux/syslinux first try with '64' suffix with a 64bits cpu.
+# We name the kernel image 'bzImage'.
+# isolinux/syslinux first tries the '64' suffix with a 64bits cpu.
 make_bzImage_hardlink()
 {
 	if [ -s ${1:-.}/vmlinuz*slitaz ]; then
