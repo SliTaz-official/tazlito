@@ -12,7 +12,7 @@
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
 #
-VERSION=5.2.5
+VERSION=5.2.6
 
 . /lib/libtaz.sh
 
@@ -381,7 +381,7 @@ write_initramfs()
 # Deduplicate files (MUST be on the same filesystem).
 deduplicate()
 {
-	find "${@:-.}" -type f -xdev \
+	find "${@:-.}" -type f -size +0c -xdev \
 		-exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
 	( save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 	   while read attr inode link file; do
