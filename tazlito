@@ -12,7 +12,7 @@
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
 #
-VERSION=5.2.3
+VERSION=5.2.5
 
 . /lib/libtaz.sh
 
@@ -234,7 +234,7 @@ make_bzImage_hardlink()
 create_iso()
 {
 	cd $2
-	deduplicate .
+	deduplicate
 	echo -n "Computing md5..."
 	find * -type f ! -name md5sum ! -name 'vmlinuz*' -exec md5sum {} \; > md5sum
 	sed -i  -e '/  boot\/isolinux\/isolinux.bin$/d' \
@@ -381,7 +381,7 @@ write_initramfs()
 # Deduplicate files (MUST be on the same filesystem).
 deduplicate()
 {
-	find "$@" -type f -xdev \
+	find "${@:-.}" -type f -xdev \
 		-exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
 	( save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 	   while read attr inode link file; do
@@ -438,7 +438,7 @@ gen_initramfs()
 	cd $1
 
 	# Link duplicate files
-	deduplicate .
+	deduplicate
 
 	# Use lzma if installed. Display rootfs size in realtime.
 	rm -f /tmp/rootfs 2> /dev/null
@@ -1178,6 +1178,10 @@ find_flavor_rootfs()
 ####################
 
 case "$0" in
+	*reduplicate)
+		find ${@:-.} ! -type d -links +1 \
+			-exec cp -a {} {}$$ \; -exec mv {}$$ {} \;
+		exit 0 ;;
 	*deduplicate)
 		deduplicate "$@"
 		exit 0 ;;

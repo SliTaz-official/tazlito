@@ -33,6 +33,9 @@ msgfmt:
 install: msgfmt
 	install -m 0755 -d $(DESTDIR)$(PREFIX)/bin
 	install -m 0777 tazlito $(DESTDIR)$(PREFIX)/bin
+	-[ "$(VERSION)" ] && sed -i 's/^VERSION=[0-9].*/VERSION=$(VERSION)/' $(DESTDIR)$(PREFIX)/bin/tazlito
+	ln -s tazlito $(DESTDIR)$(PREFIX)/bin/deduplicate
+	ln -s tazlito $(DESTDIR)$(PREFIX)/bin/reduplicate
 	install -m 0777 tazlito-wiz $(DESTDIR)$(PREFIX)/bin
 	install -m 0755 -d $(DESTDIR)/etc/tazlito
 	install -m 0644 tazlito.conf $(DESTDIR)/etc/tazlito
@@ -52,6 +55,8 @@ install: msgfmt
 
 uninstall:
 	rm -f $(PREFIX)/bin/tazlito
+	rm -f $(PREFIX)/bin/deduplicate
+	rm -f $(PREFIX)/bin/reduplicate
 	rm -f $(PREFIX)/bin/tazlito-wiz
 	rm -f $(PREFIX)/var/www/tazpanel/menu.d/boot/live
 	rm -f $(PREFIX)/var/www/tazpanel/styles/default/images/tazlito.png
