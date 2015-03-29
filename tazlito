@@ -2294,6 +2294,21 @@ EOT
 		rm /var/cache/tazpkg/* -r -f
 		rm -rf /home/slitaz/distro
 
+		if [ -f /var/log/boot.log.0 ] || [ -f messages.0 ]; then
+			echo "Do you wish to keep LOG files in rootfs ? "
+			echo -n "Press ENTER to remove or answer (No|yes|exit): "
+			read anser
+		case $anser in
+			e|E|"exit"|Exit)
+				exit 0 ;;
+			y|Y|yes|Yes)
+				echo "Keeping current logs... KERNEL PANIC possible.";;
+			*)
+				RmLogs='Y' ;;
+		esac
+			status
+		fi
+
 		# Optionally remove sound card selection and screen resolution.
 		echo "Do you wish to remove the sound card and screen configs ? "
 		echo -n "Press ENTER to keep or answer (No|yes|exit): "
@@ -2334,17 +2349,25 @@ EOT
 		# Create list of files including default user files since it is defined in /etc/passwd
 		# and some new users might have been added.
 		cd /
-		for dir in bin etc init sbin var dev lib root usr home opt
+		echo 'init' > /tmp/list
+		for dir in bin etc sbin var dev lib root usr home opt
 		do
 			[ -d $dir ] && find $dir
-		done >/tmp/list
+		done >>/tmp/list
 
 		for dir in proc sys tmp mnt media media/cdrom media/flash \
 			media/usbdisk run run/udev
 		do
 			[ -d $dir ] && echo $dir
 		done >>/tmp/list
+
 		sed -i '\/var\/run\/.*pid$/d' /tmp/list
+
+		if [ $RmLogs == Y ]; then
+			for removeit in boot messages slim old; do
+				sed -i "\/var\/log\/$removeit/d" /tmp/list
+			done
+		fi
 
 		# Generate initramfs with specified compression and display rootfs
 		# size in realtime.
