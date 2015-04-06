@@ -11,7 +11,7 @@ icon="/usr/share/pixmaps/slitaz-icon.png"
 opts="--height=300 --width=$width --image=$icon --center
 --image-on-top --window-icon=$icon --title=LiveWizard"
 rel=$(cat /etc/slitaz-release)
-[ "$rel" != "cooking" ] && rel=stable
+#[ "$rel" != "cooking" ] && rel=stable
 live=/home/slitaz/$rel/live
 db="/var/lib/tazpkg"
 list="distro-packages.list"
