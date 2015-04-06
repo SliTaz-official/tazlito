@@ -1,4 +1,4 @@
-cat <<EOT
+[ "$REMOTE_USER" == "root" ] && cat <<EOT
 <li><a data-icon="cd" href="/live.cgi">$(gettext 'Live')</a>
 	<menu>
 		<li><a href="/live.cgi?liveusb">$(gettext 'Create a live USB key')</a></li>
