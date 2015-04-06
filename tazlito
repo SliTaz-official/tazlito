@@ -2328,6 +2328,8 @@ EOT
 		status
 		
 		# Clean-up files by default
+		mv -f /var/log/wtmp /var/log/.wtmp
+		touch /var/log/wtmp
 		newline > /etc/udev/rules.d/70-persistent-net.rules
 		newline > /etc/udev/rules.d/70-persistant-cd.rules
 
@@ -2346,10 +2348,11 @@ EOT
 			[ -d $dir ] && echo $dir
 		done >>/tmp/list
 
-		sed -i '\/var\/run\/.*pid$/d' /tmp/list
+		sed -i '/var\/run\/.*pid$/d'	/tmp/list
+		sed -i '/var\/run\/utmp/d'	/tmp/list
 
 		for removelog in auth boot messages dmesg daemon slim .*old Xorg; do
-			sed -i "\/var\/log\/$removelog/d" /tmp/list
+			sed -i "/var\/log\/$removelog/d" /tmp/list
 		done
 
 		# Generate initramfs with specified compression and display rootfs
@@ -2364,6 +2367,7 @@ EOT
 			sleep 1
 			echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
 		done
+		mv -f /var/log/.wtmp /var/log/wtmp
 		echo -e "\n"
 		rm -f /tmp/rootfs
 
@@ -2372,23 +2376,26 @@ EOT
 		mv -f /rootfs.gz $ROOTCD/boot
 
 		# Now we need the kernel and isolinux files.
-		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
+		copy_from_cd()
+		{
 			cp /media/cdrom/boot/bzImage* $ROOTCD/boot
 			cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
 			unmeta_boot $ROOTCD
 			umount /media/cdrom
-	      elif  mount |grep /media/cdrom; then
-	                cp /media/cdrom/boot/bzImage* $ROOTCD/boot
-		        cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
-			unmeta_boot $ROOTCD
-			umount /media/cdrom;
-	      else
+		}
+		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
+			copy_from_cd;
+		elif  mount |grep /media/cdrom; then
+			copy_from_cd;
+		else
+			echo "Located in: $ROOTCD/boot/rootfs.gz"
 			echo -e "
 When SliTaz is running in RAM the kernel and bootloader files are kept
 on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 /media/cdrom to let Tazlito copy the files.\n"
 			echo -en "----\nENTER to continue..."; read i
-			exit 1
+			[ ! -d /media/cdrom/boot/isolinux ] && exit 1
+			copy_from_cd
 		fi
 
 		# Generate the iso image.
