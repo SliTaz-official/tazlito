@@ -374,7 +374,7 @@ write_initramfs()
 		echo "Creating rootfs.gz without compression... "
 		cpio -o -H newc > /rootfs.gz
 	fi < /tmp/list
-	align_to_32bits /rootfs.gz
+	#align_to_32bits /rootfs.gz
 	echo 1 > /tmp/rootfs
 }
 
