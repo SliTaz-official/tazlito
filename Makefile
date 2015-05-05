@@ -45,7 +45,7 @@ install: msgfmt
 	cp -a applications $(DESTDIR)/usr/share
 	cp -a doc $(DESTDIR)/usr/share/doc/tazlito
 	cp -a live.cgi $(DESTDIR)/var/www/tazpanel
-	cp -a live $(DESTDIR)/var/www/tazpanel/menu.d/boot
+	ln -s ../../live.cgi $(DESTDIR)/var/www/tazpanel/menu.d/boot/live
 	cp -a tazlito.png $(DESTDIR)/var/www/tazpanel/styles/default/images
 	# i18n
 	mkdir -p $(DESTDIR)$(PREFIX)/share/locale

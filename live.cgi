@@ -22,6 +22,30 @@ fi
 get_config
 header
 
+#------
+# menu
+#------
+
+case "$1" in
+	menu)
+		TEXTDOMAIN_original=$TEXTDOMAIN
+		export TEXTDOMAIN='tazlito'
+		cat <<EOT
+<li><a data-icon="cd" href="live.cgi" data-root>$(gettext 'Live')</a>
+	<menu>
+		<li><a data-icon="" href="live.cgi?liveusb" data-root>$(gettext 'Create a live USB key')</a></li>
+		<li><a data-icon="" href="live.cgi#liveiso" data-root>$(gettext 'Create a live CD-ROM')</a></li>
+		<li><a data-icon="" href="live.cgi#hybrid" data-root>$(gettext 'Create a hybrid ISO')</a></li>
+		<li><a data-icon="" href="live.cgi#loram" data-root>$(gettext 'Convert ISO to loram')</a></li>
+		<li><a data-icon="" href="live.cgi#meta" data-root>$(gettext 'Build a meta ISO')</a></li>
+	</menu>
+</li>
+EOT
+		export TEXTDOMAIN=$TEXTDOMAIN_original
+		exit
+esac
+
+
 TITLE=$(gettext 'TazPanel - Live')
 
 # Build arguments to create a meta iso using 'tazlito merge' command
