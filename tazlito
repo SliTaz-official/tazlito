@@ -371,10 +371,12 @@ write_initramfs()
 		echo "Creating rootfs.gz with gzip compression... "
 		cpio -o -H newc | gzip -9 > /rootfs.gz
 	else
+		# align='y'
 		echo "Creating rootfs.gz without compression... "
 		cpio -o -H newc > /rootfs.gz
 	fi < /tmp/list
-	#align_to_32bits /rootfs.gz
+	# [ $align == '1' ] && align_to_32bits /rootfs.gz
+	# align_to_32bits /rootfs.gz
 	echo 1 > /tmp/rootfs
 }
 
@@ -2180,6 +2182,7 @@ EOT
 			done <<EOT
 $(awk '{ for (i = 4; i <= NF; i+=2) print $i; }' < /etc/tazlito/rootfs.list)
 EOT
+#'
 			i=$(($n+1))
 			while [ $n -gt 0 ]; do
 				mv ${ROOTFS}0$n ${ROOTFS}$i
@@ -2292,9 +2295,11 @@ $(boldify "Archive compression:") $(colorize 36 "$COMPRESSION")
 EOT
 		# Save some space
 		rm /var/cache/tazpkg/* -r -f
+		rm /var/lib/tazpkg/*.bak -f
 		rm -rf /home/slitaz/distro
 
 		# Optionally remove sound card selection and screen resolution.
+		if [ -z $LaunchedByTazpanel ]; then
 		echo "Do you wish to remove the sound card and screen configs ? "
 		echo -n "Press ENTER to keep or answer (No|yes|exit): "
 		read anser
@@ -2326,10 +2331,13 @@ EOT
 				echo "Keeping current locale/keymap settings..." ;;
 		esac
 		status
+		fi
 		
 		# Clean-up files by default
-		mv -f /var/log/wtmp /var/log/.wtmp
-		touch /var/log/wtmp
+		if [ ! $(find /var/log/wtmp -size +4k) = "" ]; then
+			mv -f /var/log/wtmp /tmp/tazlito-wtmp
+			touch /var/log/wtmp
+		fi
 		newline > /etc/udev/rules.d/70-persistent-net.rules
 		newline > /etc/udev/rules.d/70-persistant-cd.rules
 
@@ -2350,6 +2358,7 @@ EOT
 
 		sed -i '/var\/run\/.*pid$/d'	/tmp/list
 		sed -i '/var\/run\/utmp/d'	/tmp/list
+		sed -i '/.*\/.gvfs/d'	/tmp/list
 
 		for removelog in auth boot messages dmesg daemon slim .*old Xorg; do
 			sed -i "/var\/log\/$removelog/d" /tmp/list
@@ -2357,7 +2366,9 @@ EOT
 
 		# Generate initramfs with specified compression and display rootfs
 		# size in realtime.
-		rm -f /tmp/rootfs 2> /dev/null
+		rm -f /tmp/.write-iso*	2> /dev/null
+		rm -f /tmp/rootfs	2> /dev/null
+
 		write_initramfs &
 		sleep 2
 		cd - > /dev/null
@@ -2367,13 +2378,15 @@ EOT
 			sleep 1
 			echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
 		done
-		mv -f /var/log/.wtmp /var/log/wtmp
+		[ -f /tmp/tazlito-wtmp ] && \
+		mv -f /tmp/tazlito-wtmp /var/log/wtmp
 		echo -e "\n"
 		rm -f /tmp/rootfs
 
 		# Move freshly generated rootfs to the cdrom.
 		mkdir -p $ROOTCD/boot
 		mv -f /rootfs.gz $ROOTCD/boot
+		echo "Located in: $ROOTCD/boot/rootfs.gz"
 
 		# Now we need the kernel and isolinux files.
 		copy_from_cd()
@@ -2383,22 +2396,35 @@ EOT
 			unmeta_boot $ROOTCD
 			umount /media/cdrom
 		}
+		bootloader="/var/lib/tazpkg/installed/syslinux/volatile.cpio.gz"
 		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
 			copy_from_cd;
 		elif  mount |grep /media/cdrom; then
 			copy_from_cd;
+		elif [ -f "$bootloader" -a -f /boot/vmlinuz*slitaz* ]; then
+			cp $bootloader $ROOTCD
+			cd $ROOTCD
+			zcat	volatile.cpio.gz | cpio -id
+			rm -f	volatile.cpio.gz
+			[ -f /boot/*slitaz ] && \
+				cp /boot/vmlinuz*slitaz $ROOTCD/boot/bzImage
+			[ -f /boot/*slitaz64 ] && \
+				cp /boot/vmlinuz*slitaz64 $ROOTCD/boot/bzImage64
 		else
-			echo "Located in: $ROOTCD/boot/rootfs.gz"
+			touch /tmp/.write-iso-error
 			echo -e "
 When SliTaz is running in RAM the kernel and bootloader files are kept
 on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
-/media/cdrom to let Tazlito copy the files.\n"
+/media/cdrom (run # mount -o loop slitaz-rolling.iso /media/cdrom )
+to let Tazlito copy the files.\n"
 			echo -en "----\nENTER to continue..."; read i
 			[ ! -d /media/cdrom/boot/isolinux ] && exit 1
 			copy_from_cd
 		fi
 
 		# Generate the iso image.
+		touch /tmp/.write-iso
+		newline
 		cd $DISTRO
 		echo "Generating ISO image..."
 		genisoimage -R -o $ISO_NAME.iso -b boot/isolinux/isolinux.bin \
@@ -2416,7 +2442,9 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 
 		separator
 		echo "ISO image: $(du -sh /home/slitaz/distro/$ISO_NAME.iso)"
+		rm -f /tmp/.write-iso
 		newline
+		if [ -z $LaunchedByTazpanel ]; then
 		echo -n "Exit or burn ISO to cdrom (Exit|burn)? "; read anser
 		case $anser in
 			burn)
@@ -2428,7 +2456,8 @@ on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 				echo -en "----\nENTER to continue..."; read i ;;
 			*)
 				exit 0 ;;
-		esac ;;
+		esac
+		fi ;;
 	
 	burn-iso)
 		# Guess cdrom device, ask user and burn the ISO.

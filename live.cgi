@@ -76,10 +76,6 @@ merge_args()
 #
 
 case " $(GET) " in
-	*\ write_iso\ *)
-		$TERMINAL $TERM_OPTS \
-			-T "write-iso" \
-			-e "tazlito writeiso $(GET write_iso)" & ;;
 	*\ loramoutput\ *)
 		$TERMINAL $TERM_OPTS \
 			-T "build loram iso" \
@@ -147,12 +143,61 @@ EOT
 			yes | tazusb gen-liveusb $(GET gen)
 			echo '</pre>'
 		fi ;;
+	*\ write_iso\ *)
+		xhtml_header
+
+		LaunchedByTazpanel="y" \
+			tazlito writeiso $(GET write_iso) > /tmp/tazlitowriteiso 2>&1 &
+
+		until [ -f /rootfs.gz ]; do
+			sleep 1
+		done
+		cat << EOT
+<fieldset>
+$(head /tmp/tazlitowriteiso | sed "s|$|<p></p>|g" | sed '/.gvfs/d')
+<li id="fssize"> </li>
+EOT
+		until [ ! -f /rootfs.gz ]; do
+			sleep 1
+		cat << EOT
+<script type="text/javascript">
+document.getElementById('fssize').innerHTML = "<h4>$(boldify $(du -mh /rootfs.gz | cut -f1))</h4>";
+</script>
+EOT
+		done
+		if [ -f /rootfs.gz ]; then
+			until [ ! -f /rootfs.gz ]; do
+				sleep 1
+			done
+		fi
+		cat <<EOT
+<script type="text/javascript">
+document.getElementById('fssize').innerHTML = "$(boldify $(du -mh /home/slitaz/distro/rootcd/boot/rootfs.gz | cut -f1))";
+</script>
+/home/slitaz/distro/rootcd/boot/rootfs.gz
+</fieldset>
+EOT
+		until [ -f /tmp/.write-iso* ]; do
+			sleep 1
+		done
+		echo "<fieldset>"
+		if	[ -f /tmp/.write-iso ]; then
+			newline
+			tail /tmp/tazlitowriteiso | grep ISO
+			while [ -f /tmp/.write-iso ]; do sleep 1 ; done
+		elif [ -f /tmp/.write-iso-error ]; then
+			tail -n8 /tmp/tazlitowriteiso | grep -vE 'ENTER|----'
+		fi
+		tail -n5 /tmp/tazlitowriteiso | sed "s|$|<p></p>|g"
+		echo "</fieldset>"
+		echo "Use ' <code>tazlito emu-iso</code> ' to check it" ;;
 	*)
 		#
 		# Default xHTML content
 		#
 		xhtml_header
 		cat << EOT
+<header id="liveiso"> <header>
 <div id="wrapper">
 	<h2>$(gettext 'SliTaz Live Systems')</h2>
 	<p>$(gettext 'Create and manage Live CD or USB SliTaz systems')<p>
@@ -163,10 +208,12 @@ EOT
 		<img src="$IMAGES/harddisk.png" />$(gettext 'Create LiveUSB')</a>
 </div>
 
+<fieldset >
+<h3 id="loram">$(gettext 'Write a Live CD')</h3>
 
-<!--
-<h3 id="livecd">$(gettext 'Write a Live CD')</h3>
+<!-- id="livecd" -->
 
+<div>
 <p>$(gettext "The command writeiso will generate an ISO image of the current \
 filesystem as is, including all files in the /home directory. It is an easy \
 way to remaster a SliTaz Live system, you just have to: boot, modify, \
@@ -180,12 +227,21 @@ writeiso.")</p>
 		<option value="none">$(gettext 'none')</option>
 	</select>
 	<input type="submit" value="$(gettext 'Write ISO')" />
-</form> -->
+</form>
+$([ ! -d /media/cdrom/boot/isolinux -a ! -f /boot/*slitaz* ] && \
+echo '<p> Cannot find Slitaz ISO/cd mounted in /media/cdrom (You will get only rootfs.gz)</p>')
+</div>
+</fieldset>
 
+<p></p>
+<fieldset>
 
 <h3>$(gettext 'Live CD tools')</h3>
 
-<h4 id="loram">$(gettext 'Convert ISO to loram')</h4>
+<fieldset>
+<h4>$(gettext 'Convert ISO to loram')</h4>
+
+<!-- id="loram" -->
 
 <p>$(gettext "This command will convert an ISO image of a SliTaz Live CD to a \
 new ISO image requiring less RAM to run.")</p>
@@ -219,8 +275,9 @@ new ISO image requiring less RAM to run.")</p>
 	</table>
 	<input type="submit" value="$(gettext 'Convert ISO to loram')" />
 </form>
+</fieldset>
 
-
+<fieldset>
 <h4 id="hybrid">$(gettext 'Build a hybrid ISO')</h4>
 
 <p>$(gettext "Add a master boot sector and an EXE header to the ISO image. \
@@ -237,7 +294,9 @@ new ISO image requiring less RAM to run.")</p>
 	</table>
 	<input type="submit" name="hybrid" value="$(gettext 'Build a hybrid ISO')" />
 </form>
+</fieldset>
 
+<fieldset>
 <h4 id="meta">$(gettext 'Build a meta ISO')</h4>
 
 <p>$(gettext "Combines several ISO flavors like nested Russian dolls. The \
@@ -283,6 +342,8 @@ EOT
 	</table>
 	<input type="submit" name="meta" value="$(gettext 'Build a meta ISO')" />
 </form>
+</fieldset>
+</fieldset>
 
 EOT
 		;;
