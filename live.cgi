@@ -20,7 +20,6 @@ fi
 # Common functions from libtazpanel
 . lib/libtazpanel
 get_config
-header
 
 #------
 # menu
@@ -47,6 +46,7 @@ esac
 
 
 TITLE=$(gettext 'TazPanel - Live')
+header
 
 # Build arguments to create a meta iso using 'tazlito merge' command
 merge_args()
