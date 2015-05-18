@@ -677,7 +677,7 @@ BEGIN {
 	kernel="	COM32 c32box.c32"
 }
 {
-if (/ROWS/) print "MENU ROW " n+$3;
+if (/ROWS/) print "MENU ROWS " n+$3;
 else if (/TIMEOUTROW/) print "MENU TIMEOUTROW " n+$3;
 else if (/TABMSGROW/) print "MENU TABMSGROW " n+$3;
 else if (/CMDLINEROW/) print "MENU CMDLINEROW " n+$3;
