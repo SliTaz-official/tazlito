@@ -375,7 +375,7 @@ write_initramfs()
 		echo "Creating rootfs.gz without compression... "
 		cpio -o -H newc > /rootfs.gz
 	fi < /tmp/list
-	# [ $align == '1' ] && align_to_32bits /rootfs.gz
+	# [ $align == 'y' ] && align_to_32bits /rootfs.gz
 	# align_to_32bits /rootfs.gz
 	echo 1 > /tmp/rootfs
 }
@@ -2334,10 +2334,6 @@ EOT
 		fi
 		
 		# Clean-up files by default
-		if [ ! $(find /var/log/wtmp -size +4k) = "" ]; then
-			mv -f /var/log/wtmp /tmp/tazlito-wtmp
-			touch /var/log/wtmp
-		fi
 		newline > /etc/udev/rules.d/70-persistent-net.rules
 		newline > /etc/udev/rules.d/70-persistant-cd.rules
 
@@ -2356,18 +2352,22 @@ EOT
 			[ -d $dir ] && echo $dir
 		done >>/tmp/list
 
-		sed -i '/var\/run\/.*pid$/d'	/tmp/list
-		sed -i '/var\/run\/utmp/d'	/tmp/list
-		sed -i '/.*\/.gvfs/d'	/tmp/list
-
-		for removelog in auth boot messages dmesg daemon slim .*old Xorg; do
+		sed '/var\/run\/.*pid$/d ; /var\/run\/utmp/d ; /.*\/.gvfs/d' -i /tmp/list
+		
+		if [ ! $(find /var/log/slitaz/tazpkg.log -size +4k) = "" ]; then
+			sed -i "/var\/log\/slitaz\/tazpkg.log/d" /tmp/list
+		fi
+		mv -f /var/log/wtmp /tmp/tazlito-wtmp
+		touch /var/log/wtmp
+		
+		for removelog in \
+		auth boot messages dmesg daemon slim .*old Xorg tazpanel cups; do
 			sed -i "/var\/log\/$removelog/d" /tmp/list
 		done
 
 		# Generate initramfs with specified compression and display rootfs
 		# size in realtime.
-		rm -f /tmp/.write-iso*	2> /dev/null
-		rm -f /tmp/rootfs	2> /dev/null
+		rm -f /tmp/.write-iso*  /tmp/rootfs	2>/dev/null
 
 		write_initramfs &
 		sleep 2
@@ -2378,7 +2378,6 @@ EOT
 			sleep 1
 			echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
 		done
-		[ -f /tmp/tazlito-wtmp ] && \
 		mv -f /tmp/tazlito-wtmp /var/log/wtmp
 		echo -e "\n"
 		rm -f /tmp/rootfs
