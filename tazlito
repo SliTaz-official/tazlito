@@ -326,7 +326,7 @@ lzma_set_size()
 	local n
 	local i
 	return # Need to fix kernel code ?
-	n=$(unlzma -c $1 | wc -c)
+	n=$(unlzma < $1 | wc -c)
 	for i in $(seq 1 8); do
 		printf '\\\\x%02X' $(($n & 255))
 		n=$(($n >> 8))
@@ -524,7 +524,7 @@ EOF
 # extract rootfs.gz somewhere
 extract_rootfs()
 {
-	(zcat $1 || unlzma -c $1 || cat $1) 2>/dev/null | \
+	(zcat $1 || unlzma < $1 || cat $1) 2>/dev/null | \
 		(cd $2; cpio -idm > /dev/null)
 }
 
@@ -802,15 +802,16 @@ EOT
 		 $TMP_DIR/initfs/sys $TMP_DIR/initfs/lib/modules
 	ln -s bin $TMP_DIR/initfs/sbin
 	ln -s . $TMP_DIR/initfs/usr
-	while [ ! -f /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z ]; do
-		install_package aufs $version || return 1
-	done
+	for aufs in aufs overlayfs ; do
+		[ ! -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] &&
+		install_package $fs $version && break
+	done || return 1
 	cp /init $TMP_DIR/initfs/
 	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
 	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
 		$TMP_DIR/initfs/lib/modules 2> /dev/null
 	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2> /dev/null
-	cp /lib/modules/$version/kernel/fs/aufs/aufs.ko.?z \
+	cp /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z \
 		$TMP_DIR/initfs/lib/modules
 	if [ "$1" == "cdrom" ]; then
 		sed -i '/mod squashfs/d' $TMP_DIR/initfs/init
@@ -855,7 +856,7 @@ EOT
 		cd $TMP_DIR/initfs
 		echo "Getting slitaz-release..."
 		for i in $TMP_DIR/iso/boot/rootfs*.gz; do
-			( zcat $i 2> /dev/null || unlzma -c $i) | \
+			( zcat $i 2> /dev/null || unlzma < $i) | \
 			cpio -idmu etc/slitaz-release > /dev/null
 		done
 		cd - > /dev/null
@@ -944,7 +945,7 @@ fi
 mount -t tmpfs \$size tmpfs /mnt
 path2=/mnt/.httpfs/
 path=/mnt/.cdrom/
-mkdir -p /mnt/.rw \$path \$path2
+mkdir -p /mnt/.rw /mnt/.wd \$path \$path2
 while [ ! -d \$path/boot ]; do
 	for i in \$(echo \$URLISO | sed 's/,/ /g'); do
 		httpfs \$i \$path2 && break
@@ -954,9 +955,9 @@ done
 
 memfree=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
 umount /proc
-branch=br=/mnt/.rw:/mnt/.cdrom/\$DIR
+branch=:/mnt/.cdrom/\$DIR
 if [ ! -d /mnt/.cdrom/\$DIR/etc ]; then
-branch=br=/mnt/.rw
+branch=
 for i in \${path}rootfs* ; do
 	fs=\${i#*root}
 	branch=\$branch:/mnt/.\$fs
@@ -967,8 +968,12 @@ done
 else
 mkdir -p /mnt/.rw/mnt/.httpfs
 fi
-insmod /lib/aufs.ko.gz
-mount -t aufs -o \$branch none /mnt
+while read type opt; do
+	insmod /lib/\$type.ko.gz && mount -t \$type -o \$opt none /mnt && break
+done <<EOT
+aufs		br=/mnt/.rw\$branch
+overlayfs	workdir=/mnt/.wd\${branch/:/,lowerdir=},upperdir=/mnt/.rw
+EOT
 [ -x /bin/httpfs ] && sed -i 's/DHCP="yes"/DHCP="no"/' /mnt/etc/network.conf
 [ \$memfree -lt 30000 ] && sed -i 's/ slim//' /mnt/etc/rcS.conf
 [ -x /mnt/sbin/init ] && exec /bin/switch_root mnt /sbin/init || sh
@@ -994,7 +999,7 @@ build_loram_rootfs()
 	for i in $TMP_DIR/iso/boot/rootfs*.gz; do
 		mkdir -p $TMP_DIR/fs
 		cd $TMP_DIR/fs
-		( zcat $i 2> /dev/null || unlzma -c $i) | cpio -idm
+		( zcat $i 2> /dev/null || unlzma < $i) | cpio -idm
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i)
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
@@ -1029,7 +1034,7 @@ unmeta_boot()
 	fi
 }
 
-# Move rootfs to squashfs filesystem(s) to the cdrom writeable with aufs.
+# Move rootfs to squashfs filesystem(s) to the cdrom writeable with aufs/overlayfs.
 # These squashfs may be loaded in ram at boot time.
 # Rootfs are also copied to cdrom for tiny ramsize systems.
 # Meta flavors are converted to normal flavors.
@@ -1040,7 +1045,7 @@ build_loram_cdrom()
 	mkdir $TMP_DIR/loramiso/fs
 	cd $TMP_DIR/loramiso/fs
 	for i in $( ls ../boot/root* | sort -r ) ; do
-		( zcat $i 2> /dev/null || unlzma -c $i ) | cpio -idmu
+		( zcat $i 2> /dev/null || unlzma < $i ) | cpio -idmu
 		rm -f $i
 	done
 	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
@@ -1099,7 +1104,7 @@ update_metaiso_sizes()
 	done
 }
 
-# Move rootfs to a squashfs filesystem into the initramfs writeable with aufs.
+# Move rootfs to a squashfs filesystem into the initramfs writeable with aufs/overlayfs.
 # Meta flavor selection sizes are updated.
 build_loram_ram()
 {
@@ -1834,8 +1839,8 @@ EOT
 			echo "No /boot/rootfs.gz in iso image. Needs a SliTaz iso."
 			umount -d $TMP_DIR/iso
 		else
-			( unlzma -c $TMP_DIR/iso/boot/rootfs.gz || \
-			  zcat $TMP_DIR/iso/boot/rootfs.gz ) | \
+			( zcat < $TMP_DIR/iso/boot/rootfs.gz || \
+			  unlzma < $TMP_DIR/iso/boot/rootfs.gz ) | \
 				( cd $TMP_DIR/rootfs ; cpio -idmu > /dev/null 2>&1 )
 			if [ ! -s $TMP_DIR/rootfs/etc/slitaz-release ]; then
 				echo "No file /etc/slitaz-release in /boot/rootfs.gz of iso image. Needs a non loram SliTaz iso."
@@ -2593,7 +2598,7 @@ EOT
 
 		for i in $TMP_DIR/iso/boot/rootfs* ; do
 			echo -n "Repacking $(basename $i)"
-			(zcat $i 2> /dev/null || unlzma -c $i || cat $i) \
+			(zcat $i 2> /dev/null || unlzma < $i || cat $i) \
 				2>/dev/null > $TMP_DIR/rootfs
 			lzma e $TMP_DIR/rootfs $i \
 				 $(lzma_switches $TMP_DIR/rootfs)
