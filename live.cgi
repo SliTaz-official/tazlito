@@ -177,6 +177,7 @@ document.getElementById('fssize').innerHTML = "$(boldify $(du -mh /home/slitaz/d
 /home/slitaz/distro/rootcd/boot/rootfs.gz
 </fieldset>
 EOT
+		ls -l /home/slitaz/distro/rootcd/boot/rootfs.gz
 		until [ -f /tmp/.write-iso* ]; do
 			sleep 1
 		done
@@ -189,6 +190,7 @@ EOT
 			tail -n8 /tmp/tazlitowriteiso | grep -vE 'ENTER|----'
 		fi
 		tail -n5 /tmp/tazlitowriteiso | sed "s|$|<p></p>|g"
+		ls -l /home/slitaz/distro
 		echo "</fieldset>"
 		echo "Use ' <code>tazlito emu-iso</code> ' to check it" ;;
 	*)
@@ -222,7 +224,9 @@ writeiso.")</p>
 <form method="get" action="$SCRIPT_NAME">
 	$(gettext 'Compression type:')
 	<select name="write_iso">
+<!--
 		<option value="gzip">gzip</option>
+-->
 		<option value="lzma">lzma</option>
 		<option value="none">$(gettext 'none')</option>
 	</select>

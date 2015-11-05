@@ -365,7 +365,8 @@ write_initramfs()
 {
 	if [ "$COMPRESSION" = "lzma" ]; then
 		echo -n "Creating rootfs.gz with lzma compression... "
-		cpio -o -H newc | lzma e -si -so > /rootfs.gz
+		cpio -o -H newc | lzma e -si -so $(lzma_switches) > /rootfs.gz
+		align='y'
 		lzma_set_size /rootfs.gz
 	elif [ "$COMPRESSION" = "gzip" ]; then
 		echo "Creating rootfs.gz with gzip compression... "
@@ -375,8 +376,7 @@ write_initramfs()
 		echo "Creating rootfs.gz without compression... "
 		cpio -o -H newc > /rootfs.gz
 	fi < /tmp/list
-	# [ $align == 'y' ] && align_to_32bits /rootfs.gz
-	# align_to_32bits /rootfs.gz
+	[ $align == 'y' -a -z "$noalign" ] && align_to_32bits /rootfs.gz
 	echo 1 > /tmp/rootfs
 }
 
@@ -2298,10 +2298,11 @@ archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso).
 $(boldify "Archive compression:") $(colorize 36 "$COMPRESSION")
 
 EOT
+		[ $COMPRESSION == "gzip" ] && colorize 31 "gzip-compressed rootfs unsupported and may fail to boot"
 		# Save some space
 		rm /var/cache/tazpkg/* -r -f
 		rm /var/lib/tazpkg/*.bak -f
-		rm -rf /home/slitaz/distro
+		rm -rf $DISTRO
 
 		# Optionally remove sound card selection and screen resolution.
 		if [ -z $LaunchedByTazpanel ]; then
@@ -2357,11 +2358,11 @@ EOT
 			[ -d $dir ] && echo $dir
 		done >>/tmp/list
 
-		sed '/var\/run\/.*pid$/d ; /var\/run\/utmp/d ; /.*\/.gvfs/d' -i /tmp/list
+		sed '/var\/run\/.*pid$/d ; /var\/run\/utmp/d ; /.*\/.gvfs/d ; /home\/.*\/.cache\/.*/d' -i /tmp/list
 		
-		if [ ! $(find /var/log/slitaz/tazpkg.log -size +4k) = "" ]; then
-			sed -i "/var\/log\/slitaz\/tazpkg.log/d" /tmp/list
-		fi
+		#if [ ! $(find /var/log/slitaz/tazpkg.log -size +4k) = "" ]; then
+		#	sed -i "/var\/log\/slitaz\/tazpkg.log/d" /tmp/list
+		#fi
 		mv -f /var/log/wtmp /tmp/tazlito-wtmp
 		touch /var/log/wtmp
 		
@@ -2420,7 +2421,7 @@ EOT
 When SliTaz is running in RAM the kernel and bootloader files are kept
 on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
 /media/cdrom (run # mount -o loop slitaz-rolling.iso /media/cdrom )
-to let Tazlito copy the files.\n"
+or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
 			echo -en "----\nENTER to continue..."; read i
 			[ ! -d /media/cdrom/boot/isolinux ] && exit 1
 			copy_from_cd
@@ -2445,7 +2446,7 @@ to let Tazlito copy the files.\n"
 		status
 
 		separator
-		echo "ISO image: $(du -sh /home/slitaz/distro/$ISO_NAME.iso)"
+		echo "ISO image: $(du -sh $DISTRO/$ISO_NAME.iso)"
 		rm -f /tmp/.write-iso
 		newline
 		if [ -z $LaunchedByTazpanel ]; then
@@ -2456,7 +2457,7 @@ to let Tazlito copy the files.\n"
 				eject
 				echo -n "Please insert a blank cdrom and press ENTER..."
 				read i && sleep 2
-				tazlito burn-iso /home/slitaz/distro/$ISO_NAME.iso
+				tazlito burn-iso $DISTRO/$ISO_NAME.iso
 				echo -en "----\nENTER to continue..."; read i ;;
 			*)
 				exit 0 ;;
