@@ -77,15 +77,15 @@ start() {
 	esac
 	# Deal with $main values
 	text=$(gettext "Getting flavor file and packages list...")
-	(echo "30" && xterm='xterm -fa fixed-8 '
-	[ -z $(which xterm) ] && xterm='terminal'
-	$xterm -geometry 80x10-0-0 -e tazpkg recharge
+	(echo "30" && \
+	[ -z $(which xterm) ] && xterm='terminal' || xterm='xterm'
+	$xterm -geometry 70x10-0-0 -e tazpkg recharge
 	name=$(echo $main | cut -d "|" -f 1)
 	skel=$(echo $main | cut -d "|" -f 2)
 	echo "$skel" > $live/skel
 	echo "60"
 	[ "$name" ] || name="custom"
-	tazlito get-flavor $skel
+	$xterm -geometry 60x12-0-0 -e tazlito get-flavor $skel
 	echo "90" && sleep 1
 	sed -i s"/^ISO_NAME=.*/ISO_NAME=\"$name\"/" tazlito.conf
 	sed -i s"/^VOLUM_NAME=.*/VOLUM_NAME=\"SliTaz $name\"/" \
@@ -99,7 +99,7 @@ pkgs_main() {
 	text=$(eval_gettext "Packages - The \$skel has \$pkgs packages")
 	yad --form $opts --text="<b>$text</b>" --separator=" " \
 		--field="$(gettext "Additional packages separated by space or by line:")\\n\(will be auto added to \'Edit packages list\'\)":TXT \
-		--button="$(gettext "Edit packages list"):2" \
+		--button="$(gettext "Edit packages list")!document-properties:2" \
 		--button="gtk-cancel:1" --button="gtk-ok:0" --image=tazpkg
 }
 

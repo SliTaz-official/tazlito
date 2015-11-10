@@ -92,7 +92,7 @@ $(boldify "Commands:")
   gen-flavor      Generate a new live-CD description.
   gen-liveflavor  Generate a live-CD description from current system.
   show-flavor     Show live-CD description.
-  get-flavor      Get a flavor's list of packages.
+  get-flavor      Get a flavor's list of packages ( --noup to skip upgrade).
   upgrade-flavor  Update package list to the latest available versions.
   extract-flavor  Extract a (*.flavor) flavor into $FLAVORS_REPOSITORY.
   pack-flavor     Pack (and update) a flavor from $FLAVORS_REPOSITORY.
@@ -1762,6 +1762,7 @@ EOT
 			mkdir -p $DISTRO
 			status
 			mkdir $TMP_DIR
+			[ -z $noup ] || tazlito upgrade-flavor $FLAVOR.flavor
 			echo -n "Extracting flavor $FLAVOR.flavor... "
 			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i --quiet >/dev/null )
 			status
