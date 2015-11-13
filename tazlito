@@ -1762,7 +1762,7 @@ EOT
 			mkdir -p $DISTRO
 			status
 			mkdir $TMP_DIR
-			[ -z $noup ] || tazlito upgrade-flavor $FLAVOR.flavor
+			[ -z $noup ] && tazlito upgrade-flavor $FLAVOR.flavor
 			echo -n "Extracting flavor $FLAVOR.flavor... "
 			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i --quiet >/dev/null )
 			status
