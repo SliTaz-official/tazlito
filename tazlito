@@ -75,7 +75,7 @@ ROOTCD=$DISTRO/rootcd
 
 # Print the usage.
 usage () {
-	cat << EOT
+	cat <<EOT
 
 SliTaz Live Tool - Version: $(colorize 34 "$VERSION")
 
@@ -2084,7 +2084,14 @@ EOT
 			yes y | tazpkg -i $pkg --root=$ROOTFS 2>&1 >> $log || exit 1
 			status
 		done
-		rm -f $ROOTFS/var/lib/tazpkg/packages.*
+
+		# Clean packages cache
+		find $ROOTFS/var/cache/tazpkg -name '*.tazpkg' -delete
+		# Clean /var/lib/tazpkg
+		rm $ROOTFS/var/lib/tazpkg/ID* $ROOTFS/var/lib/tazpkg/descriptions.txt \
+			$ROOTFS/var/lib/tazpkg/extra.list $ROOTFS/var/lib/tazpkg/files* \
+			$ROOTFS/var/lib/tazpkg/packages*
+
 		cd $DISTRO
 		cp distro-packages.list $ROOTFS/etc/tazlito
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
