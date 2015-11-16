@@ -531,40 +531,44 @@ extract_rootfs()
 # Remove duplicate files
 mergefs()
 {
-	echo -n "Merge $(basename $1) ($(du -hs $1 | awk '{ print $1}')) into "
-	echo -n       "$(basename $2) ($(du -hs $2 | awk '{ print $1}'))"
+	# Note, many packages have files with spaces in the name
+	IFS=$'\n'
+
+	echo -n "Merge $(basename "$1") ($(du -hs "$1" | awk '{ print $1}')) into "
+	echo -n       "$(basename "$2") ($(du -hs "$2" | awk '{ print $1}'))"
 	# merge symlinks files and devices
-	( cd $1; find ) | while read file; do
-		if [ -L $1/$file ]; then
-			[ -L $2/$file ] &&
-			[ "$(readlink $1/$file)" == "$(readlink $2/$file)" ] &&
-			rm -f $2/$file
-		elif [ -f $1/$file ]; then
-			[ -f $2/$file ] &&
-			cmp $1/$file $2/$file > /dev/null 2>&1 && rm -f $2/$file
-			[ -f $2/$file ] &&
-			[ "$(basename $file)" == "volatile.cpio.gz" ] &&
-			[ "$(dirname $(dirname $file))" == \
-			  ".$INSTALLED" ] && rm -f $2/$file
-		elif [ -b $1/$file ]; then
-			[ -b $2/$file ] &&
-			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == \
-			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] &&
-			rm -f $2/$file
-		elif [ -c $1/$file ]; then
-			[ -c $2/$file ] &&
-			[ "$(stat -c '%a:%u:%g:%t:%T' $1/$file)" == \
-			  "$(stat -c '%a:%u:%g:%t:%T' $2/$file)" ] &&
-			rm -f $2/$file
+	( cd "$1"; find ) | while read file; do
+		if [ -L "$1/$file" ]; then
+			[ -L "$2/$file" ] &&
+			[ "$(readlink "$1/$file")" == "$(readlink "$2/$file")" ] &&
+			rm -f "$2/$file"
+		elif [ -f "$1/$file" ]; then
+			[ -f "$2/$file" ] &&
+			cmp "$1/$file" "$2/$file" >/dev/null 2>&1 && rm -f "$2/$file"
+			[ -f "$2/$file" ] &&
+			[ "$(basename "$file")" == 'volatile.cpio.gz' ] &&
+			[ "$(dirname $(dirname "$file"))" == \
+			  ".$INSTALLED" ] && rm -f "$2/$file"
+		elif [ -b "$1/$file" ]; then
+			[ -b "$2/$file" ] &&
+			[ "$(stat -c '%a:%u:%g:%t:%T' "$1/$file")" == \
+			  "$(stat -c '%a:%u:%g:%t:%T' "$2/$file")" ] &&
+			rm -f "$2/$file"
+		elif [ -c "$1/$file" ]; then
+			[ -c "$2/$file" ] &&
+			[ "$(stat -c '%a:%u:%g:%t:%T' "$1/$file")" == \
+			  "$(stat -c '%a:%u:%g:%t:%T' "$2/$file")" ] &&
+			rm -f "$2/$file"
 		fi
 	done
 
 	# cleanup directories
-	( cd $1; find . -type d ) | sed '1!G;h;$!d' | while read file; do
-		[ -d $2/$file ] && rmdir $2/$file 2> /dev/null
+	( cd "$1"; find . -type d ) | sed '1!G;h;$!d' | while read file; do
+		[ -d "$2/$file" ] && rmdir "$2/$file" 2>/dev/null
 	done
 	true
 	status
+	unset IFS
 }
 
 cleanup_merge()
