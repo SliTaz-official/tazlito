@@ -1523,7 +1523,7 @@ code	data
 		
 	upgrade-flavor)
 		# Update package list to the latest versions available.
-		[ -s /home/slitaz/packages/packages.list -a -z $systemrepos] && \
+		[ -s /home/slitaz/packages/packages.list -a -z $systemrepos ] && \
 			LOCALSTATE='/home/slitaz/packages'
 		FLAVOR=${2%.flavor}
 		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
