@@ -2087,8 +2087,8 @@ EOT
 
 		# Use packages repository as mirror, don't download unsynced packages from mirror server
 		mkdir -p $ROOTFS/home/slitaz; ln -s ../../../../packages $ROOTFS/home/slitaz/packages
-		echo '/home/slitaz/packages' > "$ROOTFS/var/lib/tazpkg/mirror"
-		tazpkg --root=$ROOTFS >/dev/null # initial tazpkg setup in empty rootfs
+		mkdir -p "$ROOTFS/var/lib/tazpkg"; echo '/home/slitaz/packages' > "$ROOTFS/var/lib/tazpkg/mirror"
+		tazpkg --root=$ROOTFS >/dev/null 2>&1 # initial tazpkg setup in empty rootfs
 
 		for pkg in $(cat $DISTRO/list-packages)
 		do
@@ -2102,9 +2102,9 @@ EOT
 		# Clean /var/lib/tazpkg
 		rm $ROOTFS/var/lib/tazpkg/ID* $ROOTFS/var/lib/tazpkg/descriptions.txt \
 			$ROOTFS/var/lib/tazpkg/extra.list $ROOTFS/var/lib/tazpkg/files* \
-			$ROOTFS/var/lib/tazpkg/packages*
+			$ROOTFS/var/lib/tazpkg/packages* 2>/dev/null
 		# Back to default mirror
-		rm $ROOTFS/home/slitaz/packages; rmdir $ROOTFS/home/slitaz
+		rm -rf $ROOTFS/home/slitaz
 		echo "$DEFAULT_MIRROR" > $ROOTFS/var/lib/tazpkg/mirror
 
 		cd $DISTRO
