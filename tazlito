@@ -7,7 +7,7 @@
 # and/or a new ISO. Most commands must be run by root, except the stats
 # and the configuration file manipulation.
 #
-# (C) 2007-2014 SliTaz - GNU General Public License.
+# (C) 2007-2015 SliTaz - GNU General Public License.
 #
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #           Pascal Bellard <pascal.bellard@slitaz.org>
@@ -466,7 +466,7 @@ distro_sizes() {
 		[ "$div" != 0 ] && min="~ ${div}m"
 		echo "Build time      : ${sec}s $min"
 	fi
-	cat << EOT
+	cat <<EOT
 Build date      : $(date +%Y%m%d)
 Packages        : $(ls -1 $ROOTFS*$INSTALLED/*/receipt | wc -l)
 Rootfs size     : $(du -csh $ROOTFS*/ | awk '{ s=$1 } END { print s }')
@@ -489,7 +489,7 @@ distro_stats() {
 # Create an empty configuration file.
 empty_config_file()
 {
-	cat >> tazlito.conf << "EOF"
+	cat >> tazlito.conf <<"EOF"
 # tazlito.conf: Tazlito (SliTaz Live Tool) configuration file.
 #
 
@@ -1640,6 +1640,11 @@ code	data
 		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
 			mkdir $TMP_DIR
 			echo -n "Creating flavor $FLAVOR..."
+
+			# Use latest local packages if possible (don't download from unsynced mirror)
+			[ -s /home/slitaz/packages/packages.list -a -z $systemrepos ] && \
+			LOCALSTATE='/home/slitaz/packages'
+
 			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
 			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ]; then
 				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
@@ -2155,23 +2160,29 @@ EOT
 		
 		# Multi-rootfs
 		if [ -s /etc/tazlito/rootfs.list ]; then
+
 			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
 			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
+
 			[ -s $ROOTCD/boot/isolinux/isolinux.msg ] &&
 			sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
 			  $ROOTCD/boot/isolinux/isolinux.msg 2> /dev/null
+
 			[ -f $ROOTCD/boot/isolinux/ifmem.c32 -o \
 			  -f $ROOTCD/boot/isolinux/c32box.c32 ] ||
 			cp /boot/isolinux/c32box.c32 $ROOTCD/boot/isolinux 2> /dev/null ||
 			cp /boot/isolinux/ifmem.c32 $ROOTCD/boot/isolinux
+
 			n=0
 			last=$ROOTFS
 			while read flavor; do
 				n=$(($n+1))
 				newline
 				boldify "Building $flavor rootfs..."
+
 				[ -s $TOP_DIR/$flavor.flavor ] &&
 					cp $TOP_DIR/$flavor.flavor .
+
 				if [ ! -s $flavor.flavor ]; then
 					# We may have it in $FLAVORS_REPOSITORY
 					if [ -d "$FLAVORS_REPOSITORY/$flavor" ]; then
@@ -2180,12 +2191,14 @@ EOT
 						download $flavor.flavor
 					fi
 				fi
+
 				echo -n "Extracting $flavor.pkglist and $flavor.rootfs..."
 				zcat < $flavor.flavor | cpio -i --quiet \
 					$flavor.pkglist $flavor.rootfs
 				sed 's/.*/&.tazpkg/' < $flavor.pkglist \
 					> $DISTRO/list-packages0$n
 				status
+
 				mkdir ${ROOTFS}0$n
 				# Install packages
 				cd ${PACKAGES_REPOSITORY}
@@ -2332,7 +2345,7 @@ EOT
 		newline
 		boldify "Write filesystem to ISO"
 		separator
-		cat << EOT
+		cat <<EOT
 The command writeiso will write the current filesystem into a suitable cpio
 archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso).
 
@@ -2546,7 +2559,7 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
 		# Merge multiple rootfs into one iso.
 		#
 		if [ -z "$2" ]; then
-			cat << EOT
+			cat <<EOT
 Usage: tazlito merge size1 iso size2 rootfs2 [sizeN rootfsN]...
 
 Merge multiple rootfs into one iso. Rootfs are like russian dolls
