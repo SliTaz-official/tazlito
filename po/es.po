@@ -1,0 +1,273 @@
+# Spanish translations for TazLito package.
+# Copyright (C) 2012 THE TazLito'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the TazLito package.
+# Rene Rivero <arca2@hotmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TazLito Wiz\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-11-20 16:43+0200\n"
+"PO-Revision-Date: 2012-07-05 03:17-0300\n"
+"Last-Translator: Rene Rivero <arca2@hotmail.com>\n"
+"Language-Team: Argentinian\n"
+"Language: es_AR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: live.cgi:36 live.cgi:52
+msgid "Live"
+msgstr ""
+
+#: live.cgi:38
+msgid "Create a live USB key"
+msgstr ""
+
+#: live.cgi:39
+msgid "Create a live CD-ROM"
+msgstr ""
+
+#: live.cgi:40 live.cgi:110
+msgid "Create a hybrid ISO"
+msgstr ""
+
+#: live.cgi:41 live.cgi:90 live.cgi:300 live.cgi:343
+msgid "Convert ISO to loram"
+msgstr ""
+
+#: live.cgi:42 live.cgi:100 live.cgi:372 live.cgi:426
+msgid "Build a meta ISO"
+msgstr ""
+
+#: live.cgi:128
+msgid "TODO"
+msgstr ""
+
+#: live.cgi:132 live.cgi:136
+msgid "SliTaz LiveUSB"
+msgstr ""
+
+#: live.cgi:133
+msgid "Create Live USB SliTaz systems"
+msgstr ""
+
+#: live.cgi:140
+msgid ""
+"Generate SliTaz LiveUSB media and boot in RAM! Insert a Live CD into the CD-"
+"ROM drive, select the correct device and press Generate."
+msgstr ""
+
+#: live.cgi:146
+msgid "USB Media to use:"
+msgstr ""
+
+#: live.cgi:167
+msgid "Not found"
+msgstr ""
+
+#: live.cgi:172
+#, fuzzy
+msgid "Generate"
+msgstr "Generar ISO "
+
+#: live.cgi:253
+#, fuzzy
+msgid "SliTaz Live Systems"
+msgstr "Asistente creador de Slitaz Live"
+
+#: live.cgi:254
+msgid "Create and manage Live CD or USB SliTaz systems"
+msgstr ""
+
+#: live.cgi:259
+msgid "Write a Live CD"
+msgstr ""
+
+#: live.cgi:263
+msgid ""
+"The command writeiso will generate an ISO image of the current filesystem as "
+"is, including all files in the /home directory. It is an easy way to "
+"remaster a SliTaz Live system, you just have to: boot, modify, writeiso."
+msgstr ""
+
+#: live.cgi:271
+msgid "Compression type:"
+msgstr ""
+
+#: live.cgi:275
+msgid "none"
+msgstr ""
+
+#: live.cgi:282
+msgid ""
+"Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs."
+"gz)"
+msgstr ""
+
+#: live.cgi:290 tazlito-wiz:61
+#, fuzzy
+msgid "Write ISO"
+msgstr "Generar ISO "
+
+#: live.cgi:296
+msgid "Live CD tools"
+msgstr ""
+
+#: live.cgi:304
+msgid ""
+"This command will convert an ISO image of a SliTaz Live CD to a new ISO "
+"image requiring less RAM to run."
+msgstr ""
+
+#: live.cgi:310 live.cgi:359
+msgid "ISO to convert"
+msgstr ""
+
+#: live.cgi:315
+msgid "The filesystem is always in RAM"
+msgstr ""
+
+#: live.cgi:319
+msgid "The filesystem may be on a small CD-ROM"
+msgstr ""
+
+#: live.cgi:323
+msgid "The filesystem may be on a large CD-ROM"
+msgstr ""
+
+#: live.cgi:326 live.cgi:417
+msgid "ISO to create"
+msgstr ""
+
+#: live.cgi:350 live.cgi:365
+msgid "Build a hybrid ISO"
+msgstr ""
+
+#: live.cgi:354
+msgid "Add a master boot sector and an EXE header to the ISO image."
+msgstr ""
+
+#: live.cgi:376
+msgid ""
+"Combines several ISO flavors like nested Russian dolls. The amount of RAM "
+"available at startup will be used to select the utmost one."
+msgstr ""
+
+#: live.cgi:389
+msgid "ISO number %s:"
+msgstr ""
+
+#: live.cgi:393 live.cgi:410
+msgid "Minimum RAM:"
+msgstr ""
+
+#: live.cgi:406
+msgid "ISO to add"
+msgstr ""
+
+#: live.cgi:412
+msgid "Add to the list"
+msgstr ""
+
+#: tazlito-wiz:46
+msgid "Edit the distro packages list"
+msgstr "Edita lista de paquetes de la distro"
+
+#: tazlito-wiz:57
+msgid "SliTaz Live system creator wizard"
+msgstr "Asistente creador de Slitaz Live"
+
+#: tazlito-wiz:58
+msgid "Distro name:"
+msgstr "Nombre de la distro:"
+
+#: tazlito-wiz:59
+msgid "Based on:"
+msgstr "Basado en:"
+
+#: tazlito-wiz:62
+msgid "TazPanel Live"
+msgstr ""
+
+#: tazlito-wiz:102
+msgid "Getting flavor file and packages list..."
+msgstr "Obtener archivos de sabor y lista de paquetes..."
+
+#: tazlito-wiz:103
+msgid "Log"
+msgstr ""
+
+#: tazlito-wiz:113
+#, sh-format
+msgid "Packages - The \"$skel\" has $pkgs packages"
+msgstr "Paquetes - Los $skel disponibles $pkgs paquetes"
+
+#: tazlito-wiz:116
+msgid "Additional packages separated by space or by line:"
+msgstr "Paquetes adicionales separados por un espacio o una linea:"
+
+#: tazlito-wiz:116
+#, fuzzy
+msgid "(will be auto added to \"Edit packages list\")"
+msgstr "Edita lista de paquetes de la distro"
+
+#: tazlito-wiz:117
+msgid "Edit packages list"
+msgstr "Editar lista de paquetes"
+
+#: tazlito-wiz:152
+msgid "SliTaz desktop wallpaper"
+msgstr "Fondo de escritorio Slitaz"
+
+#: tazlito-wiz:153
+msgid "Wallpaper JPG image:"
+msgstr "Imagen JPG de Fondo"
+
+#: tazlito-wiz:179
+msgid ""
+"\n"
+"Now it's time to generate the distro. Last chance to start over or stop. "
+"Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the CD-"
+"ROM."
+msgstr ""
+"\n"
+"Es el momento de generar la distro. Ultima oprtunidad para continuar o "
+"detenerse. Crear un sistema Live, demanda recursos de la maquina y puede "
+"llevar cierto tiempo.\n"
+"Tenga en cuenta que todavía puede agregar algún archivo a la raíz del "
+"sistema Slitaz o al CD-ROM."
+
+#: tazlito-wiz:186
+msgid "Generate the distribution"
+msgstr "Generar la distribución"
+
+#: tazlito-wiz:204
+msgid "Building the Live system..."
+msgstr "Generando un sistema Live..."
+
+#: tazlito-wiz:217
+msgid "Live system summary"
+msgstr "Resumen del sistema Live"
+
+#: tazlito-wiz:219
+msgid "Generated ISO"
+msgstr "Generar ISO"
+
+#: tazlito-wiz:220
+msgid "Image size"
+msgstr "Tamaño de la imagen"
+
+#: tazlito-wiz:221
+msgid "Uncompressed size"
+msgstr "Tamaño sin comprimir"
+
+#: tazlito-wiz:223
+msgid "Information"
+msgstr ""
+
+#: tazlito-wiz:223
+msgid "Value"
+msgstr ""

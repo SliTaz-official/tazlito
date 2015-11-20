@@ -2,108 +2,125 @@
 #
 # Live system creation wizard in GTK using Yad.
 #
-# Copyright (C) 2012-2014 SliTaz GNU/Linux - GNU gpl v2
+# Copyright (C) 2012-2015 SliTaz GNU/Linux - GNU gpl v2
 # Authors : Christophe Lincoln <pankso@slitaz.org>
 #
 
-width="560"
-icon="/usr/share/pixmaps/slitaz-icon.png"
-opts="--height=300 --width=$width --image=$icon --center
---image-on-top --window-icon=$icon --title=LiveWizard"
+default_icon="--image=slitaz-icon"
+opts="--height=320 --width=600 --center --image-on-top --window-icon=slitaz-icon --title=LiveWizard"
 rel=$(cat /etc/slitaz-release)
 #[ "$rel" != "cooking" ] && rel=stable
-live=/home/slitaz/$rel/live
-db="/var/lib/tazpkg"
+live="/home/slitaz/$rel/live"
+db='/var/lib/tazpkg'
 list="$live/distro-packages.list"
 distro="/home/slitaz/$rel/distro"
 addfiles="$distro/addfiles"
 
+
 # TazLito wizard is only for root.
-if test $(id -u) != 0 ; then
+
+if [ $(id -u) -ne 0 ]; then
 	exec tazbox su $0
 	exit 0
 fi
 
+
 # I18n
-. /usr/bin/gettext.sh
-TEXTDOMAIN='tazlito-wiz'
-export TEXTDOMAIN
+
+. /lib/libtaz.sh
+export TEXTDOMAIN='tazlito'
+
 
 # Sanity check.
+
 mkdir -p $live && cd $live
 #rm -rf *
+
 
 #
 # Functions
 #
 
-progress() {
-	yad --progress --height="140" --width="$width" --center \
-		--image=$icon --image-on-top --window-icon=$icon \
-		--text="<b>$text</b>" --title="SliTaz Live progress" --auto-close
+edit_list() {
+	cat $list | yad --list $opts --image='system-software-update' \
+		--text="<b>$(_ 'Edit the distro packages list')</b>" \
+		--no-headers --print-all --separator='' \
+		--editable --column=0:TEXT > "$live/list"
+		mv -f "$live/list" "$list"
 }
 
-edit_list() {
-	text=$(gettext "Edit the distro packages list")
-	cat $list | yad --list $opts --text="$text" \
-		--no-headers --print-all --separator="" \
-		--editable --column=0:TEXT > $live/list
-		mv -f $live/list $list
-}
 
 # Start page GUI
+
 start_main() {
-	text=$(gettext "SliTaz Live system creator wizard")
-	yad --form $opts --text="<b>$text</b>" \
-		--field="$(gettext "Distro name:")" \
-		--field="$(gettext "Based on:")":CB \
-		--button="Write ISO:3" \
-		--button="TazPanel Live:2" \
-		--button="gtk-cancel:1" \
-		--button="gtk-ok:0" \
-		" " "core!core64!gtkonly!justx!base"
+	yad --form $opts $default_icon \
+		--text="<b>$(_ 'SliTaz Live system creator wizard')</b>" \
+		--field="$(_ "Distro name:")" \
+		--field="$(_ "Based on:")":CB \
+		--button='gtk-help:4' \
+		--button="$(_ 'Write ISO')!iso-image-burn:3" \
+		--button="$(_ 'TazPanel Live'):2" \
+		--button='gtk-cancel:1' \
+		--button='gtk-go-forward:0' \
+		'custom' 'core!core64!gtkonly!justx!base'
 }
 
+
 # Start page handler
+
 start() {
 	# Store box results
 	main=$(start_main)
+
 	# Deal with --button values
 	case $? in
-		1) exit 0 ;;
-		2) tazweb http://tazpanel:82/live.cgi && exit 0 ;;
-		3) terminal -T "write-iso" -e "tazlito writeiso lzma" && exit 0 ;;
-		*) continue ;;
+		1) exit 0;;
+		2) tazpanel live; exit 0;;
+		3) terminal -T 'write-iso' -e 'tazlito writeiso lzma'; exit 0;;
+		4) tazweb 'file:///usr/share/doc/tazlito/tazlito.html'; exit 0;;
+		*) continue;;
 	esac
+
 	# Deal with $main values
-	text=$(gettext "Getting flavor file and packages list...")
-	(echo "30" && \
-	[ -z $(which xterm) ] && xterm='terminal' || xterm='xterm'
-	$xterm -geometry 70x10-0-0 -e tazpkg recharge
-	name=$(echo $main | cut -d "|" -f 1)
-	skel=$(echo $main | cut -d "|" -f 2)
-	echo "$skel" > $live/skel
-	echo "60"
-	[ "$name" ] || name="custom"
-	$xterm -geometry 60x12-0-0 -e tazlito get-flavor $skel
-	echo "90" && sleep 1
-	sed -i s"/^ISO_NAME=.*/ISO_NAME=\"$name\"/" tazlito.conf
-	sed -i s"/^VOLUM_NAME=.*/VOLUM_NAME=\"SliTaz $name\"/" \
-		tazlito.conf) | progress
+
+	(
+		export output='raw'
+		# Numbers are moved the progressbar
+		echo '30'
+		# Lines started with '#' are displayed in the log
+		tazpkg recharge | sed 's|^.*|#&|'
+		name="$(echo $main | cut -d'|' -f1)"; name="${name:-custom}"
+		skel="$(echo $main | cut -d'|' -f2)"
+		echo "$skel" > $live/skel
+		echo '60'
+		tazlito get-flavor $skel | sed 's|^.*|#&|'
+		echo '90'
+		sed -i "s|^ISO_NAME=.*|ISO_NAME=\"$name\"|" tazlito.conf
+		sed -i "s|^VOLUM_NAME=.*|VOLUM_NAME=\"SliTaz $name\"|" tazlito.conf
+	) | \
+	yad --progress $opts --image='system-software-update' \
+		--text="<b>$(_ 'Getting flavor file and packages list...')</b>" \
+		--enable-log="$(_ 'Log')" --log-expanded --button='gtk-go-forward:0'
+
 }
 
+
 # Packages page GUI
+
 pkgs_main() {
 	pkgs=$(cat $list | wc -l)
 	skel=$(cat $live/skel)
-	text=$(eval_gettext "Packages - The \$skel has \$pkgs packages")
-	yad --form $opts --text="<b>$text</b>" --separator=" " \
-		--field="$(gettext "Additional packages separated by space or by line:")\\n\(will be auto added to \'Edit packages list\'\)":TXT \
-		--button="$(gettext "Edit packages list")!document-properties:2" \
-		--button="gtk-cancel:1" --button="gtk-ok:0" --image=tazpkg
+	text=$(_ 'Packages - The "$skel" has $pkgs packages')
+	yad --form $opts --image='application-x-tazpkg' \
+		--text="<b>$text</b>" --separator=' ' \
+		--field="$(_ 'Additional packages separated by space or by line:')\\n$(_ '(will be auto added to "Edit packages list")')":TXT \
+		--button="$(_ 'Edit packages list')!document-properties:2" \
+		--button='gtk-cancel:1' --button='gtk-go-forward:0'
 }
 
+
 # Packages page handler
+
 pkgs() {
 	# Store box results
 	main=$(pkgs_main)
@@ -115,10 +132,9 @@ pkgs() {
 	esac
 }
 
-add_to_list()
-{
-	for pkg in $(echo $main | sed s'/\\n/ /'g)
-	do
+
+add_to_list() {
+	for pkg in $(echo $main | sed s'/\\n/ /'g); do
 		vers=$(grep -E "^$pkg \|" $db/packages.desc | awk '{print $3}')
 		[ -z $vers ] || \
 		(grep -v -q "^$pkg-$vers" $list && \
@@ -128,14 +144,19 @@ add_to_list()
 	done
 }
 
+
 # Wallpaper page GUI
+
 wallpaper_main() {
-	text=$(gettext "SliTaz desktop wallpaper")
-	yad --form $opts --text="<b>$text</b>" --separator="" \
-		--field="$(gettext "Wallpaper JPG image:")":FL
+	yad --form $opts --image='preferences-desktop-wallpaper' \
+		--text="<b>$(_ 'SliTaz desktop wallpaper')</b>" --separator='' \
+		--field="$(_ 'Wallpaper JPG image:')":FL \
+		--button='gtk-cancel:1' --button='gtk-go-forward:0'
 }
 
+
 # Wallpaper page handler
+
 wallpaper() {
 	# Store box results
 	main=$(wallpaper_main)
@@ -150,48 +171,59 @@ wallpaper() {
 	fi
 }
 
+
 # Last page GUI
+
 gen_distro_main() {
-	info=$(gettext "
+	(
+		_ "
 Now it's time to generate the distro. Last chance to start over or stop. \
 Creating a Live system uses quite a lot of resources and takes some time.
-Note you can still add some files to the SliTaz root filesystem or on the \
-cdrom.";echo
-	echo $addfiles )
-	text=$(gettext "<b>Generate the distribution</b>")
-	echo "$info" | yad --text-info $opts --text="$text" \
-		--wrap --margins=20 
+Note you can still add some files to the SliTaz root filesystem or on the CD-ROM."
+		echo
+		echo $addfiles
+	) | yad --text-info $opts $default_icon \
+		--text="<b>$(_ 'Generate the distribution')</b>" --wrap --margins=20 \
+		--button='gtk-cancel:1' --button='gtk-go-forward:0'
 }
 
+
 # Last page handler
+
 gen_distro() {
 	# Store box results
 	main=$(gen_distro_main)
+
 	# Deal with --button values
 	case $? in
 		1) exit 0 ;;
 		*)
-			export output=gtk
+			export output='raw'
 			echo -e "\n" | tazlito gen-distro 2>&1 | yad \
-			--text-info $opts --tail \
-			--text="<b>$(gettext "Building the Live system...")</b>" ;;
+			--text-info $opts $default_icon --tail \
+			--text="<b>$(_ 'Building the Live system...')</b>" \
+			--button='gtk-go-forward:0'
+			;;
 	esac
 }
 
+
 # Summary
+
 summary() {
 	. tazlito.conf
 	iso_size=$(du -sh $distro/$ISO_NAME.iso | awk '{print $1}')
 	distro_size=$(du -sh $distro/rootfs | awk '{print $1}')
-	text="$(gettext "Live system summary")"
+	text="$(_ 'Live system summary')"
 	echo -e "\
-$(gettext "Generated ISO ") \n$distro/$ISO_NAME.iso
-$(gettext "Image size") \n$iso_size
-$(gettext "Uncompressed size") \n$distro_size" | \
-	yad --list $opts --text="<b>$text</b>" \
-		--column="Information":0 --column="Value":1 \
+$(_ 'Generated ISO') \n$distro/$ISO_NAME.iso
+$(_ 'Image size') \n$iso_size
+$(_ 'Uncompressed size') \n$distro_size" | \
+	yad --list $opts $default_icon --text="<b>$text</b>" \
+		--column="$(_ 'Information')":0 --column="$(_ 'Value')":1 \
 		--button="gtk-close":0
 }
+
 
 #
 # Script commands
@@ -200,13 +232,12 @@ $(gettext "Uncompressed size") \n$distro_size" | \
 case "$1" in
 	usage)
 		echo "Usage: $(basename $0) [command]" ;;
-	*) 
+	*)
 		start
 		pkgs
-		wallpaper 
+		wallpaper
 		gen_distro
 		summary ;;
 esac
 
 exit 0
-

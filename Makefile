@@ -11,20 +11,20 @@ all:
 # i18n.
 
 pot:
-	xgettext -o po/tazlito-wiz/tazlito-wiz.pot -L Shell \
-		--package-name="TazLito Wiz" ./tazlito-wiz
+	xgettext -o po/tazlito.pot -L Shell -k_ -k_n -k_p:1,2 \
+		--package-name="TazLito" ./live.cgi ./tazlito-wiz
 
 msgmerge:
 	@for l in $(LINGUAS); do \
 		echo -n "Updating $$l po file."; \
-		msgmerge -U po/tazlito-wiz/$$l.po po/tazlito-wiz/tazlito-wiz.pot ; \
+		msgmerge -U po/$$l.po po/tazlito.pot ; \
 	done;
 
 msgfmt:
 	@for l in $(LINGUAS); do \
 		echo "Compiling $$l mo file..."; \
 		mkdir -p po/mo/$$l/LC_MESSAGES; \
-		msgfmt -o po/mo/$$l/LC_MESSAGES/tazlito-wiz.mo po/tazlito-wiz/$$l.po ; \
+		msgfmt -o po/mo/$$l/LC_MESSAGES/tazlito.mo po/$$l.po ; \
 	done;
 
 # Installation.
@@ -64,9 +64,9 @@ uninstall:
 	rm -rf $(PREFIX)/etc/tazlito
 	rm -rf $(PREFIX)/usr/share/doc/tazlito
 	rm -rf $(PREFIX)/usr/share/applications/tazlito*.desktop
-	rm -rf $(PREFIX)/share/locale/*/LC_MESSAGES/tazlito*.mo
+	rm -rf $(PREFIX)/share/locale/*/LC_MESSAGES/tazlito.mo
 
 clean:
 	rm -rf po/mo
-	rm -f po/tazlito-wiz/*.mo
-	rm -f po/tazlito-wiz/*.*~
+	rm -f po/*.mo
+	rm -f po/*.*~
