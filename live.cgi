@@ -33,7 +33,7 @@ case "$1" in
 		TEXTDOMAIN_original="$TEXTDOMAIN"
 		export TEXTDOMAIN='tazlito'
 		cat <<EOT
-<li><a data-icon="cd" href="live.cgi" data-root>$(_ 'Live')</a>
+<li><a data-icon="cd" href="live.cgi">$(_ 'Live')</a>
 	<menu>
 		<li><a data-icon="" href="live.cgi?liveusb" data-root>$(_ 'Create a live USB key')</a></li>
 		<li><a data-icon="" href="live.cgi#liveiso" data-root>$(_ 'Create a live CD-ROM')</a></li>
@@ -355,10 +355,10 @@ EOT
 		<div>
 $(_ "Add a master boot sector and an EXE header to the ISO image.")
 		<ul>
-<li>$(_ "Create a bootable image for USB key, memory card, harddisk or SSD.")</li>
+<li>$(_ "Create a bootable image for a USB key, a memory card, a harddisk or a SSD.")</li>
 <li>$(_ "With the .EXE suffix, it will run under DOS (16 bits) or Windows (32 bits).")</li>
-<li>$(_ "Add ISO filesystem md5 digest and boot CRC in ISO boot area.")</li>
-<li>$(_ "Does not alter ISO image size or ISO filesystem.")</li>
+<li>$(_ "Add the ISO filesystem md5 digest and the boot CRC in the ISO boot area.")</li>
+<li>$(_ "Does not alter the ISO filesystem or the ISO image size.")</li>
 		</ul>
 		</div>
 
