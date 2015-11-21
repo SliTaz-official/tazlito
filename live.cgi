@@ -37,7 +37,7 @@ case "$1" in
 	<menu>
 		<li><a data-icon="" href="live.cgi?liveusb" data-root>$(_ 'Create a live USB key')</a></li>
 		<li><a data-icon="" href="live.cgi#liveiso" data-root>$(_ 'Create a live CD-ROM')</a></li>
-		<li><a data-icon="" href="live.cgi#hybrid" data-root>$(_ 'Create a hybrid ISO')</a></li>
+		<li><a data-icon="" href="live.cgi#hybrid">$(_ 'Create a hybrid ISO')</a></li>
 		<li><a data-icon="" href="live.cgi#loram" data-root>$(_ 'Convert ISO to loram')</a></li>
 		<li><a data-icon="" href="live.cgi#meta" data-root>$(_ 'Build a meta ISO')</a></li>
 	</menu>
@@ -253,7 +253,7 @@ EOT
 		TITLE="$(_ 'SliTaz Live Systems')"
 		xhtml_header "$(_ 'Create and manage Live CD or USB SliTaz systems')"
 
-		cat <<EOT
+		[ $(id -u) -eq 0 ] && cat <<EOT
 
 <section id="liveiso">
 	<header>$(_ 'Write a Live CD')</header>
@@ -278,14 +278,14 @@ writeiso.")
 		</table>
 EOT
 
-		if [ ! -d /media/cdrom/boot/isolinux -a ! -f /boot/*slitaz* ]; then
+		if [ $(id -u) -eq 0 -a ! -d /media/cdrom/boot/isolinux -a ! -f /boot/*slitaz* ]; then
 			msg warn "$(_ 'Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs.gz)')"
 		fi
 
 		inputiso="$(GET input)"; inputiso="${inputiso:-/root/}"
 		loramoutput="$(GET loramoutput)"; loramoutput="${loramoutput:-/root/loram.iso}"
 
-		cat <<EOT
+		[ $(id -u) -eq 0 ] && cat <<EOT
 		<footer>
 			<button type="submit" data-icon="cd">$(_ 'Write ISO')</button>
 		</footer>
@@ -302,7 +302,7 @@ EOT
 	<form method="get" action="$SCRIPT_NAME#loram" class="wide">
 		<div>
 $(_ "This command will convert an ISO image of a SliTaz Live CD to a \
-new ISO image requiring less RAM to run.")
+new ISO image requiring less RAM to run.") (-30%)
 		</div>
 
 		<table>
@@ -335,8 +335,8 @@ EOT
 			cdrom) sel='type3';;
 			*) sel='type1';;
 		esac
-		echo "document.getElementById('$sel').checked = true;"
-		cat <<EOT
+		[ $(id -u) -eq 0 ] echo "document.getElementById('$sel').checked = true;"
+		[ $(id -u) -eq 0 ] && cat <<EOT
 		</script>
 
 		<footer>
@@ -345,6 +345,8 @@ EOT
 	</form>
 </section>
 
+EOT
+		cat <<EOT
 
 <section id="hybrid">
 	<header>$(_ 'Build a hybrid ISO')</header>
@@ -352,12 +354,18 @@ EOT
 	<form method="get" action="$SCRIPT_NAME#hybrid" class="wide">
 		<div>
 $(_ "Add a master boot sector and an EXE header to the ISO image.")
+		<ul>
+<li>$(_ "Create a bootable image for USB key, memory card, harddisk or SSD.")</li>
+<li>$(_ "With the .EXE suffix, it will run under DOS (16 bits) or Windows (32 bits).")</li>
+<li>$(_ "Add ISO filesystem md5 digest and boot CRC in ISO boot area.")</li>
+<li>$(_ "Does not alter ISO image size or ISO filesystem.")</li>
+		</ul>
 		</div>
 
 		<table>
 			<tr><td>
 				$(_ 'ISO to convert')
-				<input type="text" name="input" value="/root/" />
+				<input type="text" name="input" value="$([ $(id -u) -eq 0 ] && echo "/root" || echo $HOME)/" />
 			</td></tr>
 		</table>
 
@@ -367,6 +375,8 @@ $(_ "Add a master boot sector and an EXE header to the ISO image.")
 	</form>
 </section>
 
+EOT
+		[ $(id -u) -eq 0 ] && cat <<EOT
 
 <section id="meta">
 	<header>$(_ 'Build a meta ISO')</header>
@@ -383,7 +393,7 @@ EOT
 		while [ -n "$(GET addmeta)" ]; do
 			[ -n "$(GET input$i)" ] || break
 			j=$(($i + 1))
-			cat <<EOT
+			[ $(id -u) -eq 0 ] && cat <<EOT
 			<tr>
 				<td>
 					$(_ 'ISO number %s:' "$j") $(GET input$i)
@@ -400,7 +410,7 @@ EOT
 		metaoutput="$(GET metaoutput)"
 		[ -n "$metaoutput" ] || metaoutput="/root/meta.iso"
 
-		cat <<EOT
+		[ $(id -u) -eq 0 ] && cat <<EOT
 			<tr>
 				<td>
 					$(_ 'ISO to add')
