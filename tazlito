@@ -371,6 +371,7 @@ write_initramfs()
 	elif [ "$COMPRESSION" = "gzip" ]; then
 		echo "Creating rootfs.gz with gzip compression... "
 		cpio -o -H newc | gzip -9 > /rootfs.gz
+		[ -x /usr/bin/advdef ] && advdef -z4 /rootfs.gz
 	else
 		# align='y'
 		echo "Creating rootfs.gz without compression... "

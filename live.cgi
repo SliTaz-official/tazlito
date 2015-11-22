@@ -270,8 +270,8 @@ writeiso.")
 			<tr><td>
 				$(_ 'Compression type:')
 				<select name="write_iso">
-					<!-- option value="gzip">gzip</option -->
 					<option value="lzma">lzma</option>
+					<option value="gzip">gzip</option>
 					<option value="none">$(_ 'none')</option>
 				</select>
 			</td></tr>
@@ -308,7 +308,8 @@ new ISO image requiring less RAM to run.") (-30%)
 		<table>
 			<tr><td>
 				$(_ 'ISO to convert')
-				<input type="text" accept=".iso" name="input" value="$inputiso" />
+				<span id="input"><input type="text" name="input" value="$inputiso" /></span>
+				<button data-icon="cd" onclick="ajax('index.cgi?do=file-selection&name=input', '1', 'input'); return false"/>
 			</td></tr>
 			<tr><td>
 				<input type="radio" name="type" value="ram" id="type1" checked />
@@ -365,7 +366,8 @@ $(_ "Add a master boot sector and an EXE header to the ISO image.")
 		<table>
 			<tr><td>
 				$(_ 'ISO to convert')
-				<input type="text" name="input" value="$([ $(id -u) -eq 0 ] && echo "/root" || echo $HOME)/" />
+				<span id="input"><input type="text" name="input" /></span>
+				<button data-icon="cd" onclick="ajax('index.cgi?do=file-selection&name=input', '1', 'input'); return false"/>
 			</td></tr>
 		</table>
 
@@ -414,7 +416,8 @@ EOT
 			<tr>
 				<td>
 					$(_ 'ISO to add')
-					<input type="text" name="input" value="/root/" />
+					<span id="input"><input type="text" name="input" value="/root/" /></span>
+					<button data-icon="cd" onclick="ajax('index.cgi?do=file-selection&name=input', '1', 'input'); return false"/>
 				</td>
 				<td>
 					$(_ 'Minimum RAM:')
