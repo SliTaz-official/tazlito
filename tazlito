@@ -1143,9 +1143,9 @@ find_flavor_rootfs()
 	# Verify md5
 	cat $1$INSTALLED/*/md5sum | \
 	while read md5 file; do
-		[ -e $1$file ] || continue
-		[ "$(md5sum < $1$file)" == "$md5  -" ] &&
-		rm -f $1$file
+		[ -e "$1$file" ] || continue
+		[ "$(md5sum < "$1$file")" == "$md5  -" ] &&
+		rm -f "$1$file"
 	done
 
 	# Check configuration files
@@ -1155,18 +1155,18 @@ find_flavor_rootfs()
 		zcat $i | ( cd /tmp/volatile$$ ; cpio -idmu > /dev/null 2>&1 )
 		( cd /tmp/volatile$$ ; find * -type f 2> /dev/null) | \
 		while read file ; do
-			[ -e $1/$file ] || continue
-			cmp -s /tmp/volatile$$/$file $1/$file && rm -f $1/$file
+			[ -e "$1/$file" ] || continue
+			cmp -s "/tmp/volatile$$/$file" "$1/$file" && rm -f "$1/$file"
 		done
 		rm -rf /tmp/volatile$$
 	done
 
 	# Remove other files blindly
 	for i in $1$INSTALLED/*/files.list; do
-		for file in $(cat $i); do
-			[ $1$file -nt $i ] && continue
-			[ -f $1$file -a ! -L $1$file ] && continue
-			[ -d $1$file ] || rm -f $1$file
+		for file in $(cat "$i"); do
+			[ "$1$file" -nt "$i" ] && continue
+			[ -f "$1$file" -a ! -L "$1$file" ] && continue
+			[ -d "$1$file" ] || rm -f "$1$file"
 		done
 	done
 
@@ -1180,7 +1180,7 @@ find_flavor_rootfs()
 	# Cleanup directory tree
 	cd $1
 	find * -type d | sort -r | while read dir; do
-		rmdir $dir 2> /dev/null
+		rmdir "$dir" 2> /dev/null
 	done
 	cd - > /dev/null
 }
