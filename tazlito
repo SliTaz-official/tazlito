@@ -1803,7 +1803,7 @@ EOT
 			fi
 			if [ -f "$TMP_DIR/$FLAVOR.receipt" ]; then
 				echo -n "Extracting receipt... "
-				mv $TMP_DIR/$FLAVOR.receipt  receipt 2> /dev/null
+				cp $TMP_DIR/$FLAVOR.receipt  receipt 2> /dev/null
 				status
 			fi
 			infos="$FLAVOR.desc"
