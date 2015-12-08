@@ -308,7 +308,7 @@ new ISO image requiring less RAM to run.") (-30%)
 		<table>
 			<tr><td>
 				$(_ 'ISO to convert')
-				$(file_chooser "input" "$inputiso" "cd")
+				$(file_chooser 'input' "$inputiso" 'cd' 'application/x-cd-image')
 			</td></tr>
 			<tr><td>
 				<input type="radio" name="type" value="ram" id="type1" checked />
@@ -365,7 +365,7 @@ $(_ "Add a master boot sector and an EXE header to the ISO image.")
 		<table>
 			<tr><td>
 				$(_ 'ISO to convert')
-				$(file_chooser "input" "" "cd")
+				$(file_chooser 'input' '' 'cd' 'application/x-cd-image')
 			</td></tr>
 		</table>
 
@@ -414,7 +414,7 @@ EOT
 			<tr>
 				<td>
 					$(_ 'ISO to add')
-					$(file_chooser "input" "" "cd")
+					$(file_chooser 'input' '' 'cd' 'application/x-cd-image')
 				</td>
 				<td>
 					$(_ 'Minimum RAM:')
