@@ -2364,7 +2364,7 @@ EOT
 		else
 			COMPRESSION=$2
 		fi
-		if [ -z $3 ]; then
+		if [ -z "$3" ]; then
 			ISO_NAME="slitaz"
 		else
 			ISO_NAME="$3"
@@ -2520,8 +2520,13 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
 		-V "SliTaz" -p "$(id -un)" -input-charset iso8859-1 \
 		-P "$(hostname)" -boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
-			echo -n "Creating hybrid ISO..."
+			echo -n "Creating hybrid ISO/disk..."
 			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2> /dev/null
+			status
+		fi
+		if [ -x /usr/bin/iso2exe ]; then
+			echo -n "Creating hybrid ISO/EXE..."
+			/usr/bin/iso2exe $ISO_NAME.iso 2> /dev/null
 			status
 		fi
 		echo -n "Creating the ISO md5sum..."
