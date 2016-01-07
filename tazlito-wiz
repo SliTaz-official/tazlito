@@ -57,6 +57,8 @@ start_main() {
 		--text="<b>$(_ 'SliTaz Live system creator wizard')</b>" \
 		--field="$(_ "Distro name:")" \
 		--field="$(_ "Based on:")":CB \
+		--field="":LBL --field=" ":LBL \
+		--field="$(_ "*.flavor file (optional):")":SFL \
 		--button='gtk-help:4' \
 		--button="$(_ 'Write ISO')!iso-image-burn:3" \
 		--button="$(_ 'TazPanel Live'):2" \
@@ -91,6 +93,10 @@ start() {
 		tazpkg recharge | sed 's|^.*|#&|'
 		name="$(echo $main | cut -d'|' -f1)"; name="${name:-custom}"
 		skel="$(echo $main | cut -d'|' -f2)"
+		flvf="$(echo $main | cut -d'|' -f5)"
+		if [ ${flvf/*./} == flavor ]; then
+			cp -a $flvf $live ; skel=$(basename $flvf)
+		fi
 		echo "$skel" > $live/skel
 		echo '60'
 		tazlito get-flavor $skel | sed 's|^.*|#&|'
