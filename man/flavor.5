@@ -1,0 +1,202 @@
+.TH "TazLiTo flavor" "1" "17.02.2016"
+.SH NAME
+Tazlito flavor file (\fB.flavor\fR).
+.SH SYNOPSIS
+\fIname\fB.flavor\fR
+.SH DESCRIPTION
+A \fB.flavor\fR is a small file contains information needed to (re)manufacture
+a custom LiveCD of SliTaz.
+.PP
+.IB flavor .flavor
+file is a cpio.gzip archive that contains next files inside:
+.TP
+.IB flavor .receipt
+File describing the flavor using the variables:
+.Bl -bullet
+.It
+FLAVOR: the flavor name
+.It
+SHORT_DESC: short description
+.It
+VERSION: free format
+.It
+MAINTAINER: e-mail address of the flavor maintainer
+.It
+FRUGAL_RAM: minimum RAM required (optional)
+.It
+ROOTFS_SIZE: size of rootfs.gz decompressed into RAM (optional)
+.It
+INITRAMFS_SIZE: size of rootfs.gz on the CD-ROM (optional)
+.It
+ISO_SIZE: size of CD-ROM (optional)
+.It
+ROOTFS_SELECTION: optional, see \fBMeta flavor below\fR.
+.El
+Receipt may contain function \fIcustom_rules()\fR executed after installing all
+packages, adding custom rootfs files, and executing \fIdistro.sh\fR script.
+.TP
+.IB flavor .desc
+File describing the flavor (the most of the information is taken from the
+receipt): flavor name, description, version, maintainer e-mail, Live CD RAM
+size, build date, number of the packages, rootFS size, initRAMFS size, ISO
+image size.
+.TP
+.IB flavor .pkglist
+List of packages without specifying the version (tazlito uses the latest
+available). This file is missing if ROOTFS_SELECTION exists in the receipt.
+.TP
+.IB flavor .nonfree
+Optional list of non-free packages.
+.TP
+.IB flavor -distro.sh
+Optional script executed after installing all packages and adding custom rootfs
+files to perform tasks in the rootfs before compression. Script executed with
+argument $DISTRO defined in the tazlito.conf(5).
+.TP
+.IB flavor .mirrors
+Optional file containing the list of undigest (unofficial) mirrors to be added
+to include personal packages.
+.TP
+.IB flavor .rootfs
+Optional cpio.gzip archive containing the root filesystem tree (so it should
+contain all the necessary top-level directories such as bin, etc, usr...).
+Files contained in this archive will be directly extracted to the root
+filesystem of the prepared flavor (configuration files usually).
+.TP
+.IB flavor .rootcd
+Optional cpio.gzip archive that files and folders will be directly extracted to
+the root of the CD-ROM.
+.SH WORKING WITH FLAVORS
+.SS Manufacture a flavor
+You can choose the flavor to (re)manufacture from among those available:
+.nf
+$ tazlito list-flavors
+.fi
+.B List of flavors
+.TS
+l r r l.
+\fBName\fR	\fBISO\fR	\fBRootfs\fR	\fBDescription\fR
+_
+base	12.0M	21.0M	Minimal set of packages to boot
+core-4in1	42.0M	152.4M	SliTaz core system with justX and base alternatives
+core	31.5M	104.6M	SliTaz core system
+eeepc	31.2M	105.4M	SliTaz eeepc system
+justX	16.1M	51.2M	SliTaz with a minimal X environment
+.TE
+.PP
+We will start by remanufacturing the
+.I eeepc
+flavor which uses 105.4M of RAM and has a CD-ROM size of 31.2M:
+.nf
+# tazlito clean-distro
+# tazlito get-flavor \fIeeepc\fR
+# tazlito gen-distro
+.fi
+.SS Create a flavor
+To create a flavor, you must:
+.Bl -bullet
+.It
+Either create an ISO image with
+.B tazlito gen-distro
+and then create a flavor file with
+.B tazlito gen-flavor
+.It
+Either directly create the tree structure that defines the flavor (see
+.BR "tazlito extract-flavor" )
+and then create the flavor with
+.B tazlito pack-flavor
+.It
+Either use the
+.B online builder
+http://pizza.slitaz.org/
+.El
+.SS Post a flavor
+Because a
+.I .flavor
+file contains just a few KB, it can be easily sent via the
+mailing list
+.RI ( http://www.slitaz.org/en/mailing-list.php ).
+.PP
+The results of
+.B tazlito extract-flavor
+can also be put in mercurial
+.RI ( http://hg.slitaz.org/flavors ).
+This method is preferred because the tree will be directly visible with the
+mercurial web interface
+.RI ( http://hg.slitaz.org/flavors/file/tip ).
+.PP
+This tree includes:
+.Bl -bullet
+.It
+A \fBreceipt\fR file describing the flavor thanks to the variables:
+.Bl -bullet
+.It
+FLAVOR: The flavor name.
+.It
+SHORT_DESC: Short description.
+.It
+VERSION: Free format.
+.It
+MAINTAINER: Email address of maintainer.
+.It
+FRUGAL_RAM: Minimum RAM required (optional).
+.It
+ROOTFS_SIZE: Size of rootfs.gz decompressed into RAM (optional).
+.It
+INITRAMFS_SIZE: Size of rootfs.gz on the CD-ROM (optional).
+.It
+ISO_SIZE: Size of CD-ROM (optional).
+.It
+ROOTFS_SELECTION: Optional, see \fBMeta flavor\fR below.
+.El
+.It
+The file \fBpackages.list\fR containing the list of packages without specifying
+the version (tazlito uses the latest available). This file is missing if
+ROOTFS_SELECTION exists in the receipt.
+.It
+The optional \fBmirrors\fR file containing the list of unofficial mirrors
+(undigest) to be added to include personal packages.
+.It
+The optional directory \fBrootfs\fR containing the tree to add to the root
+filesystem rootfs.gz (configuration files usually).
+.It
+The optional directory \fBrootcd\fR containing the tree to add to the root of
+the CD-ROM.
+.El
+.SS Adapt a flavor
+It is often easier to modify an existing flavor than to create one from
+scratch. To adapt the eeepc flavor for example:
+.nf
+# tazpkg get-install mercurial
+# cd /home/slitaz
+# hg clone http://hg.slitaz.org/flavors
+# cd flavors
+# cp -a \fIeeepc myslitaz\fR
+.fi
+Files in \fImyslitaz\fR can then be changed, and:
+.nf
+# tazlito pack-flavor \fImyslitaz\fR
+.fi
+Will simply create the new flavor.
+.PP
+Tip: you can skip mercurial installation by extracting a flavor. Using the
+previous example:
+.nf
+# tazlito get-flavor \fIeeepc\fR
+# tazlito extract-flavor \fIeeepc.flavor\fR
+# cd /home/slitaz/flavors
+# cp -a \fIeeepc myslitaz\fR
+.fi
+.SS Meta flavor
+A meta flavor contains several flavors like nested Russian dolls. The flavor
+will be launched at startup according to the amount of RAM available. The
+ROOTFS_SELECTION variable defines the minimum RAM and corresponding flavor
+parameters, example
+.RI ( http://hg.slitaz.org/flavors/file/tip/core-4in1/receipt ):
+.nf
+ROOTFS_SELECTION="160M core 96M justX 32M base"
+.fi
+A meta flavor doesn't contain a list of packages (\fIpackages.list\fR). SliTaz
+kernels prior to 2.6.30 do not support meta flavors.
+.SH SEE ALSO
+tazlito(1), tazlito.conf(5).

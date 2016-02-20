@@ -1,0 +1,352 @@
+.TH TazLiTo "1" "29.01.2016"
+.SH NAME
+Tazlito \(em SliTaz Live Tool.
+.SH SYNTAX
+.nf
+.RI "tazlito [" command "] [" list | iso | flavor "] [" dir ]
+.fi
+.SH DESCRIPTION
+Tazlito is a small utility to extract a Live CD, rebuild the ISO image and
+regenerate the root filesystem of the Live CD. Tazlito can also generate a
+distribution from a list of packages previously downloaded. Tazlito uses the
+configuration file
+.IR tazlito.conf (5).
+.PP
+Tazlito installed by default on SliTaz and installed/successfully tested on
+Debian GNU/Linux. You will find additional information about creating a LiveCD
+in the Handbook.
+.SH COMMANDS
+.SS usage
+Display a summary of available commands with a short description.
+.nf
+$ tazlito usage
+.fi
+.SS stats
+Display the configuration variables, the paths to the various files and
+directories, and information on the ISO image.
+.nf
+$ tazlito stats
+.fi
+.SS list-addfiles
+Display the list of additional files in the rootfs.
+.nf
+$ tazlito list-addfiles
+.fi
+.SS gen-config
+Generate a configuration file ready to be edited.
+.PP
+By default the file is created in the current directory, but can be in another
+directory if specified via the command line.
+.nf
+$ tazlito gen-config
+$ tazlito gen-config \fI/path/to/distro\fR
+.fi
+.SS configure
+Configure the system configuration file or one found in the current directory.
+.PP
+You will be asked for ISO name, volume name, paths to packages repository and
+to distro.
+.nf
+# tazlito configure
+.fi
+.SS gen-iso
+Generate a new Live CD image following modifications and additions to the root
+filesystem of the CD-ROM.
+.PP
+To function, this command needs a directory containing the distro-tree of the
+Live system. This tree can easily be built with the
+.B extract-distro
+command, modified and rebuilt via:
+.nf
+# tazlito gen-iso
+.fi
+.SS gen-initiso
+The same as
+.BR gen-iso ,
+but it rebuilds the initramfs compressed system prior.
+.PP
+The initramfs contains the root filesystem and must be rebuilt if modified.
+.nf
+# tazlito gen-initiso
+.fi
+.SS list-flavors
+Download (if necessary) and display a list of the different flavors available.
+.PP
+You can force the download with the
+.I --recharge
+option.
+.nf
+$ tazlito list-flavors
+# tazlito list-flavors --recharge
+.fi
+.SS get-flavor
+Download (if necessary) and prepares the files for
+.B gen-distro
+to generate an ISO image.
+.PP
+Option
+.I --noup
+can be used to skip updating flavor (see
+.B upgrade-flavor
+command).
+.nf
+# tazlito get-flavor \fIcore\fR
+.fi
+.SS show-flavor
+Display the description of the flavor and its size after regeneration.
+.PP
+The options
+.IR --brief " and " --noheader
+reduce the output displayed.
+.nf
+$ tazlito show-flavor \fIbase\fR
+$ tazlito show-flavor \fIjustx\fR --brief
+$ tazlito show-flavor \fIcore\fR --brief --noheader
+.fi
+.SS gen-flavor
+Create a description file of a new flavor from the results of generating a
+distro
+.RB ( gen-distro ).
+The
+.I .flavor
+file can then be sent to slitaz.org.
+.nf
+# tazlito gen-flavor \fInew-flavor\fR
+.fi
+.SS gen-liveflavor
+Create a description file of a new flavor from the results of generating a
+distro based on the current system.
+.PP
+The
+.I --help
+option provides more information.
+.nf
+# tazlito gen-liveflavor --help
+# tazlito gen-liveflavor \fIflavor-name\fR
+# tazlito gen-liveflavor \fIflavor-name flavor-patch-file\fR
+.fi
+Format of the flavor-patch-file:
+.TS
+c l.
+\fBcode\fR	\fBdata\fR
+_
+@	flavor description
++	package to add
+-	package to remove
+!	non-free package to add
+?	display message
+.TE
+Example:
+.nf
+@ Developer tools for SliTaz maintainers
++ slitaz-toolchain
++ mercurial
+.fi
+.SS iso2flavor
+Create a flavor file from the ISO image.
+.nf
+# tazlito iso2flavor \fIslitaz-cooking.iso mycooking\fR
+.fi
+.SS upgrade-flavor
+Refresh a flavor description file. Sizes and actual number of packages will be
+re-calculated. List of unknown packages will be displayed if any, as well as
+list of important packages missed in the flavor (like
+.BR syslinux " or " linux ).
+Packages versions (presented in the legacy flavor format) will be stripped from
+the flavor package list.
+.nf
+# tazlito upgrade-flavor \fIcore\fR
+.fi
+.SS extract-flavor
+Convert a flavor into an easily modifiable tree structure. Path to the
+extracted flavors repository specified by variable
+.I FLAVORS_REPOSITORY
+in the tazlito.conf(5) (by default
+.IR /home/slitaz/cooking/flavors ).
+.PP
+This repository can be managed with mercurial: http://hg.slitaz.org/flavors .
+.nf
+# tazlito extract-flavor \fIcore\fR
+.fi
+.SS pack-flavor
+Convert a tree structure, extracted by
+.B extract-flavor
+into a flavor file
+.RI ( .flavor ).
+.nf
+# tazlito pack-flavor \fIcore\fR
+.fi
+Execute this command after changing existing flavor, or after preparing new
+flavor. File
+.I packages.list
+inside flavor tree structure can contain include directive at the beginning,
+for example:
+.nf
+@include \fIjustx\fR
+.fi
+to include all the packages listed in the
+.I justx
+flavor.
+.SS extract-distro
+Extract an ISO image from the Live CD to rebuild the structure of the root
+CD-ROM and system. It is then possible to make the desired changes or additions
+and rebuild the ISO image via
+.BR gen-iso " or " gen-initiso .
+.PP
+ISO image is extracted by default to the path specified by variable
+.I DISTRO
+in the tazlito.conf(5). Desired path may be specified in the second argument.
+.nf
+# tazlito extract-distro \fI/tmp/slitaz-cooking.iso\fR
+# tazlito extract-distro \fI/tmp/slitaz-cooking.iso\fR \fI/tmp/extracted\fR
+.fi
+.SS gen-distro
+Generate the distro-tree and an ISO image via a list of packages.
+.PP
+To function, this command needs a list of packages and other files provided by
+command
+.BR get-flavor .
+List is expected to be the file
+.I distro-packages.list
+in the current directory, or can be specified in the command argument.
+If package list not given, new list
+.I distro-packages.list
+will be re-created in the current directory using all currently installed
+packages.
+.PP
+If one uses the Live CD, the options
+.IR --cdrom " and " --iso=
+allows the regeneration of packages that place files in
+.I /boot
+without being obliged to download them and recovers the additional files of the
+Live CD.
+.PP
+The path to the various directories are configured in the tazlito.conf(5)
+and packages can be downloaded from the SliTaz mirrors or generated by
+Cookutils.
+.nf
+# tazlito gen-distro
+# tazlito gen-distro --cdrom
+# tazlito gen-distro --iso=\fIslitaz.iso\fR
+# tazlito gen-distro \fIpackage-list\fR
+.fi
+.SS clean-distro
+Remove all files generated or extracts of the structure of the LiveCD.
+.nf
+# tazlito clean-distro
+.fi
+.SS check-distro
+Verify few configuration files in the generated rootfs
+.RI ( /etc/slitaz-release ", " /var/lib/tazpkg/mirror ,
+.IR /boot/isolinux/isolinux.cfg ).
+.PP
+.B TODO:
+Remove this function. First two files are maintained by tazpkg while it runs on
+rootfs, while last one file should be maintained by tazlito itself.
+.nf
+# tazlito check-distro
+.fi
+.SS writeiso
+Write the current filesystem to a cpio archive
+.RI ( rootfs.gz )
+and then generate a bootable ISO image. Writeiso can be used in a HD install or
+in live mode and will also archive your current
+.I /home
+directory.
+.PP
+This command lets you easily remaster and build your own Live CD image, just
+boot, modify any files, and then:
+.nf
+# tazlito writeiso [gzip|lzma|none]
+# tazlito writeiso gzip
+# tazlito writeiso gzip \fIimage-name\fR
+.fi
+.SS repack
+Recompress the rootfs with the best possible compression.
+.nf
+# tazlito repack \fIslitaz.iso\fR
+.fi
+.SS merge
+Combine several flavors like nested Russian dolls. Each rootfs is a subset of
+the previous. The first rootfs is extracted from the ISO image used in the
+third argument. The flavor will then be chosen to launch at startup according
+to the amount of RAM available.
+.nf
+# tazlito merge \fI160M slitaz-core.iso 96M rootfs-justx.gz 32M rootfs-base.gz\fR
+.fi
+.SS build-loram
+Create an ISO image flavor for low RAM systems from a SliTaz ISO image. You can
+build a flavor with
+.I /
+always in RAM or where
+.I /
+resides on the CD-ROM:
+.nf
+# tazlito build-loram \fIslitaz.iso loram.iso\fR
+# tazlito build-loram \fIslitaz.iso loram-cdrom.iso\fR cdrom
+.fi
+Third argument can be one of the:
+.TP
+.I cdrom
+Move rootfs to squashfs filesystem(s) to the CD-ROM writeable with
+aufs/overlayfs. These squashfs may be loaded in RAM at boot time. Rootfs are also
+copied to CD-ROM for tiny ramsize systems. Meta flavors are converted to normal
+flavors.
+.TP
+.I smallcdrom
+TODO.
+.TP
+.I http
+Create http bootstrap to load and remove loram_cdrom. Meta flavors are converted
+to normal flavors.
+.TP
+.I ram
+Move rootfs to a squashfs filesystem into the initramfs writeable with
+aufs/overlayfs. Meta flavor selection sizes are updated.
+.SS emu-iso
+Use the QEMU emulator to start and run SliTaz.
+.PP
+QEMU is used to test the newly built ISO image without burning to a CD-ROM or
+booting into frugal mode.
+.nf
+# tazlito emu-iso
+# tazlito emu-iso path/to/image.iso
+.fi
+.SS burn-iso
+Burn an ISO image guessing the CD-ROM device and its speed.
+.PP
+The default ISO image is the one located in the current configuration file, but
+it's possible to specify a different image via the command line:
+.nf
+# tazlito burn-iso
+# tazlito burn-iso \fIslitaz-hacked.iso\fR
+.fi
+.SH LICENSE
+Tazlito is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+.PP
+Tazlito is distributed in the hope that it will be useful, but
+.BR "without any warranty" ;
+without even the implied warranty of
+.BR merchantability " or " "fitness for a particular purpose" .
+See the GNU General Public License for more details.
+.SH AUTHORS
+Christophe Lincoln <pankso@slitaz.org>
+.br
+Pascal Bellard <pascal.bellard@ads-lu.com>
+.br
+Paul Issott <paul@slitaz.org>
+.br
+Eric Joseph-Alexandre <erjo@slitaz.org>
+.br
+Claudinei Pereira <claudinei@slitaz.org>
+.br
+Aleksej Bobylev <al.bobylev@gmail.com>
+.SH MAINTAINERS
+Christophe Lincoln <pankso@slitaz.org>
+.br
+Pascal Bellard <pascal.bellard@slitaz.org>
+.SH SEE ALSO
+tazlito.conf(5), flavor(5).

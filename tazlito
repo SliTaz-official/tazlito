@@ -1,438 +1,479 @@
 #!/bin/sh
 # TazLito - SliTaz Live Tool.
 #
-# Tazlito is a tool to help generate and configure SliTaz LiveCD
+# Tazlito is a tool to help generate and configure SliTaz Live CD
 # ISO images. You can create a custom distro in one command from a list of
 # packages, extract an existing ISO image to hack it, create a new initramfs
 # and/or a new ISO. Most commands must be run by root, except the stats
 # and the configuration file manipulation.
 #
-# (C) 2007-2015 SliTaz - GNU General Public License.
+# (C) 2007-2016 SliTaz - GNU General Public License.
 #
-# Authors : Christophe Lincoln <pankso@slitaz.org>
-#           Pascal Bellard <pascal.bellard@slitaz.org>
+# Authors: see the AUTHORS file
 #
-VERSION=5.2.6
+
+VERSION='6.0'
 
 . /lib/libtaz.sh
+# Force to use Busybox cpio and wget
+alias cpio='busybox cpio'
+alias wget='busybox wget'
 
 # Tazlito configuration variables to be shorter
 # and to use words rather than numbers.
-COMMAND=$1
-LIST_NAME=$2
-TMP_DIR=/tmp/tazlito-$$-$RANDOM
-TMP_MNT=/media/tazlito-$$-$RANDOM
-TOP_DIR=`pwd`
-INITRAMFS=rootfs.gz
-LOCALSTATE=/var/lib/tazpkg
-INSTALLED=$LOCALSTATE/installed
-CACHE_DIR=/var/cache/tazpkg
-MIRROR=$LOCALSTATE/mirror
-DEFAULT_MIRROR="http://mirror.slitaz.org/packages/`cat /etc/slitaz-release`/"
+COMMAND="$1"
+LIST_NAME="$2"
+TMP_DIR="/tmp/tazlito-$$-$RANDOM"
+TMP_MNT="/media/tazlito-$$-$RANDOM"
+TOP_DIR="$(pwd)"
+INITRAMFS='rootfs.gz'
+LOCALSTATE='/var/lib/tazpkg'
+INSTALLED="$LOCALSTATE/installed"
+CACHE_DIR='/var/cache/tazpkg'
+MIRROR="$LOCALSTATE/mirror"
+DEFAULT_MIRROR="http://mirror.slitaz.org/packages/$(cat /etc/slitaz-release)/"
 
-log=/var/log/tazlito.log
-if check_root; then
+log='/var/log/tazlito.log'
+if [ $(id -u) -eq 0 ]; then
 	newline > $log
 fi
 
+
+cleanup() {
+	if [ -d "$TMP_MNT" ]; then
+		umount $TMP_MNT
+		rmdir $TMP_MNT
+		rm -f /boot
+	fi
+	[ -d "$tmp_dir" ] && rm -r "$tmp_dir"
+	[ -d "$flv_dir" ] && rm -r "$flv_dir"
+}
+
+
+# Report error and finish work
+
+die() {
+	emsg "<n>$(longline "$@")<n> " >&2
+	cleanup
+	exit 1
+}
+
+
+
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
-if [ -f "/etc/tazlito/tazlito.conf" ] ; then
-	CONFIG_FILE="/etc/tazlito/tazlito.conf"
-fi
 # Specific distro config file can be put in a distro tree.
-if [ -f "$TOP_DIR/tazlito.conf" ] ; then
-	CONFIG_FILE="$TOP_DIR/tazlito.conf"
-fi
-if [ ! "$CONFIG_FILE" = "" ] ; then
-	. $CONFIG_FILE
-else
-	if [ "$COMMAND" = "gen-config" ] ; then
-		continue
-	else
-		echo "Unable to find any configuration file. Please read the docs"
-		echo "or run '`basename $0` gen-config' to get an empty config file."
-		exit 0
-	fi
-fi
+for i in /etc/tazlito "$TOP_DIR"; do
+	[ -f "$i/tazlito.conf" ] && CONFIG_FILE="$i/tazlito.conf"
+done
 
-# While Tazpkg is not used the default mirror url file does not exist
+[ -z "$CONFIG_FILE" -a "$COMMAND" != 'gen-config' ] && \
+	die 'Unable to find any configuration file.' \
+		'Please read the docs or run `tazlito gen-config` to get an empty config file.'
+
+. $CONFIG_FILE
+
+# While Tazpkg is not used the default mirror URL file does not exist
 # and user can't recharge the list of flavors.
-if test $(id -u) = 0 ; then
-	if [ ! -f "$MIRROR" ]; then
-		echo "$DEFAULT_MIRROR" > $MIRROR
-	fi
-fi
+[ $(id -u) -eq 0  -a  ! -f "$MIRROR" ] && echo "$DEFAULT_MIRROR" > $MIRROR
 
 # Set the rootfs and rootcd path with $DISTRO
 # configuration variable.
-ROOTFS=$DISTRO/rootfs
-ROOTCD=$DISTRO/rootcd
+ROOTFS="$DISTRO/rootfs"
+ROOTCD="$DISTRO/rootcd"
+
+
+
 
 #####################
 # Tazlito functions #
 #####################
 
+
 # Print the usage.
+
 usage () {
-	cat <<EOT
+	[ $(basename $0) == 'tazlito' ] && cat <<EOT
 
 SliTaz Live Tool - Version: $(colorize 34 "$VERSION")
 
-$(boldify "Usage:") $(basename $0) [command] [list|iso|flavor|compression] [dir|iso]
+$(boldify "Usage:") tazlito [command] [list|iso|flavor|compression] [dir|iso]
 
 $(boldify "Commands:")
-  usage           Print this short usage.
-  stats           View Tazlito and distro configuration statistics.
-  gen-config      Generate a new configuration file for a distro.
-  configure       Configure the main config file or a specific tazlito.conf.
-  gen-iso         Generate a new ISO from a distro tree.
-  gen-initiso     Generate a new initramfs and ISO from the distro tree.
-  list-flavors    List all available package lists on the mirror.
-  gen-flavor      Generate a new live-CD description.
-  gen-liveflavor  Generate a live-CD description from current system.
-  show-flavor     Show live-CD description.
-  get-flavor      Get a flavor's list of packages ( --noup to skip upgrade).
-  upgrade-flavor  Update package list to the latest available versions.
-  extract-flavor  Extract a (*.flavor) flavor into $FLAVORS_REPOSITORY.
-  pack-flavor     Pack (and update) a flavor from $FLAVORS_REPOSITORY.
-  iso2flavor      Create a flavor file from a SliTaz iso image.
-  check-list      Check a distro-packages.list for updates.
-  extract-distro  Extract an ISO to a directory and rebuild LiveCD tree.
-  gen-distro      Generate a Live distro and ISO from a list of packages.
-  clean-distro    Remove all files generated by gen-distro.
-  check-distro    Help to check if distro is ready to release.
-  writeiso        Use running system to generate a bootable ISO (with /home).
-  merge           Merge multiple rootfs into one iso.
-  deduplicate	  Deduplicate files in a tree.
-  repack          Recompress rootfs into iso with maximum ratio.
-  build-loram     Generate a live-CD for low ram systems.
-  emu-iso         Emulate an ISO image with Qemu.
-  burn-iso        Burn ISO image to a cdrom using Wodim.
-
 EOT
+optlist "\
+usage			Print this short usage.
+stats			View Tazlito and distro configuration statistics.
+list-addfiles	Simple list of additional files in the rootfs.
+gen-config		Generate a new configuration file for a distro.
+configure		Configure the main config file or a specific tazlito.conf.
+gen-iso			Generate a new ISO from a distro tree.
+gen-initiso		Generate a new initramfs and ISO from the distro tree.
+list-flavors	List all flavors available on the mirror.
+gen-flavor		Generate a new Live CD description.
+gen-liveflavor	Generate a Live CD description from current system.
+show-flavor		Show Live CD description.
+get-flavor		Get a flavor's list of packages (--noup to skip update).
+upgrade-flavor	Update package list to the latest available versions.
+extract-flavor	Extract a *.flavor file into $FLAVORS_REPOSITORY.
+pack-flavor		Pack (and update) a flavor from $FLAVORS_REPOSITORY.
+iso2flavor		Create a flavor file from a SliTaz ISO image.
+extract-distro	Extract an ISO to a directory and rebuild Live CD tree.
+gen-distro		Generate a Live distro and ISO from a list of packages.
+clean-distro	Remove all files generated by gen-distro.
+check-distro	Help to check if distro is ready to release.
+writeiso		Use running system to generate a bootable ISO (with /home).
+merge			Merge multiple rootfs into one ISO.
+deduplicate		Deduplicate files in a tree.
+repack			Recompress rootfs into ISO with maximum ratio.
+build-loram		Generate a Live CD for low-RAM systems.
+emu-iso			Emulate an ISO image with QEMU.
+burn-iso		Burn ISO image to a CD-ROM using Wodim.
+"
 }
 
+
 yesorno() {
-	echo -n "$1"
+	local answer
+	echo -n "$1 (y=yes, n=no) [$2] " >&2
 	case "$DEFAULT_ANSWER" in
 		Y|y) answer="y";;
 		N|n) answer="n";;
-		*) read answer;;
+		*)
+			read answer
+			[ -z "$answer" ] && answer="$2"
+			[ "$answer" != 'y' -a "$answer" != 'n' ] && answer="$2"
+			;;
+	esac
+	echo "$answer"
+}
+
+
+field() {
+	grep "^$1" "$2" | \
+	case "$1" in
+		Desc*) sed 's|^.*: *||';;
+		*)     sed 's/.*: \([0-9KMG\.]*\).*/\1/';;
 	esac
 }
 
-field() {
-	grep "^$1" "$2" | sed 's/.*: \([0-9KMG\.]*\).*/\1/'
-}
 
 todomsg() {
 	echo -e "\\033[70G[ \\033[1;31mTODO\\033[0;39m ]"
 }
 
+
 # Download a file from this mirror
+
 download_from() {
-	local i
-	local mirrors
-	mirrors="$1"
+	local i mirrors="$1"
 	shift
 	for i in $mirrors; do
 		case "$i" in
-		http://*|ftp://*) busybox wget -c $i$@ && break;;
-		*) cp $i/$1 . && break;;
+			http://*|ftp://*|https://*)
+				wget -c $i$@ && break;;
+			*)
+				cp $i/$1 . && break;;
 		esac
 	done
 }
 
+
 # Download a file trying all mirrors
+
 download() {
 	local i
-	for i in $(cat $MIRROR $LOCALSTATE/undigest/*/mirror 2> /dev/null); do
+	for i in $(cat $MIRROR $LOCALSTATE/undigest/*/mirror 2>/dev/null); do
 		download_from "$i" "$@" && break
 	done
 }
 
+
 # Execute hooks provided by some packages
+
 genisohooks() {
-	local here=`pwd`
-	for i in $(ls $ROOTFS/etc/tazlito/*.$1 2> /dev/null); do
+	local here="$(pwd)"
+	for i in $(ls $ROOTFS/etc/tazlito/*.$1 2>/dev/null); do
 		cd $ROOTFS
 		. $i $ROOTCD
 	done
-	cd $here
+	cd "$here"
 }
 
-cleanup() {
-	if [ -d $TMP_MNT ]; then
-		umount $TMP_MNT
-		rmdir $TMP_MNT
-		rm -f /boot
-	fi
-}
 
 # Echo the package name if the tazpkg is already installed
+
 installed_package_name() {
-	local tazpkg
-	local package
-	local VERSION
-	local EXTRAVERSION
-	tazpkg=$1
+	local tazpkg="$1" package VERSION EXTRAVERSION
+
 	# Try to find package name and version to be able
 	# to repack it from installation
 	# A dash (-) can exist in name *and* in version
 	package=${tazpkg%-*}
 	i=$package
 	while true; do
-		VERSION=""
-		eval $(grep -s ^VERSION= $INSTALLED/$i/receipt)
-		EXTRAVERSION=""
+		unset VERSION EXTRAVERSION
+		eval $(grep -s ^VERSION=      $INSTALLED/$i/receipt)
 		eval $(grep -s ^EXTRAVERSION= $INSTALLED/$i/receipt)
-		if [ "$i-$VERSION$EXTRAVERSION" = "$tazpkg" ]; then
+		if [ "$i-$VERSION$EXTRAVERSION" == "$tazpkg" ]; then
 			echo $i
 			break
 		fi
 		case "$i" in
-		*-*);;
-		*) break;;
+			*-*);;
+			*) break;;
 		esac
 		i=${i%-*}
 	done
 }
 
+
 # Check for the rootfs tree.
+
 check_rootfs() {
-	if [ ! -d "$ROOTFS/etc" ] ; then
-		echo -e "\nUnable to find a distro rootfs...\n"
-		exit 0
-	fi
+	[ -d "$ROOTFS/etc" ] || die 'Unable to find a distro rootfs...'
 }
 
+
 # Check for the boot dir into the root CD tree.
-verify_rootcd()
-{
-	if [ ! -d "$ROOTCD/boot" ] ; then
-		echo -e "\nUnable to find the rootcd boot directory...\n"
-		exit 0
-	fi
+
+verify_rootcd() {
+	[ -d "$ROOTCD/boot" ] || die 'Unable to find the rootcd boot directory...'
 }
+
 
 # isolinux.conf doesn't know the kernel version.
 # We name the kernel image 'bzImage'.
 # isolinux/syslinux first tries the '64' suffix with a 64bits cpu.
-make_bzImage_hardlink()
-{
-	if [ -s ${1:-.}/vmlinuz*slitaz ]; then
-		rm -f ${1:-.}/bzImage 2> /dev/null
-		ln ${1:-.}/vmlinuz*slitaz ${1:-.}/bzImage
+
+make_bzImage_hardlink() {
+	if [   -s ${1:-.}/vmlinuz*slitaz ]; then
+		rm -f ${1:-.}/bzImage 2>/dev/null
+		ln    ${1:-.}/vmlinuz*slitaz ${1:-.}/bzImage
 	fi
-	if [ -s ${1:-.}/vmlinuz*slitaz64 ]; then
+	if [   -s ${1:-.}/vmlinuz*slitaz64 ]; then
 		rm -f ${1:-.}/bzImage64 2> /dev/null
-		ln ${1:-.}/vmlinuz*slitaz64 ${1:-.}/bzImage64
+		ln    ${1:-.}/vmlinuz*slitaz64 ${1:-.}/bzImage64
 	fi
 }
 
-create_iso()
-{
+
+create_iso() {
 	cd $2
 	deduplicate
-	echo -n "Computing md5..."
+
+	action 'Computing md5...'
 	find * -type f ! -name md5sum ! -name 'vmlinuz*' -exec md5sum {} \; > md5sum
-	sed -i  -e '/  boot\/isolinux\/isolinux.bin$/d' \
-		-e '/  boot\/isolinux\/boot.cat$/d' md5sum
+	sed -i -e '/  boot\/isolinux\/isolinux.bin$/d' \
+		   -e '/  boot\/isolinux\/boot.cat$/d' md5sum
 	status
-	cd - > /dev/null
-	newline
-	boldify "Generating ISO image"
-	separator
+
+	cd - >/dev/null
+	title 'Generating ISO image'
+
 	echo "Generating $1"
 	make_bzImage_hardlink $2/boot
-	genisoimage -R -o $1 -b boot/isolinux/isolinux.bin \
- 		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-		-V "$VOLUM_NAME" -p "$PREPARED" -input-charset iso8859-1 \
-		-copyright README -P "www.slitaz.org" -boot-info-table $2
-	if [ -x /usr/bin/isohybrid ]; then
-		echo -n "Creating hybrid ISO..."
-		/usr/bin/isohybrid $1 -entry 2 2> /dev/null
+	genisoimage -R   -o $1   -b boot/isolinux/isolinux.bin \
+		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
+		-V "$VOLUM_NAME"   -p "$PREPARED"   -input-charset utf-8 \
+		-copyright README   -P "www.slitaz.org"   -boot-info-table $2
+
+	if [ -x '/usr/bin/isohybrid' ]; then
+		action 'Creating hybrid ISO...'
+		/usr/bin/isohybrid $1 -entry 2 2>/dev/null
 		status
 	fi
-	if [ -s /etc/tazlito/info ]; then
+
+	if [ -s '/etc/tazlito/info' ]; then
 		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
-			echo -n "Storing ISO info..."
-			dd if=/etc/tazlito/info bs=1k seek=1 of=$1 \
-				conv=notrunc 2> /dev/null
+			action 'Storing ISO info...'
+			dd if=/etc/tazlito/info bs=1k seek=1 of=$1 conv=notrunc 2>/dev/null
 			status
 		fi
 	fi
-	if [ -x /usr/bin/iso2exe ]; then
-		echo "Creating EXE header..."
-		/usr/bin/iso2exe $1 2> /dev/null
+
+	if [ -x '/usr/bin/iso2exe' ]; then
+		echo 'Creating EXE header...'
+		/usr/bin/iso2exe $1 2>/dev/null
 	fi
 }
 
+
 # Generate a new ISO image using isolinux.
-gen_livecd_isolinux()
-{
+
+gen_livecd_isolinux() {
 	# Some packages may want to alter iso
 	genisohooks iso
-	if [ ! -f "$ROOTCD/boot/isolinux/isolinux.bin" ]; then
-		echo -e "\nUnable to find isolinux binary.\n"
-		cleanup
-		exit 0
-	fi
+	[ ! -f "$ROOTCD/boot/isolinux/isolinux.bin" ] && die 'Unable to find isolinux binary.'
+
 	# Set date for boot msg.
-	if grep -q 'XXXXXXXX' $ROOTCD/boot/isolinux/isolinux.*g; then
-		DATE=`date +%Y%m%d`
-		echo -n "Setting build date to: $DATE..."
-		sed -i "s/XXXXXXXX/$DATE/" $ROOTCD/boot/isolinux/isolinux.*g
+	if grep -q 'XXXXXXXX' "$ROOTCD/boot/isolinux/isolinux.cfg"; then
+		DATE=$(date +%Y%m%d)
+		action 'Setting build date to: %s...' "$DATE"
+		sed -i "s/XXXXXXXX/$DATE/" "$ROOTCD/boot/isolinux/isolinux.cfg"
 		status
 	fi
+
 	cd $DISTRO
 	create_iso $ISO_NAME.iso $ROOTCD
-	echo -n "Creating the ISO md5sum..."
+
+	action 'Creating the ISO md5sum...'
 	md5sum $ISO_NAME.iso > $ISO_NAME.md5
 	status
+
 	separator
 	# Some packages may want to alter final iso
 	genisohooks final
 }
 
-lzma_history_bits()
-{
+
+lzma_history_bits() {
 	#
 	# This generates an ISO which boots with Qemu but gives
 	# rootfs errors in frugal or liveUSB mode.
 	#
-	#local n
-	#local sz
-	#n=20	# 1Mb
-	#sz=$(du -sk $1 | cut -f1)
-	#while [ $sz -gt 1024 -a $n -lt 28 ]; do
-		#n=$(( $n + 1 ))
-		#sz=$(( $sz / 2 ))
-	#done
-	#echo $n
+#	local n
+#	local sz
+#	n=20	# 1Mb
+#	sz=$(du -sk $1 | cut -f1)
+#	while [ $sz -gt 1024 -a $n -lt 28 ]; do
+#		n=$(( $n + 1 ))
+#		sz=$(( $sz / 2 ))
+#	done
+#	echo $n
 	echo 24
 }
 
-lzma_switches()
-{
-	local proc=$(grep -s '^processor' < /proc/cpuinfo | wc -l)
-	echo "-d$(lzma_history_bits $1) -mt${proc:-1}"
+
+lzma_switches() {
+	local proc_num=$(grep -sc '^processor' /proc/cpuinfo)
+	echo "-d$(lzma_history_bits $1) -mt${proc_num:-1}"
 }
 
-lzma_set_size()
-{
+
+lzma_set_size() {
 	# Update size field for lzma'd file packed using -si switch
-	local n
-	local i
-	return # Need to fix kernel code ?
+	return # Need to fix kernel code?
+
+	local n i
 	n=$(unlzma < $1 | wc -c)
 	for i in $(seq 1 8); do
 		printf '\\\\x%02X' $(($n & 255))
 		n=$(($n >> 8))
-	done | xargs echo -en | dd of=$1 conv=notrunc bs=1 seek=5 2> /dev/null
+	done | xargs echo -en | dd of=$1 conv=notrunc bs=1 seek=5 2>/dev/null
 }
 
-align_to_32bits()
-{
-	local size
-	size=$(stat -c %s ${1:-/dev/null})
+
+align_to_32bits() {
+	local size=$(stat -c %s ${1:-/dev/null})
 	[ $((${size:-0} & 3)) -ne 0 ] &&
-	dd if=/dev/zero bs=1 count=$((4 - ($size & 3))) >> $1 2> /dev/null
+		dd if=/dev/zero bs=1 count=$((4 - ($size & 3))) >> $1 2>/dev/null
 }
+
 
 # Pack rootfs
-pack_rootfs()
-{
-	( cd $1 ; find . -print | cpio -o -H newc ) | \
-	if [ "$COMPRESSION" = "none" ]; then
-		echo "Generating uncompressed initramfs... "
-		cat > $2
-	elif [ -x /usr/bin/lzma -a "$COMPRESSION" != "gzip" ]; then
-		echo -n "Generating lzma'ed initramfs... "
-		lzma e -si -so $(lzma_switches $1) > $2
-		lzma_set_size $2
-	else
-		echo "Generating gziped initramfs... "
-		gzip -9 > $2
-	fi
+
+pack_rootfs() {
+	( cd $1; find . -print | cpio -o -H newc ) | \
+	case "$COMPRESSION" in
+		none)
+			_ 'Creating %s without compression...' 'initramfs'
+			cat > $2
+			;;
+		gzip)
+			_ 'Creating %s with gzip compression...' 'initramfs'
+			gzip -9 > $2
+			;;
+		*)
+			_ 'Creating %s with lzma compression...' 'initramfs'
+			lzma e -si -so $(lzma_switches $1) > $2
+			lzma_set_size $2
+			;;
+	esac
 	align_to_32bits $2
 	echo 1 > /tmp/rootfs
 }
 
+
 # Compression functions for writeiso.
-write_initramfs()
-{
-	if [ "$COMPRESSION" = "lzma" ]; then
-		echo -n "Creating rootfs.gz with lzma compression... "
-		cpio -o -H newc | lzma e -si -so $(lzma_switches) > /rootfs.gz
-		align='y'
-		lzma_set_size /rootfs.gz
-	elif [ "$COMPRESSION" = "gzip" ]; then
-		echo "Creating rootfs.gz with gzip compression... "
-		cpio -o -H newc | gzip -9 > /rootfs.gz
-		[ -x /usr/bin/advdef ] && advdef -z4 /rootfs.gz
-	else
-		# align='y'
-		echo "Creating rootfs.gz without compression... "
-		cpio -o -H newc > /rootfs.gz
-	fi < /tmp/list
-	[ $align == 'y' -a -z "$noalign" ] && align_to_32bits /rootfs.gz
+
+write_initramfs() {
+	case "$COMPRESSION" in
+		lzma)
+			_n 'Creating %s with lzma compression...' "$INITRAMFS"
+			cpio -o -H newc | lzma e -si -so $(lzma_switches) > "/$INITRAMFS"
+			align='y'
+			lzma_set_size "/$INITRAMFS"
+			;;
+		gzip)
+			_ 'Creating %s with gzip compression...' "$INITRAMFS"
+			cpio -o -H newc | gzip -9 > "/$INITRAMFS"
+			[ -x /usr/bin/advdef ] && advdef -z4 "/$INITRAMFS"
+			;;
+		*)
+			# align='y'
+			_ 'Creating %s without compression...' "$INITRAMFS"
+			cpio -o -H newc > "/$INITRAMFS"
+			;;
+	esac < /tmp/list
+	[ "$align" == 'y' -a -z "$noalign" ] && align_to_32bits "/$INITRAMFS"
 	echo 1 > /tmp/rootfs
 }
 
+
 # Deduplicate files (MUST be on the same filesystem).
-deduplicate()
-{
-	find "${@:-.}" -type f -size +0c -xdev \
-		-exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
-	( save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
-	   while read attr inode link file; do
-		[ -L "$file" ] && continue
-		if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
-			if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
-				rm -f "$file"
-				if ln "$old_file" "$file" 2> /dev/null; then
-					inode="$old_inode"
-					[ "$link" = "1" ] && 
-					hardlinks=$(($hardlinks+1)) &&
-					save="$(($save+(${attr%%-*}+512)/1024))"
-				else
-					cp -a "$old_file" "$file"
+
+deduplicate() {
+	find "${@:-.}" -type f -size +0c -xdev -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
+		(
+			save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
+			while read attr inode link file; do
+				[ -L "$file" ] && continue
+				if [ "$attr" == "$old_attr" -a "$inode" != "$old_inode" ]; then
+					if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
+						rm -f "$file"
+						if ln "$old_file" "$file" 2>/dev/null; then
+							inode="$old_inode"
+							[ "$link" -eq 1 ] && hardlinks=$(($hardlinks+1)) &&
+								save="$(($save+(${attr%%-*}+512)/1024))"
+						else
+							cp -a "$old_file" "$file"
+						fi
+					fi
 				fi
-			fi
-		fi
-		old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
-	   done
-	   echo "$save Kbytes saved in $hardlinks duplicate files."
-	)
-	find "$@" -type l -xdev \
-		-exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
-	( old_attr=""; hardlinks=0; while read attr inode link file; do
-		attr="${attr/-TARGET-/-$(readlink $file)}"
-		if [ "$attr" = "$old_attr" ]; then
-			if [ "$inode" != "$old_inode" ]; then
-				rm -f "$file"
-				if ln "$old_file" "$file" 2> /dev/null; then
-					[ "$link" = "1" ] && 
-					hardlinks=$(($hardlinks+1))
+				old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
+			done
+			echo "$save Kbytes saved in $hardlinks duplicate files."
+		)
+
+	find "$@" -type l -xdev -exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
+		(
+			old_attr=""; hardlinks=0;
+			while read attr inode link file; do
+				attr="${attr/-TARGET-/-$(readlink $file)}"
+				if [ "$attr" == "$old_attr" ]; then
+					if [ "$inode" != "$old_inode" ]; then
+						rm -f "$file"
+						if ln "$old_file" "$file" 2>/dev/null; then
+							[ "$link" -eq 1 ] && hardlinks=$(($hardlinks+1))
+						else
+							cp -a "$old_file" "$file"
+						fi
+					fi
 				else
-					cp -a "$old_file" "$file"
+					old_file="$file"
+					old_attr="$attr"
+					old_inode="$inode"
 				fi
-			fi
-		else
-			old_file="$file"
-			old_attr="$attr"
-			old_inode="$inode"
-		fi
-	   done
-	   echo "$hardlinks duplicate symlinks."
-	)
+			done
+			echo "$hardlinks duplicate symlinks."
+		)
 }
 
+
 # Generate a new initramfs from the root filesystem.
-gen_initramfs()
-{
+
+gen_initramfs() {
 	# Just in case CTRL+c
 	rm -f $DISTRO/gen
 
@@ -444,14 +485,13 @@ gen_initramfs()
 	deduplicate
 
 	# Use lzma if installed. Display rootfs size in realtime.
-	rm -f /tmp/rootfs 2> /dev/null
+	rm -f /tmp/rootfs 2>/dev/null
 	pack_rootfs . $DISTRO/$(basename $1).gz &
 	sleep 2
 	echo -en "\nFilesystem size:"
-	while [ ! -f /tmp/rootfs ]
-	do
+	while [ ! -f /tmp/rootfs ]; do
 		sleep 1
-		echo -en "\\033[18G`du -sh $DISTRO/$(basename $1).gz | awk '{print $1}'`    "
+		echo -en "\\033[18G$(du -sh $DISTRO/$(basename $1).gz | awk '{print $1}')    "
 	done
 	echo -e "\n"
 	rm -f /tmp/rootfs
@@ -459,37 +499,37 @@ gen_initramfs()
 	mv $(basename $1).gz $ROOTCD/boot
 }
 
+
 distro_sizes() {
-	if [ "$time" ]; then
-		time=$(($(date +%s) - $time))
+	if [ -n "$start_time" ]; then
+		time=$(($(date +%s) - $start_time))
 		sec=$time
 		div=$(( ($time + 30) / 60))
-		[ "$div" != 0 ] && min="~ ${div}m"
+		[ "$div" -ne 0 ] && min="~ ${div}m"
 		echo "Build time      : ${sec}s $min"
 	fi
 	cat <<EOT
 Build date      : $(date +%Y%m%d)
-Packages        : $(ls -1 $ROOTFS*$INSTALLED/*/receipt | wc -l)
-Rootfs size     : $(du -csh $ROOTFS*/ | awk '{ s=$1 } END { print s }')
-Initramfs size  : $(du -csh $ROOTCD/boot/rootfs*.gz | awk '{ s=$1 } END { print s }')
-ISO image size  : $(du -sh $ISO_NAME.iso | awk '{ print $1 }')
+Packages        : $(ls -1   $ROOTFS*$INSTALLED/*/receipt | wc -l)
+Rootfs size     : $(du -csh $ROOTFS*/                    | awk 'END { print $1 }')
+Initramfs size  : $(du -csh $ROOTCD/boot/rootfs*.gz      | awk 'END { print $1 }')
+ISO image size  : $(du  -sh $ISO_NAME.iso                | awk '{ print $1 }')
 EOT
-	separator
-	echo "Image is ready: $ISO_NAME.iso"
-	newline
+	footer "Image is ready: $ISO_NAME.iso"
 }
 
+
 # Print ISO and rootfs size.
+
 distro_stats() {
-	newline
-	echo "$(boldify 'Distro statistics:') $DISTRO"
-	separator
+	title 'Distro statistics: %s' "$DISTRO"
 	distro_sizes
 }
 
+
 # Create an empty configuration file.
-empty_config_file()
-{
+
+empty_config_file() {
 	cat >> tazlito.conf <<"EOF"
 # tazlito.conf: Tazlito (SliTaz Live Tool) configuration file.
 #
@@ -506,8 +546,7 @@ PREPARED="$USER"
 # Path to the packages repository and the packages.list.
 PACKAGES_REPOSITORY=""
 
-# Path to the distro tree to gen-distro from a
-# list of packages.
+# Path to the distro tree to gen-distro from a list of packages.
 DISTRO=""
 
 # Path to the directory containing additional files
@@ -522,148 +561,166 @@ COMPRESSION="lzma"
 EOF
 }
 
-# extract rootfs.gz somewhere
-extract_rootfs()
-{
-	(zcat $1 || unlzma < $1 || cat $1) 2>/dev/null | \
-		(cd $2; cpio -idm > /dev/null)
+
+# Extract rootfs.gz somewhere
+
+extract_rootfs() {
+	# Detect compression format: *.lzma.cpio, *.gzip.cpio, or *.cpio
+	# First part (lzcat or zcat) may not fail, but cpio will fail on uncorrect format
+	(cd "$2"; lzcat "$1" | cpio -idm --quiet 2>/dev/null) && return
+	(cd "$2";  zcat "$1" | cpio -idm --quiet 2>/dev/null) && return
+	(cd "$2";   cat "$1" | cpio -idm --quiet 2>/dev/null)
 }
 
+
+# Extract flavor file to temp directory
+
+extract_flavor() {
+	# Input: $1 - flavor name to extract;
+	#        $2 = absent/empty: just extract 'outer layer'
+	#        $2 = 'full': also extract 'inner' rootcd and rootfs archives, make files rename
+	#        $2 = 'info': as 'full' and also make 'info' file to put into ISO
+	# Output: temp dir path where flavor was extracted
+	local f="$1.flavor" from to infos="$1.desc"
+	[ -f "$f" ] || die "File '$f' not found"
+	local dir="$(mktemp -d)"
+	zcat "$f" | (cd $dir; cpio -i --quiet >/dev/null)
+
+	if [ -n "$2" ]; then
+		cd $dir
+
+		[ -s "$1.receipt" ] && infos="$infos\n$1.receipt"
+
+		for i in rootcd rootfs; do
+			[ -f "$1.$i" ] || continue
+			mkdir "$i"
+			zcat "$1.$i" | (cd "$i"; cpio -idm --quiet 2>/dev/null)
+			zcat "$1.$i" | cpio -tv 2>/dev/null > "$1.list$i"; infos="$infos\n$1.list$i"
+			rm "$1.$i"
+		done
+		# Info to be stored inside ISO
+		[ "$2" == info ] && echo -e $infos | cpio -o -H newc | gzip -9 > info
+		rm $1.list*
+
+		# Renames
+		while read from to; do
+			[ -f "$from" ] || continue
+			mv "$from" "$to"
+		done <<EOT
+$1.nonfree    non-free.list
+$1.pkglist    packages.list
+$1-distro.sh  distro.sh
+$1.receipt    receipt
+$1.mirrors    mirrors
+$1.desc       description
+EOT
+	fi
+
+	echo $dir
+}
+
+
+# Pack flavor file from temp directory
+
+pack_flavor() {
+	(cd "$1"; ls | grep -v err | cpio -o -H newc) | gzip -9 > "$2.flavor"
+}
+
+
 # Remove duplicate files
-mergefs()
-{
+
+mergefs() {
 	# Note, many packages have files with spaces in the name
 	IFS=$'\n'
 
-	echo -n "Merge $(basename "$1") ($(du -hs "$1" | awk '{ print $1}')) into "
-	echo -n       "$(basename "$2") ($(du -hs "$2" | awk '{ print $1}'))"
+	local size1=$(du -hs "$1" | awk '{ print $1 }')
+	local size2=$(du -hs "$2" | awk '{ print $1 }')
+	action 'Merge %s (%s) into %s (%s)' "$(basename "$1")" "$size1" "$(basename "$2")" "$size2"
+
 	# merge symlinks files and devices
-	( cd "$1"; find ) | while read file; do
-		if [ -L "$1/$file" ]; then
-			[ -L "$2/$file" ] &&
-			[ "$(readlink "$1/$file")" == "$(readlink "$2/$file")" ] &&
-			rm -f "$2/$file"
+	( cd "$1"; find ) | \
+	while read file; do
+		if  [ -L "$1/$file" ]; then
+			[ -L "$2/$file"  -a  "$(readlink "$1/$file")" == "$(readlink "$2/$file")" ] &&
+				rm -f "$2/$file"
+
 		elif [ -f "$1/$file" ]; then
-			[ -f "$2/$file" ] &&
-			cmp "$1/$file" "$2/$file" >/dev/null 2>&1 && rm -f "$2/$file"
+			 [ -f "$2/$file" ] && cmp -s "$1/$file" "$2/$file" &&
+				rm -f "$2/$file"
+
 			[ -f "$2/$file" ] &&
 			[ "$(basename "$file")" == 'volatile.cpio.gz' ] &&
-			[ "$(dirname $(dirname "$file"))" == \
-			  ".$INSTALLED" ] && rm -f "$2/$file"
+			[ "$(dirname $(dirname "$file"))" == ".$INSTALLED" ] &&
+				rm -f "$2/$file"
+
 		elif [ -b "$1/$file" ]; then
-			[ -b "$2/$file" ] &&
+			 [ -b "$2/$file" ] &&
 			[ "$(stat -c '%a:%u:%g:%t:%T' "$1/$file")" == \
 			  "$(stat -c '%a:%u:%g:%t:%T' "$2/$file")" ] &&
-			rm -f "$2/$file"
+				rm -f "$2/$file"
+
 		elif [ -c "$1/$file" ]; then
-			[ -c "$2/$file" ] &&
+			 [ -c "$2/$file" ] &&
 			[ "$(stat -c '%a:%u:%g:%t:%T' "$1/$file")" == \
 			  "$(stat -c '%a:%u:%g:%t:%T' "$2/$file")" ] &&
-			rm -f "$2/$file"
+				rm -f "$2/$file"
 		fi
 	done
 
-	# cleanup directories
-	( cd "$1"; find . -type d ) | sed '1!G;h;$!d' | while read file; do
+	# cleanup directories; TODO: simplify
+	( cd "$1"; find . -type d ) | sed '1!G;h;$!d' | \
+	while read file; do
 		[ -d "$2/$file" ] && rmdir "$2/$file" 2>/dev/null
 	done
-	true
-	status
+
 	unset IFS
+	status
 }
 
-cleanup_merge()
-{
+
+cleanup_merge() {
 	rm -rf $TMP_DIR
 	exit 1
 }
 
-human2cent()
-{
-case "$1" in
-*k) echo $1 | sed 's/\(.*\).\(.\)k/\1\2/';;
-*M) echo $(( $(echo $1 | sed 's/\(.*\).\(.\)M/\1\2/') * 1024));;
-*G) echo $(( $(echo $1 | sed 's/\(.*\).\(.\)G/\1\2/') * 1024 * 1024));;
-esac
-}
-
-cent2human()
-{
-if [ $1 -lt 10000 ]; then
-  echo "$(($1 / 10)).$(($1 % 10))k"
-elif [ $1 -lt 10000000 ]; then
-  echo "$(($1 / 10240)).$(( ($1/1024) % 10))M"
-else
-  echo "$(($1 / 10485760)).$(( ($1/1048576) % 10))G"
-fi
-}
-
-get_size()
-{
-cat $LOCALSTATE/packages.list $TMP_DIR/packages.list 2>/dev/null | awk "{ \
-if (/^$(echo $1 | sed 's/[$+.\]/\\&/g')$/) get=1; \
-if (/installed/ && get == 1) { print ; get++ } \
-}
-END { if (get < 2) print \" 0.0k  (0.0k installed)\" }" | \
-sed 's/ *\(.*\) .\(.*\) installed./\1 \2/' | while read packed unpacked; do
-  echo "$(human2cent $packed) $(human2cent $unpacked)"
-done
-}
-
-# Display package list with version, set packed_size and unpacked_size
-get_pkglist()
-{
-packed_size=0; unpacked_size=0
-grep -v ^#  $FLAVORS_REPOSITORY/$1/packages.list > $TMP_DIR/flavor.pkg
-while read pkg; do
-	set -- $(get_size $pkg)
-	packed_size=$(( $packed_size + $1 ))
-	unpacked_size=$(( $unpacked_size + $2 ))
-	for i in $(grep -hs ^$pkg $LOCALSTATE/packages.list \
-				  $TMP_DIR/packages.list); do
-		echo $i
-		break
-	done
-done < $TMP_DIR/flavor.pkg
-rm -f $TMP_DIR/flavor.pkg
-}
 
 # Update isolinux config files for multiple rootfs
-update_bootconfig()
-{
+
+update_bootconfig() {
 	local files
 	echo -n "Updating boot config files..."
 	files="$(grep -l 'include common' $1/*.cfg)"
-	for file in $files ; do
-			awk -v n=$(echo $2 | awk '{ print NF/2 }') '{
-if (/label/) label=$0;
-else if (/kernel/) kernel=$0;
-else if (/append/) {
-	i=index($0,"rootfs.gz");
-	append=substr($0,i+9);
-}
-else if (/include/) {
-	for (i = 1; i <= n; i++) {
-		print label i
-		print kernel;
-		initrd="initrd=/boot/rootfs" n ".gz"
-		for (j = n - 1; j >= i; j--) {
-			initrd=initrd ",/boot/rootfs" j ".gz";
-		}
-		printf "\tappend %s%s\n",initrd,append;
-		print "";
-	}
-	print;
-}
-else print;
-}' < $file > $file.$$
-			mv -f $file.$$ $file
+	for file in $files; do
+		awk -v n=$(echo $2 | awk '{ print NF/2 }') '{
+			if (/label/) label=$0;
+			else if (/kernel/) kernel=$0;
+			else if (/append/) {
+				i=index($0,"rootfs.gz");
+				append=substr($0,i+9);
+			}
+			else if (/include/) {
+				for (i = 1; i <= n; i++) {
+					print label i
+					print kernel;
+					initrd="initrd=/boot/rootfs" n ".gz"
+					for (j = n - 1; j >= i; j--) {
+						initrd=initrd ",/boot/rootfs" j ".gz";
+					}
+					printf "\tappend %s%s\n",initrd,append;
+					print "";
+				}
+				print;
+			}
+			else print;
+		}' < $file > $file.$$
+		mv -f $file.$$ $file
 	done
 	sel="$(echo $2 | awk '{
-  for (i=1; i<=NF; i++)
-     if (i % 2 == 0) printf " slitaz%d",i/2
-     else printf " %s",$i
-}')"
+		for (i=1; i<=NF; i++)
+			if (i % 2 == 0) printf " slitaz%d", i/2
+			else printf " %s", $i
+	}')"
+
 	[ -s $1/common.cfg ] && cat >> $1/common.cfg <<EOT
 
 label slitaz
@@ -674,54 +731,54 @@ label noram
 	config noram.cfg
 
 EOT
+
 	# Update vesamenu
-	if [ -s $1/isolinux.cfg ]; then
+	if [ -s "$1/isolinux.cfg" ]; then
 		files="$files $1/isolinux.cfg"
 		awk -v n=$(echo $2 | awk '{ print NF/2 }') -v "sel=$sel" '
-BEGIN {
-	kernel="	COM32 c32box.c32"
-}
-{
-if (/ROWS/) print "MENU ROWS " n+$3;
-else if (/TIMEOUTROW/) print "MENU TIMEOUTROW " n+$3;
-else if (/TABMSGROW/) print "MENU TABMSGROW " n+$3;
-else if (/CMDLINEROW/) print "MENU CMDLINEROW " n+$3;
-else if (/VSHIFT/) {
-	x=$3-n;
-	if (x < 0) x=0;
-	print "MENU VSHIFT " x;
-}
-else if (/rootfs.gz/) {
-	linux=""
-	if (/bzImage/) {
-		linux="linux /boot/bzImage "
-	}
-	i=index($0,"rootfs.gz");
-	append=substr($0,i+9);
-	print	"	kernel /boot/isolinux/ifmem.c32"
-	print	"	append" sel " noram"
-	print	""
-	print	"label noram"
-	print	"	MENU HIDE"
-	print	"	config noram.cfg"
-	print	""
-	for (i = 1; i <= n; i++) {
-		print "LABEL slitaz" i
-		print "	MENU LABEL SliTaz slitaz" i " Live"
-		print kernel;
-		initrd="initrd=/boot/rootfs" n ".gz"
-		for (j = n - 1; j >= i; j--) {
-			initrd=initrd ",/boot/rootfs" j ".gz";
+		BEGIN {
+			kernel = "	COM32 c32box.c32"
 		}
-		printf "\tappend %s%s%s\n",linux,initrd,append;
-		print "";
-	}
-}
-else if (/bzImage/) kernel=$0;
-else print;
-}' < $1/isolinux.cfg > $1/isolinux.cfg.$$
+		{
+			     if (/ROWS/)       print "MENU ROWS "       n+$3;
+			else if (/TIMEOUTROW/) print "MENU TIMEOUTROW " n+$3;
+			else if (/TABMSGROW/)  print "MENU TABMSGROW "  n+$3;
+			else if (/CMDLINEROW/) print "MENU CMDLINEROW " n+$3;
+			else if (/VSHIFT/) {
+				x = $3-n;
+				if (x < 0) x = 0;
+				print "MENU VSHIFT " x;
+			}
+			else if (/rootfs.gz/) {
+				linux = "";
+				if (/bzImage/) linux = "linux /boot/bzImage ";
+				i = index($0, "rootfs.gz");
+				append = substr($0, i+9);
+				print "	kernel /boot/isolinux/ifmem.c32"
+				printf "\tappend%s noram", sel;
+				print ""
+				print "label noram"
+				print "	MENU HIDE"
+				print "	config noram.cfg"
+				print ""
+				for (i = 1; i <= n; i++) {
+					print "LABEL slitaz" i
+					printf "\tMENU LABEL SliTaz slitaz%d Live", i;
+					print kernel;
+					initrd = "initrd=/boot/rootfs" n ".gz"
+					for (j = n - 1; j >= i; j--) {
+						initrd = initrd ",/boot/rootfs" j ".gz";
+					}
+					printf "\tappend %s%s%s\n", linux, initrd, append;
+					print "";
+				}
+			}
+			else if (/bzImage/) kernel = $0;
+			else print;
+		}' < $1/isolinux.cfg > $1/isolinux.cfg.$$
 		mv $1/isolinux.cfg.$$ $1/isolinux.cfg
 	fi
+
 	[ -s $1/c32box.c32 ] && sed -i -e '/kernel.*ifmem/d' \
 		-e 's/append \([0-9]\)/append ifmem \1/' $1/isolinux.cfg
 	cat > $1/noram.cfg <<EOT
@@ -739,6 +796,7 @@ label hacker
 
 label reboot
 EOT
+
 	if [ -s $1/c32box.c32 ]; then
 		cat >> $1/noram.cfg <<EOT
 	COM32 c32box.c32
@@ -752,6 +810,7 @@ EOT
 	else
 		echo "	com32 reboot.c32" >> $1/noram.cfg
 	fi
+
 	# Restore real label names
 	[ -s $1/common.cfg ] && files="$1/common.cfg $files"
 	echo $2 | awk '{ for (i=NF; i>1; i-=2) printf "%d/%s\n",i/2,$i }' | \
@@ -761,64 +820,65 @@ EOT
 	status
 }
 
+
 # Install a missing package
-install_package()
-{
-	echo -n "Install package $1 "
-	[ -n "$2" ] && echo -n "for kernel $2 "
-	echo -n "?"
+
+install_package() {
+	if [ -z "$2" ]; then
+		_n 'Install package %s? ' "$1"
+	else
+		_n 'Install package %s for Kernel %s? ' "$1" "$2"
+	fi
+	echo -n '[y = yes] '
 	read answer
 	case "$answer" in
-	y*|Y*|o*|O*)
-		# We dont want package on host cache.
-		echo -n "Getting and installing package: $1"
-		yes y | tazpkg get-install $1 2>&1 >> $log || exit 1
-		status ;;
-	*)
-		return 1 ;;
+		y*|Y*|o*|O*)
+			# We don't want package on host cache.
+			action 'Getting and installing package: %s' "$1"
+			yes y | tazpkg get-install $1 --quiet 2>&1 >> $log || exit 1
+			status ;;
+		*)
+			return 1 ;;
 	esac
 }
 
+
 # Check iso for loram transformation
-check_iso_for_loram()
-{
-	[ -s $TMP_DIR/iso/boot/rootfs.gz ] ||
-	[ -s $TMP_DIR/iso/boot/rootfs1.gz ]
+
+check_iso_for_loram() {
+	[ -s "$TMP_DIR/iso/boot/rootfs.gz" ] ||
+	[ -s "$TMP_DIR/iso/boot/rootfs1.gz" ]
 }
 
+
 # Build initial rootfs for loram ISO ram/cdrom/http
-build_initfs()
-{
+
+build_initfs() {
 	urliso="mirror.slitaz.org mirror.switch.ch/ftp/mirror/slitaz \
 download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 	version=$(ls $TMP_DIR/iso/boot/vmlinuz-* | sed 's/.*vmlinuz-//')
-	if [ -z "$version" ]; then
-		cat <<EOT
-Can't find the kernel version.
-No file /boot/vmlinuz-<version> in ISO image.
-Abort.
-EOT
-		exit 1
-	fi
+	[ -z "$version" ] && die "Can't find the kernel version." \
+		'No file /boot/vmlinuz-<version> in ISO image. Abort.'
+
 	[ -s /usr/share/boot/busybox-static ] || install_package busybox-static
 	need_lib=false
-	mkdir -p $TMP_DIR/initfs/bin $TMP_DIR/initfs/dev $TMP_DIR/initfs/run \
-		 $TMP_DIR/initfs/mnt $TMP_DIR/initfs/proc $TMP_DIR/initfs/tmp \
-		 $TMP_DIR/initfs/sys $TMP_DIR/initfs/lib/modules
+	for i in bin dev run mnt proc tmp sys lib/modules; do
+		mkdir -p $TMP_DIR/initfs/$i
+	done
 	ln -s bin $TMP_DIR/initfs/sbin
-	ln -s . $TMP_DIR/initfs/usr
-	for aufs in aufs overlayfs ; do
+	ln -s .   $TMP_DIR/initfs/usr
+	for aufs in aufs overlayfs; do
 		[ ! -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] &&
 		install_package $aufs $version && break
 	done || return 1
 	cp /init $TMP_DIR/initfs/
 	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
 	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
-		$TMP_DIR/initfs/lib/modules 2> /dev/null
-	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2> /dev/null
+		$TMP_DIR/initfs/lib/modules 2>/dev/null
+	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2>/dev/null
 	cp /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z \
 		$TMP_DIR/initfs/lib/modules
-	if [ "$1" == "cdrom" ]; then
+	if [ "$1" == 'cdrom' ]; then
 		sed -i '/mod squashfs/d' $TMP_DIR/initfs/init
 	else
 		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
@@ -826,14 +886,14 @@ EOT
 			install_package linux-squashfs $version || return 1
 		done
 		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
-			 $TMP_DIR/initfs/lib/modules
+			$TMP_DIR/initfs/lib/modules
 		ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
 		cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	fi
 	for i in $(ls /dev/[hs]d[a-f]*); do
 		cp -a $i $TMP_DIR/initfs/dev
 	done
-	if [ "$1" == "http" ]; then
+	if [ "$1" == 'http' ]; then
 		mkdir $TMP_DIR/initfs/etc
 		ln -s /proc/mounts $TMP_DIR/initfs/etc/mtab
 		cp /usr/share/udhcpc/default.script $TMP_DIR/initfs/lib/udhcpc
@@ -859,14 +919,13 @@ EOT
 			need_lib=true
 		fi
 		cd $TMP_DIR/initfs
-		echo "Getting slitaz-release..."
+		echo 'Getting slitaz-release...'
 		for i in $TMP_DIR/iso/boot/rootfs*.gz; do
-			( zcat $i 2> /dev/null || unlzma < $i) | \
-			cpio -idmu etc/slitaz-release > /dev/null
+			(zcat $i 2>/dev/null || unlzma < $i) | cpio -idmu etc/slitaz-release >/dev/null
 		done
 		cd - > /dev/null
-		echo "Default urls for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-$(cat $TMP_DIR/initfs/etc/slitaz-release)-loram-cdrom.iso: $urliso"
-		echo -n "List of urls to insert: "
+		longline "Default URLs for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-$(cat $TMP_DIR/initfs/etc/slitaz-release)-loram-cdrom.iso: $urliso"
+		echo -n "List of URLs to insert: "
 		read -t 30 urliso2
 		urliso="$urliso2 $urliso"
 	fi
@@ -888,18 +947,16 @@ EOT
 	$need_lib && for i in /lib/ld-* /lib/lib[cm].so* /lib/lib[cm]-* ; do
 		cp -a $i $TMP_DIR/initfs/lib
 	done
-	[ "$1" == "http" ] && cat > $TMP_DIR/initfs/init <<EOTEOT
+	[ "$1" == 'http' ] && cat > $TMP_DIR/initfs/init <<EOTEOT
 #!/bin/sh
 
-getarg()
-{
+getarg() {
 	grep -q " \$1=" /proc/cmdline || return 1
 	eval \$2=\$(sed "s/.* \$1=\\\\([^ ]*\\\\).*/\\\\1/" < /proc/cmdline)
 	return 0
 }
 
-copy_rootfs()
-{
+copy_rootfs() {
 	total=\$(grep MemTotal /proc/meminfo | sed 's/[^0-9]//g')
 	need=\$(du -c \${path}rootfs* | tail -n 1 | cut -f1)
 	[ \$(( \$total / \$need )) -gt 1 ] || return 1
@@ -988,8 +1045,8 @@ EOTEOT
 		unxz $i || gunzip $i || lzma d $i ${i%.gz}
 		rm -f $i
 		gzip -9 ${i%.gz}
-	done 2> /dev/null
-	( cd $TMP_DIR/initfs ; find | busybox cpio -o -H newc 2> /dev/null) | \
+	done 2>/dev/null
+	(cd $TMP_DIR/initfs; find | busybox cpio -o -H newc 2>/dev/null) | \
 	lzma e $TMP_DIR/initfs.gz -si
 	lzma_set_size $TMP_DIR/initfs.gz
 	rm -rf $TMP_DIR/initfs
@@ -997,21 +1054,21 @@ EOTEOT
 	return 0
 }
 
+
 # Move each initramfs to squashfs
-build_loram_rootfs()
-{
+
+build_loram_rootfs() {
 	rootfs_sizes=""
 	for i in $TMP_DIR/iso/boot/rootfs*.gz; do
 		mkdir -p $TMP_DIR/fs
 		cd $TMP_DIR/fs
-		( zcat $i 2> /dev/null || unlzma < $i) | cpio -idm
+		(zcat $i 2>/dev/null || unlzma < $i) | cpio -idm
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i)
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
-		( cd $(dirname $rootfs); echo $(basename $rootfs) | \
-			  cpio -o -H newc ) > $rootfs.cpio
+		( cd $(dirname $rootfs); echo $(basename $rootfs) | cpio -o -H newc ) > $rootfs.cpio
 		rm -f $rootfs
 		mv $rootfs.cpio $rootfs
 		cd - > /dev/null
@@ -1019,10 +1076,11 @@ build_loram_rootfs()
 	done
 }
 
+
 # Move meta boot configuration files to basic configuration files
-# because meta loram flavor is useless when rootfs is not loaded in ram
-unmeta_boot()
-{
+# because meta loram flavor is useless when rootfs is not loaded in RAM
+
+unmeta_boot() {
 	local root=${1:-$TMP_DIR/loramiso}
 	if [ -f $root/boot/isolinux/noram.cfg ]; then
 		# We keep enough information to do unloram...
@@ -1039,22 +1097,23 @@ unmeta_boot()
 	fi
 }
 
+
 # Move rootfs to squashfs filesystem(s) to the cdrom writeable with aufs/overlayfs.
-# These squashfs may be loaded in ram at boot time.
-# Rootfs are also copied to cdrom for tiny ramsize systems.
+# These squashfs may be loaded in RAM at boot time.
+# Rootfs are also copied to CD-ROM for tiny ramsize systems.
 # Meta flavors are converted to normal flavors.
-build_loram_cdrom()
-{
+
+build_loram_cdrom() {
 	build_initfs cdrom || return 1
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
 	mkdir $TMP_DIR/loramiso/fs
 	cd $TMP_DIR/loramiso/fs
 	for i in $( ls ../boot/root* | sort -r ) ; do
-		( zcat $i 2> /dev/null || unlzma < $i ) | cpio -idmu
+		(zcat $i 2>/dev/null || unlzma < $i) | cpio -idmu
 		rm -f $i
 	done
 	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
-	cd - > /dev/null
+	cd - >/dev/null
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	unmeta_boot
 	VOLUM_NAME="SliTaz_LoRAM_CDROM"
@@ -1063,10 +1122,11 @@ build_loram_cdrom()
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
+
 # Create http bootstrap to load and remove loram_cdrom
 # Meta flavors are converted to normal flavors.
-build_loram_http()
-{
+
+build_loram_http() {
 	build_initfs http || return 1
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
 	rm -f $TMP_DIR/loramiso/boot/rootfs*
@@ -1075,10 +1135,11 @@ build_loram_http()
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
 
+
 # Update meta flavor selection sizes.
 # Reduce sizes with rootfs gains.
-update_metaiso_sizes()
-{
+
+update_metaiso_sizes() {
 	for cfg in $(grep -El '(append|ifmem) [0-9]' $TMP_DIR/loramiso/boot/isolinux/*.cfg)
 	do
 		local append="$(grep -E '(append|ifmem) [0-9]' $cfg)"
@@ -1091,9 +1152,9 @@ update_metaiso_sizes()
 		while [ -n "$2" ]; do
 			local s
 			case "$1" in
-			*G) s=$(( ${1%G} * 1024 * 1024 ));;
-			*M) s=$(( ${1%M} * 1024 ));;
-			*)  s=${1%K};;
+				*G) s=$(( ${1%G} * 1024 * 1024 ));;
+				*M) s=$(( ${1%M} * 1024 ));;
+				*)  s=${1%K};;
 			esac
 			sizes=${sizes#* }
 			for i in $sizes ; do
@@ -1109,23 +1170,25 @@ update_metaiso_sizes()
 	done
 }
 
+
 # Move rootfs to a squashfs filesystem into the initramfs writeable with aufs/overlayfs.
 # Meta flavor selection sizes are updated.
-build_loram_ram()
-{
+
+build_loram_ram() {
 	build_initfs ram || return 1
 	build_loram_rootfs
-	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
+	cp -a $TMP_DIR/iso    $TMP_DIR/loramiso
 	make_bzImage_hardlink $TMP_DIR/loramiso/boot
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
-	cp $TMP_DIR/rootfs* $TMP_DIR/loramiso/boot
+	cp $TMP_DIR/rootfs*   $TMP_DIR/loramiso/boot
 	update_metaiso_sizes
-	create_iso $OUTPUT $TMP_DIR/loramiso
+	create_iso $OUTPUT    $TMP_DIR/loramiso
 }
 
+
 # Remove files installed by packages
-find_flavor_rootfs()
-{
+
+find_flavor_rootfs() {
 	for i in $1/etc/tazlito/*.extract; do
 		[ -e $i ] || continue
 		chroot $1 /bin/sh ${i#$1}
@@ -1175,34 +1238,348 @@ find_flavor_rootfs()
 	rm -f $1$LOCALSTATE/*packages* $1$LOCALSTATE/files.list.lzma \
 		$1$LOCALSTATE/mirror*  $1/var/cache/*/* \
 		$1/var/lock/* $1/var/log/* $1/var/run/* $1/var/run/*/* \
-		$1/var/lib/*  $1/var/lib/dbus/* 2> /dev/null
+		$1/var/lib/*  $1/var/lib/dbus/* 2>/dev/null
 
 	# Cleanup directory tree
 	cd $1
 	find * -type d | sort -r | while read dir; do
-		rmdir "$dir" 2> /dev/null
+		rmdir "$dir" 2>/dev/null
 	done
 	cd - > /dev/null
 }
 
-# get byte(s) form a binary file 
-get()
-{
+
+# Get byte(s) from a binary file
+
+get() {
 	od -v -j $1 -N ${3:-2} -t u${3:-2} -w${3:-2} -An $2 2>/dev/null
 }
 
-# get cpio flavor info from the ISO image
-flavordata()
-{
+
+# Get cpio flavor info from the ISO image
+
+flavordata() {
 	[ $(get 1024 $1) -eq 35615 ] && n=2 || n=$((1+$(get 417 $1 1)))
 	dd if=$1 bs=512 skip=$n count=20 2>/dev/null | zcat 2>/dev/null
 }
+
+
+# Restore undigest mirrors
+
+restore_mirrors() {
+	local undigest="$root$LOCALSTATE/undigest" priority="$root$LOCALSTATE/priority"
+	[ -d "$undigest.bak" ] || [ -e "$priority.bak" ] || return
+
+	action 'Restoring mirrors...'
+	if [  -d "$undigest.bak" ]; then
+		[ -d "$undigest" ] && rm -r "$undigest"
+		mv   "$undigest.bak" "$undigest"
+	fi
+	[ -e "$priority.bak" ] && mv -f "$priority.bak" "$priority"
+	:; status
+}
+
+
+# Setup undigest mirrors
+
+setup_mirrors() {
+	# Setup mirrors in plain system or in chroot (with variable root=)
+	#
+	# Note, difficulties exists in using local-filesystem-mirrors (when content
+	# of the 'mirror' file is point to folder somewhere in the FS) inside chroot,
+	# because mirror should be in the chroot too. We make local mirrors to be
+	# accessible via http://localhost/... using built-in SliTaz web server.
+	local mirrorlist="$1" fresh repacked
+	local undigest="$root$LOCALSTATE/undigest" priority="$root$LOCALSTATE/priority"
+
+	# Restore mirrors first: in case of non-clear exits, hangs, etc.
+	restore_mirrors
+
+	_ 'Setting up mirrors for %s...' "$root/"
+	# Backing up current undigest mirrors and priority
+	[ -d "$undigest" ] && mv "$undigest" "$undigest.bak"
+	[ -e "$priority" ] && mv "$priority" "$priority.bak"
+	rm -rf '/var/www/tazlito/'
+	mkdir -p '/var/www/tazlito/'
+
+	# Packages produced by CookUtils: on Tank or local, or repacked packages: highest priority
+	fresh='/home/slitaz/packages'
+	if [ -d "$fresh" ]; then
+		# Make this mirror accessible using http://localhost/tazlito/fresh
+		ln -s "$fresh" '/var/www/tazlito/fresh'
+		# Setup first undigest mirror
+		mkdir -p "$undigest/fresh"
+		echo "http://localhost/tazlito/fresh/" > "$undigest/fresh/mirror"
+		echo 'fresh' >> "$priority"
+		# Rebuild mirror DB if needed
+		[ ! -e "$fresh/IDs" ] && tazpkg mkdb "$fresh" --forced --root=''
+		[ -n "$(find -L "$fresh" -name '*.tazpkg' -newer "$fresh/IDs")" ] && \
+			tazpkg mkdb "$fresh" --forced --root=''
+		cp -a "$fresh/files.list.lzma" "$fresh/files-list.lzma"
+	fi
+
+	# Repacked packages: high priority
+	repacked="$PACKAGES_REPOSITORY"
+	if [ -d "$repacked" -a "$repacked" != "$fresh" ] && ls "$repacked" | grep -q ".tazpkg"; then
+		# According to Tazlito setup file (tazlito.conf):
+		# WORK_DIR="/home/slitaz/$SLITAZ_VERSION"
+		# or
+		# WORK_DIR="/home/slitaz"
+		# and
+		# PACKAGES_REPOSITORY="$WORK_DIR/packages"
+		# It MAY or MAY NOT match /home/slitaz/packages, so here we setup second repository
+
+		# Make this mirror accessible using http://localhost/tazlito/repacked
+		ln -s "$repacked" '/var/www/tazlito/repacked'
+		# Setup second undigest mirror
+		mkdir -p "$undigest/repacked"
+		echo "http://localhost/tazlito/repacked/" > "$undigest/repacked/mirror"
+		echo 'repacked' >> "$priority"
+		# Rebuild mirror DB if needed
+		[ ! -e "$repacked/IDs" ] && tazpkg mkdb "$repacked" --forced --root=''
+		[ -n "$(find -L "$repacked" -name '*.tazpkg' -newer "$repacked/IDs")" ] && \
+			tazpkg mkdb "$repacked" --forced --root=''
+		cp -a "$repacked/files.list.lzma" "$repacked/files-list.lzma"
+	fi
+
+	# All repositories listed in mirrors list: normal priority
+	[ -e "$mirrorlist" ] && \
+	while read mirror; do
+		# Provide consistent mirror ID for caching purpose: /var/cache/tazpkg/<mirror ID>/packages
+		mirrorid=$(echo "$mirror" | md5sum | cut -d' ' -f1)
+		mkdir -p            "$undigest/$mirrorid"
+		echo "$mirror"    > "$undigest/$mirrorid/mirror"
+		echo "$mirrorid" >> "$priority"
+	done < "$mirrorlist"
+
+	# And, finally, main mirror with the lowest (failsafe) priority (nothing to do)
+
+	# Show list of mirrors
+	awk -vdb="$root$LOCALSTATE" '
+	function show(num, name, url,   pad, len) {
+		pad = "................................";
+		len = (32 - length(name));
+		printf " %-1.1d. %s%*.*s %-44.44s\n", num, name, len, len, pad, url;
+	}
+	{
+		num++;
+		"cat " db "/undigest/" $0 "/mirror" | getline url;
+		show(num, $0, url);
+	}
+	END {
+		num++;
+		"cat " db "/mirror" | getline url;
+		show(num, "main", url);
+	}' "$priority"
+
+	tazpkg recharge --quiet
+}
+
+
+# Get list of 'packages.info' lists using priority
+
+pi_lists() {
+	local pi
+	[ -s "$root$LOCALSTATE/packages.info" ] || tazpkg recharge >/dev/null 2>&1
+	local priority="$root$LOCALSTATE/priority"
+	local undigest="$root$LOCALSTATE/undigest"
+
+	{
+		[ -s "$priority" ] && cat "$priority"
+		echo 'main'
+		[ -d "$undigest" ] && ls "$undigest"
+	} | awk -vun="$undigest/" '
+	{
+		if (arr[$0] != 1) {
+			arr[$0]  = 1;
+			print un $0 "/packages.info";
+		}
+	}' | sed 's|/undigest/main||' | \
+	while read pi; do
+		[ -e "$pi" ] && echo "$pi"
+	done
+}
+
+
+# Strip versions from packages list
+
+strip_versions() {
+	action 'Strip versions from list %s...' "$(basename "$1")"
+	local in_list="$1" tmp_list="$(mktemp)" namever pkg
+	[ -f "$in_list" ] || die "List '$in_list' not found."
+
+	# $pkg=<name>-<version> or $pkg=<name>; both <name> and <version> may contain dashes
+	awk '
+	{
+		if (FILENAME ~ "packages.info") {
+			# Collect package names
+			FS = "\t"; pkg[$1] = 1;
+		} else {
+			FS = "-"; OFS = "-"; $0 = $0;		# Fix bug with FS for first record
+			while (NF > 1 && ! pkg[$0])
+				NF --;
+			printf "%s\n", $0;
+		}
+	}' $(pi_lists) "$in_list" > "$tmp_list"
+
+	cat "$tmp_list" > "$in_list"
+	rm "$tmp_list"
+	status
+}
+
+
+# Calculate sizes (estimated) and real packages number (including all dependencies)
+# using given extracted flavor and current mirrors.
+#
+# Input: <unpacked flavor dir> <flavor name> [<output full list file>]
+# Output in human readable form:
+# <unpacked size> <packed size> <size of ISO> <number of packages>
+# File $1/err output: unknown packages
+# File $1/warn output: warnings about missing packages
+# TODO: use 'equivalent packages' rules
+
+calc_sizes() {
+	local dir="$1" flavor="$2" outfile="$3"
+	local rootfs_packed=0 rootfs_unpacked=0 rootcd_unpacked=0
+
+	if [ -s "$dir/$flavor.rootfs" ]; then
+		rootfs_packed="$(wc -c < "$dir/$flavor.rootfs")";
+		rootfs_unpacked="$(zcat  "$dir/$flavor.rootfs" | wc -c)";
+	fi
+	if [ -s "$dir/$flavor.rootcd" ]; then
+		rootcd_unpacked="$(zcat  "$dir/$flavor.rootcd" | wc -c)";
+	fi
+
+	awk -F$'\t' \
+	-vrootfs_p="$rootfs_packed" -vrootfs_u="$rootfs_unpacked" -vrootcd_u="$rootcd_unpacked" \
+	-voutfile="$outfile" -verrfile="$dir/err" -vwarnfile="$dir/warn" '
+	BEGIN {
+		K = 1024; M = K * 1024; G = M * 1024;
+	}
+	function h2b(h) {
+		# Convert human-readable format to bytes
+		if (h ~ "K")	return h * K;
+		if (h ~ "M")	return h * M;
+		if (h ~ "G")	return h * G;
+						return h;
+	}
+	function b2h(b,   p) {
+		# Convert bytes to human-readable format
+		     if (b >= G)	{ b /= G; p = "G"; }
+		else if (b >= M)	{ b /= M; p = "M"; }
+		else				{ b /= K; p = "K"; }
+		if (b >= 100)	printf   "%d%s\n", b, p;
+		else			printf "%.1f%s\n", b, p;
+	}
+	function mark_deps(pkg,   localdepend, localdepends) {
+		# Mark package with its dependencies (to be processed later)
+		if (sizes[pkg]) {
+			if (! pkgs[pkg]) {
+				pkgs[pkg] = sizes[pkg];
+
+				if (depends[pkg]) {
+					split(depends[pkg], localdepends, " ");
+					# Recursive call
+					for (localdepend in localdepends)
+						mark_deps(localdepends[localdepend]);
+				}
+			}
+		} else {
+			printf "  %s\n", $1 >> errfile;
+		}
+	}
+	function calc(pkg, size_u, size_p) {
+		# Calculate unpacked and packed sizes of /boot
+		if (pkgs[pkg]) { boot_u += h2b(size_u); boot_p += h2b(size_p); }
+	}
+	# main loop
+	{
+		if (FILENAME ~ "packages.info") {
+			# Step #1: fill arrays "sizes" and "depends"
+			if (! sizes[$1]) {
+				  sizes[$1] = $7;
+				depends[$1] = $8;
+			}
+		} else {
+			# Step #2: mark packages and its dependencies
+			mark_deps($1);
+		}
+	}
+	END {
+		# Calculate sums for all marked packages and its deps
+		for (pkg in pkgs) {
+			num_pkgs ++;
+			split(pkgs[pkg], s, " ");
+			size_packed   += h2b(s[1]);
+			size_unpacked += h2b(s[2]);
+			if (outfile) print pkg >> outfile;
+		}
+		# Add files placed in flavor.rootfs
+		size_packed   += rootfs_p;
+		size_unpacked += rootfs_u;
+
+		# Check critical packages: "syslinux" and one of the packages containing "vmlinuz*"
+		printf "" > warnfile;
+		if (! pkgs["syslinux"]) printf "  * Syslinux\n" >> warnfile;
+		if (! pkgs["linux"]       && ! pkgs["linux-without-modules"] && \
+			! pkgs["linux64"]     && ! pkgs["linux64-without-modules"] && \
+			! pkgs["linux-libre"] && ! pkgs["linux-libre-without-modules"] && \
+			! pkgs["linux-uml"]) printf "  * Linux kernel\n" >> warnfile;
+
+		# Calculate unpacked and packed sizes of /boot
+		calc("syslinux",					"156K",  "120K" );
+		calc("gpxe",						"196K",  "188K" );
+		calc("ipxe",						"316K",  "312K" );
+		calc("memtest",						"52K",   "48K"  );
+		calc("memtest-serial",				"52K",   "48K"  );
+		calc("slitaz-configs-base",			"36K",   "28K"  );
+		calc("linux",						"2.8M",  "2.8M" );
+		calc("linux-without-modules",		"12.6M", "12.8M");
+		calc("linux64",						"3.0M",  "3.0M" );
+		calc("linux64-without-modules",		"13.2M", "13.4M");
+		calc("linux-libre",					"2.3M",  "2.3M" );
+		calc("linux-libre-without-modules",	"6.9M",  "6.9M" );
+		calc("linux-uml",					"3.0M",  "1.1M" );
+
+		# /boot is moved away from rootfs
+		size_packed   -= boot_p;
+		size_unpacked -= boot_u;
+
+		# Add rootcd payload and /boot content sizes
+		size_iso = size_packed + rootcd_u + boot_u;
+
+		printf "%s %s ",  b2h(size_unpacked), b2h(size_packed);
+		printf "%s %d\n", b2h(size_iso), num_pkgs;
+	}' $(pi_lists) "$dir/$flavor.pkglist"
+}
+
+
+# Display list of unknown packages (informative)
+display_unknown() {
+	[ -s "$1" ] || return
+	echo "Unknown packages:" >&2
+	cat "$1" >&2
+	rm  "$1"
+}
+
+
+# Display warnings about critical packages absent (informative)
+display_warn() {
+	[ -s "$1" ] || return
+	echo "Absent critical packages:" >&2
+	cat "$1" >&2
+	rm  "$1"
+	echo "Probably ISO image will be unusable."
+}
+
+
 
 
 ####################
 # Tazlito commands #
 ####################
 
+# /usr/bin/tazlito is linked with /usr/bin/reduplicate and /usr/bin/deduplicate
 case "$0" in
 	*reduplicate)
 		find ${@:-.} ! -type d -links +1 \
@@ -1213,68 +1590,76 @@ case "$0" in
 		exit 0 ;;
 esac
 
+
 case "$COMMAND" in
 	stats)
 		# Tazlito general statistics from the config file.
 		#
-		newline
-		boldify "Tazlito statistics"
-		separator
-		echo "\
-Config file         : $CONFIG_FILE
-ISO name            : $ISO_NAME.iso
-Volume name         : $VOLUM_NAME
-Prepared            : $PREPARED
-Packages repository : $PACKAGES_REPOSITORY
-Distro directory    : $DISTRO"
-		if [ ! "$ADDFILES" = "" ] ; then
-			echo -e "Additional files    : $ADDFILES"
-		fi
-		separator && newline ;;
-	
+		title 'Tazlito statistics'
+		optlist "\
+Config file			: $CONFIG_FILE
+ISO name			: $ISO_NAME.iso
+Volume name			: $VOLUM_NAME
+Prepared			: $PREPARED
+Packages repository	: $PACKAGES_REPOSITORY
+Distro directory	: $DISTRO
+Additional files	: $ADDFILES
+" | sed '/: $/d'
+		footer
+		;;
+
+
 	list-addfiles)
 		# Simple list of additional files in the rootfs
 		newline
-		cd $ADDFILES
-		find rootfs -type f
-		newline ;;
-	
+		if [ -d "$ADDFILES/rootfs" ]; then
+			cd $ADDFILES
+			find rootfs -type f
+		else
+			_ 'Additional files not found: %s' "$ADDFILES/rootfs/"
+		fi
+		newline
+		;;
+
+
 	gen-config)
 		# Generate a new config file in the current dir or the specified
 		# directory by $2.
 		#
-		if [ -n "$2" ] ; then
-			mkdir -p $2 && cd $2
+		if [ -n "$2" ]; then
+			mkdir -p "$2" && cd "$2"
 		fi
-		echo -n "Generating empty tazlito.conf..."
+
+		newline
+		action 'Generating empty tazlito.conf...'
 		empty_config_file
 		status
-		newline
-		if [ -f "tazlito.conf" ] ; then
-			echo "Configuration file is ready to edit."
-			echo "File location : `pwd`/tazlito.conf"
+
+		separator
+		if [ -f 'tazlito.conf' ] ; then
+			_ 'Configuration file is ready to edit.'
+			_ 'File location: %s' "$(pwd)/tazlito.conf"
 			newline
-		fi ;;
-	
+		fi
+		;;
+
+
 	configure)
 		# Configure a tazlito.conf config file. Start by getting
 		# a empty config file and sed it.
 		#
-		if [ -f "tazlito.conf" ] ; then
+		if [ -f 'tazlito.conf' ]; then
 			rm tazlito.conf
 		else
-			if test $(id -u) = 0 ; then
-				cd /etc
-			else
-				echo "You must be root to configure the main config file or in"
-				echo "the same directory of the file you want to configure."
-				exit 0
-			fi
+			[ $(id -u) -ne 0 ] && die 'You must be root to configure the main config file' \
+				'or in the same directory of the file you want to configure.'
+			cd /etc
 		fi
+
 		empty_config_file
-		echo""
-		echo -e "\033[1mConfiguring :\033[0m `pwd`/tazlito.conf"
-		separator
+
+		title 'Configuring: %s' "$(pwd)/tazlito.conf"
+
 		# ISO name.
 		echo -n "ISO name            : " ; read answer
 		sed -i s#'ISO_NAME=\"\"'#"ISO_NAME=\"$answer\""# tazlito.conf
@@ -1287,237 +1672,233 @@ Distro directory    : $DISTRO"
 		# Distro path.
 		echo -n "Distro path         : " ; read answer
 		sed -i s#'DISTRO=\"\"'#"DISTRO=\"$answer\""# tazlito.conf
-		separator
-		echo "Config file is ready to use."
-		echo "You can now extract an ISO or generate a distro."
-		newline ;;
-	
+		footer "Config file is ready to use."
+		echo 'You can now extract an ISO or generate a distro.'
+		newline
+		;;
+
+
 	gen-iso)
 		# Simply generate a new iso.
 		#
 		check_root
 		verify_rootcd
 		gen_livecd_isolinux
-		distro_stats ;;
-	
+		distro_stats
+		;;
+
+
 	gen-initiso)
 		# Simply generate a new initramfs with a new iso.
 		#
 		check_root
 		verify_rootcd
-		gen_initramfs $ROOTFS
+		gen_initramfs "$ROOTFS"
 		gen_livecd_isolinux
-		distro_stats ;;
-	
+		distro_stats
+		;;
+
+
 	extract-distro)
 		# Extract an ISO image to a directory and rebuild the LiveCD tree.
 		#
 		check_root
-		ISO_IMAGE=$2
-		if [ -z "$ISO_IMAGE" ] ; then
-			echo -e "\nPlease specify the path to the ISO image."
-			echo -e "Example : `basename $0` image.iso /path/target\n"
-			exit 0
-		fi
+		ISO_IMAGE="$2"
+		[ -z "$ISO_IMAGE" ] && die 'Please specify the path to the ISO image.' \
+			'Example:\n  tazlito image.iso /path/target'
+
 		# Set the distro path by checking for $3 on cmdline.
-		if [ -n "$3" ] ; then
-			TARGET=$3
-		else
-			TARGET=$DISTRO
-		fi
+		TARGET="${3:-$DISTRO}"
+
 		# Exit if existing distro is found.
-		if [ -d "$TARGET/rootfs" ] ; then
-			echo -e "\nA rootfs exists in : $TARGET"
-			echo -e "Please clean the distro tree or change directory path.\n"
-			exit 0
-		fi
-		newline
-		echo -e "\033[1mTazlito extracting :\033[0m `basename $ISO_IMAGE`"
-		separator
+		[ -d "$TARGET/rootfs" ] && die "A rootfs exists in '$TARGET'." \
+			'Please clean the distro tree or change directory path.'
+
+		title 'Tazlito extracting: %s' "$(basename $ISO_IMAGE)"
+
 		# Start to mount the ISO.
-		newline
-		echo "Mounting ISO image..."
-		mkdir -p $TMP_DIR
+		action 'Mounting ISO image...'
+		mkdir -p "$TMP_DIR"
 		# Get ISO file size.
-		isosize=`du -sh $ISO_IMAGE | cut -f1`
-		mount -o loop $ISO_IMAGE $TMP_DIR
+		isosize=$(du -sh "$ISO_IMAGE" | cut -f1)
+		mount -o loop -r "$ISO_IMAGE" "$TMP_DIR"
 		sleep 2
 		# Prepare target dir, copy the kernel and the rootfs.
-		mkdir -p $TARGET/rootfs
-		mkdir -p $TARGET/rootcd/boot
-		echo -n "Copying the Linux kernel..."
-		if cp $TMP_DIR/boot/vmlinuz* $TARGET/rootcd/boot 2> /dev/null; then
-			make_bzImage_hardlink $TARGET/rootcd/boot
-		else
-			cp $TMP_DIR/boot/bzImage $TARGET/rootcd/boot
-		fi
+		mkdir -p "$TARGET/rootfs" "$TARGET/rootcd/boot"
 		status
-		echo -n "Copying isolinux files..."
-		cp -a $TMP_DIR/boot/isolinux $TARGET/rootcd/boot
-		for i in $(ls $TMP_DIR); do
-			[ "$i" = "boot" ] && continue
-			cp -a $TMP_DIR/$i $TARGET/rootcd
-		done
-		status
-		if [ -d $TMP_DIR/boot/syslinux ]; then
-			echo -n "Copying syslinux files..."
-			cp -a $TMP_DIR/boot/syslinux $TARGET/rootcd/boot
-			status
-		fi
-		if [ -d $TMP_DIR/boot/extlinux ]; then
-			echo -n "Copying extlinux files..."
-			cp -a $TMP_DIR/boot/extlinux $TARGET/rootcd/boot
-			status
-		fi
-		if [ -d $TMP_DIR/boot/grub ]; then
-			echo -n "Copying GRUB files..."
-			cp -a $TMP_DIR/boot/grub $TARGET/rootcd/boot
-			status
-		fi
 
-		echo -n "Copying the rootfs..."
-		cp $TMP_DIR/boot/rootfs.?z $TARGET/rootcd/boot
+		action 'Copying the Linux kernel...'
+		if cp $TMP_DIR/boot/vmlinuz* "$TARGET/rootcd/boot" 2>/dev/null; then
+			make_bzImage_hardlink "$TARGET/rootcd/boot"
+		else
+			cp "$TMP_DIR/boot/bzImage" "$TARGET/rootcd/boot"
+		fi
 		status
+
+		for i in $(ls $TMP_DIR); do
+			[ "$i" == 'boot' ] && continue
+			cp -a "$TMP_DIR/$i" "$TARGET/rootcd"
+		done
+
+		for loader in isolinux syslinux extlinux grub; do
+			[ -d "$TMP_DIR/boot/$loader" ] || continue
+			action 'Copying %s files...' "$loader"
+			cp -a "$TMP_DIR/boot/$loader" "$TARGET/rootcd/boot"
+			status
+		done
+
+		action 'Copying the rootfs...'
+		cp $TMP_DIR/boot/rootfs.?z "$TARGET/rootcd/boot"
+		status
+
 		# Extract initramfs.
-		cd $TARGET/rootfs
-		echo -n "Extracting the rootfs... "
-		extract_rootfs ../rootcd/boot/rootfs.gz $TARGET/rootfs
+		cd "$TARGET/rootfs"
+		action 'Extracting the rootfs...'
+		extract_rootfs "$TARGET/rootcd/boot/$INITRAMFS" "$TARGET/rootfs"
 		# unpack /usr
 		for i in etc/tazlito/*.extract; do
 			[ -f "$i" ] && . $i ../rootcd
 		done
 		# Umount and remove temp directory and cd to $TARGET to get stats.
-		umount $TMP_DIR && rm -rf $TMP_DIR
+		umount "$TMP_DIR" && rm -rf "$TMP_DIR"
 		cd ..
+		status
+
 		newline
 		separator
-		echo "Extracted       : `basename $ISO_IMAGE` ($isosize)"
-		echo "Distro tree     : `pwd`"
-		echo "Rootfs size     : `du -sh rootfs`"
-		echo "Rootcd size     : `du -sh rootcd`"
-		separator
-		newline ;;
-	
+		echo "Extracted       : $(basename $ISO_IMAGE) ($isosize)"
+		echo "Distro tree     : $(pwd)"
+		echo "Rootfs size     : $(du -sh rootfs)"
+		echo "Rootcd size     : $(du -sh rootcd)"
+		footer
+		;;
+
+
 	list-flavors)
 		# Show available flavors.
-		if [ ! -s /etc/tazlito/flavors.list -o "$2" == "--recharge" ]; then
-			download flavors.list -O - > /etc/tazlito/flavors.list
-		fi
-		newline
-		boldify "List of flavors"
-		separator
-		cat /etc/tazlito/flavors.list
-		newline ;;
-		
+		local list='/etc/tazlito/flavors.list'
+		[ ! -s $list -o -n "$recharge" ] && download flavors.list -O - > $list
+		title 'List of flavors'
+		cat $list
+		footer
+		;;
+
+
 	show-flavor)
 		# Show flavor description.
-		FLAVOR=${2%.flavor}
-		if [ ! -f "$FLAVOR.flavor" ]; then
-			echo "File $FLAVOR.flavor not found."
-			exit 1
-		fi
-		mkdir $TMP_DIR
-		zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i > /dev/null)
-		if [ "$3" = "--brief" ]; then
-			if [ "$4" != "--noheader" ]; then
-				echo "Name              ISO   Rootfs  Description"
+		set -e
+		flavor=${2%.flavor}
+		flv_dir="$(extract_flavor "$flavor")"
+		desc="$flv_dir/$flavor.desc"
+		if [ -n "$brief" ]; then
+			if [ -z "$noheader" ]; then
+				printf "%-16.16s %6.6s %6.6s %s\n" 'Name' 'ISO' 'Rootfs' 'Description'
 				separator
 			fi
-			printf "%-16.16s %6.6s %6.6s %s\n" "$FLAVOR" \
-				"$(field ISO $TMP_DIR/$FLAVOR.desc)" \
-				"$(field 'Rootfs size' $TMP_DIR/$FLAVOR.desc)" \
-				"$(grep ^Description $TMP_DIR/$FLAVOR.desc | cut -d: -f2)"
+			printf "%-16.16s %6.6s %6.6s %s\n" "$flavor" \
+				"$(field ISO         "$desc")" \
+				"$(field Rootfs      "$desc")" \
+				"$(field Description "$desc")"
 		else
 			separator
-			cat $TMP_DIR/$FLAVOR.desc
+			cat "$desc"
 		fi
-		rm -Rf $TMP_DIR ;;
-		
+		cleanup
+		;;
+
+
 	gen-liveflavor)
 		# Generate a new flavor from the live system.
 		FLAVOR=${2%.flavor}
-		DESC=""
-		case "$FLAVOR" in
-		'')	echo -n "Flavor name : "
-			read FLAVOR
-			[ -z "$FLAVOR" ] && exit 1;;
-		-?|-h*|--help) echo -e "
+		[ -z "$FLAVOR" ] && die 'Please specify flavor name on the commandline.'
 
+		case "$FLAVOR" in
+			-?|-h*|--help)
+				cat <<EOT
 SliTaz Live Tool - Version: $VERSION
-\033[1mUsage: \033[0m `basename $0` gen-liveflavor flavor-name [flavor-patch-file]
-\033[1mflavor-patch-file format: \033[0m
+
+$(boldify 'Usage:') tazlito gen-liveflavor <flavor-name> [<flavor-patch-file>]
+
+$(boldify '<flavor-patch-file> format:')
+$(optlist "\
 code	data
 +	package to add
 -	package to remove
 !	non-free package to add
 ?	display message
 @	flavor description
+")
 
-\033[1mExample: \033[0m
-@	Developer tools for slitaz maintainers
+$(boldify 'Example:')
+$(optlist "\
+@	Developer tools for SliTaz maintainers
 +	slitaz-toolchain
 +	mercurial
-"
-			exit 1;;
+")
+EOT
+				exit 1
+				;;
 		esac
 		mv /etc/tazlito/distro-packages.list \
-		   /etc/tazlito/distro-packages.list.$$ 2> /dev/null
-		rm -f distro-packages.list non-free.list 2> /dev/null
+		   /etc/tazlito/distro-packages.list.$$ 2>/dev/null
+		rm -f distro-packages.list non-free.list 2>/dev/null
 		tazpkg recharge
-		[ -n "$3" ] && while read action pkg; do
+
+		DESC=""
+		[ -n "$3" ] && \
+		while read action pkg; do
 			case "$action" in
-			+)	yes | tazpkg get-install $pkg 2>&1 >> $log || exit 1 ;;
-			-)	yes | tazpkg remove $pkg ;;
-			!)	echo $pkg >> non-free.list ;;
-			@)	DESC="$pkg" ;;
-			\?)	echo -en "$pkg"; read action ;;
+				+)	yes | tazpkg get-install $pkg 2>&1 >> $log || exit 1 ;;
+				-)	yes | tazpkg remove $pkg ;;
+				!)	echo $pkg >> non-free.list ;;
+				@)	DESC="$pkg" ;;
+				\?)	echo -en "$pkg"; read action ;;
 			esac
 		done < $3
+
 		yes '' | tazlito gen-distro
 		echo "$DESC" | tazlito gen-flavor "$FLAVOR"
 		mv /etc/tazlito/distro-packages.list.$$ \
-		   /etc/tazlito/distro-packages.list 2> /dev/null ;;
-		
+		   /etc/tazlito/distro-packages.list 2>/dev/null
+		;;
+
+
 	gen-flavor)
-		# Generate a new flavor from the last iso image generated.
+		# Generate a new flavor from the last ISO image generated
 		FLAVOR=${2%.flavor}
-		newline
-		boldify "Flavor generation"
-		separator
-		if [ -z "$FLAVOR" ]; then
-			echo -n "Flavor name : "
-			read FLAVOR
-			[ -z "$FLAVOR" ] && exit 1
-		fi
+		[ -z "$FLAVOR" ] && die 'Please specify flavor name on the commandline.'
+
+		title 'Flavor generation'
 		check_rootfs
 		FILES="$FLAVOR.pkglist"
-		echo -n "Creating file $FLAVOR.flavor..."
+
+		action 'Creating file %s...' "$FLAVOR.flavor"
 		for i in rootcd rootfs; do
 			if [ -d "$ADDFILES/$i" ] ; then
 				FILES="$FILES\n$FLAVOR.$i"
-				( cd "$ADDFILES/$i"; find . | \
-				  cpio -o -H newc 2> /dev/null | gzip -9 ) > $FLAVOR.$i
+				(cd "$ADDFILES/$i"; find . | cpio -o -H newc 2>/dev/null | gzip -9) > $FLAVOR.$i
 			fi
 		done
 		status
-		answer=`grep -s ^Description $FLAVOR.desc`
+
+		answer=$(grep -s ^Description $FLAVOR.desc)
 		answer=${answer#Description     : }
 		if [ -z "$answer" ]; then
-			echo -n "Description : "
+			echo -n "Description: "
 			read answer
 		fi
-		echo -n "Compressing flavor $FLAVOR..."
-		echo "Flavor          : $FLAVOR" > $FLAVOR.desc
+
+		action 'Compressing flavor %s...' "$FLAVOR"
+		echo "Flavor          : $FLAVOR"  > $FLAVOR.desc
 		echo "Description     : $answer" >> $FLAVOR.desc
-		( cd $DISTRO; distro_sizes) >> $FLAVOR.desc
-		\rm -f $FLAVOR.pkglist $FLAVOR.nonfree 2> /dev/null
+		(cd $DISTRO; distro_sizes) >> $FLAVOR.desc
+		\rm -f $FLAVOR.pkglist $FLAVOR.nonfree 2>/dev/null
 		for i in $(ls $ROOTFS$INSTALLED); do
 			eval $(grep ^VERSION= $ROOTFS$INSTALLED/$i/receipt)
 			EXTRAVERSION=""
 			eval $(grep ^EXTRAVERSION= $ROOTFS$INSTALLED/$i/receipt)
 			eval $(grep ^CATEGORY= $ROOTFS$INSTALLED/$i/receipt)
-			if [ "$CATEGORY" = "non-free" -a "${i%%-*}" != "get" ]
-			then
+			if [ "$CATEGORY" == 'non-free' -a "${i%%-*}" != 'get' ]; then
 				echo "$i" >> $FLAVOR.nonfree
 			else
 				echo "$i-$VERSION$EXTRAVERSION" >> $FLAVOR.pkglist
@@ -1528,346 +1909,234 @@ code	data
 			[ -s $i ] && cat $i >> $FLAVOR.mirrors
 		done
 		[ -s $FLAVOR.mirrors ] && $FILES="$FILES\n$FLAVOR.mirrors"
-		echo -e "$FLAVOR.desc\n$FILES" | cpio -o -H newc 2>/dev/null | \
-			gzip -9 > $FLAVOR.flavor
-		rm `echo -e $FILES`
+		echo -e "$FLAVOR.desc\n$FILES" | cpio -o -H newc 2>/dev/null | gzip -9 > $FLAVOR.flavor
+		rm $(echo -e $FILES)
 		status
-		separator
-		echo "Flavor size : `du -sh $FLAVOR.flavor`"
-		newline ;;
-		
+
+		footer "Flavor size: $(du -sh $FLAVOR.flavor)"
+		;;
+
+
 	upgrade-flavor)
-		# Update package list to the latest versions available.
-		[ -s /home/slitaz/packages/packages.list -a -z $systemrepos ] && \
-			LOCALSTATE='/home/slitaz/packages'
-		FLAVOR=${2%.flavor}
-		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
-			mkdir $TMP_DIR
-			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
-			echo -n "Updating $FLAVOR package list..."
-			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
-			packed_size=0; unpacked_size=0
-			while read org; do
-				i=0
-				pkg=$org
-				while ! grep -q ^$pkg$ $LOCALSTATE/packages.txt; do
-					pkg=${pkg%-*}
-					i=$(($i + 1))
-					[ $i -gt 5 ] && break;
-				done
-				set -- $(get_size $pkg)
-				packed_size=$(( $packed_size + $1 ))
-				unpacked_size=$(( $unpacked_size + $2 ))
-				for i in $(grep ^$pkg $LOCALSTATE/packages.list); do
-					echo $i
-					break
-				done
-			done <  $TMP_DIR/$FLAVOR.pkglist \
-			     > $TMP_DIR/$FLAVOR.pkglist.$$
-			mv -f $TMP_DIR/$FLAVOR.pkglist.$$ $TMP_DIR/$FLAVOR.pkglist
-			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
-				packed_size=$(($packed_size \
-					+ $(wc -c < $TMP_DIR/$FLAVOR.rootfs) / 100 ))
-				unpacked_size=$(($unpacked_size \
-					+ $(zcat < $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
-			fi
-			# Estimate lzma
-			packed_size=$(($packed_size * 2 / 3))
-			iso_size=$(( $packed_size + 26000 ))
-			if [ -s $TMP_DIR/$FLAVOR.rootcd ]; then
-				iso_size=$(($iso_size \
-					+ $(zcat < $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
-			fi
-			sed -i -e '/Image is ready/d' \
-			       -e "s/Rootfs size\( *:\) \(.*\)/Rootfs size\1 $(cent2human $unpacked_size)  (estimated)/" \
-			       -e "s/Initramfs size\( *:\) \(.*\)/Initramfs size\1 $(cent2human $packed_size)  (estimated)/" \
-			       -e "s/ISO image size\( *:\) \(.*\)/ISO image size\1 $(cent2human $iso_size)  (estimated)/" \
-			       -e "s/date\( *:\) \(.*\)/date\1 $(date +%Y%m%d\ \at\ \%H:%M:%S)/" \
-					$TMP_DIR/$FLAVOR.desc
-			( cd $TMP_DIR ; ls | cpio -o -H newc ) | gzip -9 > \
-				$FLAVOR.flavor
-			status
-			rm -Rf $TMP_DIR
-		fi ;;
-	
+		# Strip versions from pkglist and update estimated numbers in flavor.desc
+		flavor="${2%.flavor}"
+		set -e
+		[ -f "$flavor.flavor" ] || download "$flavor.flavor"
+		set +e
+
+		flv_dir="$(extract_flavor "$flavor")"
+
+		strip_versions "$flv_dir/$flavor.pkglist"
+
+		action 'Updating %s...' "$flavor.desc"
+
+		[ -f "$flv_dir/$flavor.mirrors" ] && setup_mirrors "$flv_dir/$flavor.mirrors" >/dev/null
+		set -- $(calc_sizes "$flv_dir" "$flavor")
+		restore_mirrors >/dev/null
+
+		sed -i -e '/Image is ready/d' \
+		       -e "s|\(Rootfs size *:\).*$|\1 $1  (estimated)|" \
+		       -e "s|\(Initramfs size *:\).*$|\1 $2  (estimated)|" \
+		       -e "s|\(ISO image size *:\).*$|\1 $3  (estimated)|" \
+		       -e "s|\(Packages *:\).*$|\1 $4|" \
+		       -e "s|\(Build date *:\).*$|\1 $(date '+%Y%m%d at %T')|" \
+				"$flv_dir/$flavor.desc"
+
+		pack_flavor "$flv_dir" "$flavor"
+		status
+		display_unknown "$flv_dir/err"
+		display_warn    "$flv_dir/warn"
+		cleanup
+		;;
+
+
 	extract-flavor)
-		# Extract a flavor into $FLAVORS_REPOSITORY.
-		FLAVOR=${2%.flavor}
-		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
-			mkdir $TMP_DIR
-			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i >/dev/null )
-			echo -n "Extracting $FLAVOR..."
-			rm -rf $FLAVORS_REPOSITORY/$FLAVOR 2> /dev/null
-			mkdir -p $FLAVORS_REPOSITORY/$FLAVOR
-			cp $TMP_DIR/$FLAVOR.receipt $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ echo "FLAVOR=\"$FLAVOR\"" > $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep ^Description $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/SHORT_DESC="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep ^Version $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/VERSION="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep ^Maintainer $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/MAINTAINER="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep -q '^Rootfs list' $TMP_DIR/$FLAVOR.desc && \
-			#~ grep '^Rootfs list' $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/ROOTFS_SELECTION="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep '^Rootfs size' $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/ROOTFS_SIZE="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep ^Initramfs $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/INITRAMFS_SIZE="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			#~ grep ^ISO $TMP_DIR/$FLAVOR.desc | \
-				#~ sed 's/.*: \(.*\)$/ISO_SIZE="\1"/' >> \
-				#~ $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			for i in rootcd rootfs; do
-				[ -f $TMP_DIR/$FLAVOR.$i ] || continue
-				mkdir $FLAVORS_REPOSITORY/$FLAVOR/$i
-				zcat < $TMP_DIR/$FLAVOR.$i | \
-				  (cd $FLAVORS_REPOSITORY/$FLAVOR/$i; \
-				   cpio -idm > /dev/null)
-			done
-			[ -s $TMP_DIR/$FLAVOR.mirrors ] &&
-				cp $TMP_DIR/$FLAVOR.mirrors \
-					$FLAVORS_REPOSITORY/$FLAVOR/mirrors
-			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
-			while read org; do
-				i=0
-				pkg=$org
-				while ! grep -q ^$pkg$ $LOCALSTATE/packages.txt; do
-					pkg=${pkg%-*}
-					i=$(($i + 1))
-					[ $i -gt 5 ] && break;
-				done
-				echo $pkg
-			done <  $TMP_DIR/$FLAVOR.pkglist \
-			     > $FLAVORS_REPOSITORY/$FLAVOR/packages.list
-			status
-			rm -Rf $TMP_DIR
-		fi ;;
-	
+		# Extract a flavor into $FLAVORS_REPOSITORY
+		flavor="${2%.flavor}"
+		set -e
+		[ -f "$flavor.flavor" ] || download "$flavor.flavor"
+		set +e
+
+		action 'Extracting %s...' "$flavor.flavor"
+		flv_dir="$(extract_flavor "$flavor" full)"
+		storage="$FLAVORS_REPOSITORY/$flavor"
+
+		rm    -rf "$storage" 2>/dev/null
+		mkdir -p  "$storage"
+		cp -a "$flv_dir"/* "$storage"
+		rm "$storage/description"
+		status
+
+		strip_versions "$storage/packages.list"
+
+		cleanup
+		;;
+
+
 	pack-flavor)
 		# Create a flavor from $FLAVORS_REPOSITORY.
-		FLAVOR=${2%.flavor}
-		if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
-			mkdir $TMP_DIR
-			echo -n "Creating flavor $FLAVOR..."
+		flavor=${2%.flavor}
+		storage="$FLAVORS_REPOSITORY/$flavor"
 
-			# Use latest local packages if possible (don't download from unsynced mirror)
-			[ -s /home/slitaz/packages/packages.list -a -z $systemrepos ] && \
-			LOCALSTATE='/home/slitaz/packages'
+		[ -s "$storage/receipt" ] || die "No $flavor receipt in $FLAVORS_REPOSITORY."
 
-			[ -s $LOCALSTATE/packages.list ] || tazpkg recharge
-			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/mirrors ]; then
-				cp $FLAVORS_REPOSITORY/$FLAVOR/mirrors \
-					$TMP_DIR/$FLAVOR.mirrors
-				for i in $(cat $TMP_DIR/$FLAVOR.mirrors); do
-					wget -O - $i/packages.list >> $TMP_DIR/packages.list
-				done
-			fi
-			# add distro.sh if exists
-			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/distro.sh ]; then
-				cp $FLAVORS_REPOSITORY/$FLAVOR/distro.sh $TMP_DIR/$FLAVOR-distro.sh
-			fi
-			
-			# Get receipt in .flavor
-			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/receipt ]; then
-				cp $FLAVORS_REPOSITORY/$FLAVOR/receipt $TMP_DIR/$FLAVOR.receipt
-			fi
+		action 'Creating flavor %s...' "$flavor"
+		tmp_dir="$(mktemp -d)"
 
-			# Build the package list.
-			#
-			# On peut inclure une liste venant d'une autre saveur avec le mot clé @include
-			if [ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ]; then
-				INCLUDE=$(grep '^@include' $FLAVORS_REPOSITORY/$FLAVOR/packages.list)
-				if [ ! -z "$INCLUDE" ]; then
-					INCLUDE=${INCLUDE#@include }
-					[ -s "$FLAVORS_REPOSITORY/$INCLUDE/packages.list" ] && \
-						get_pkglist $INCLUDE > $TMP_DIR/$FLAVOR.pkglist || \
-						echo -e "\nERROR: Can't find include package list from $INCLUDE\n"
+		while read from to; do
+			[  -s "$storage/$from" ] || continue
+			cp -a "$storage/$from" "$tmp_dir/$to"
+		done <<EOT
+mirrors        $flavor.mirrors
+distro.sh      $flavor-distro.sh
+receipt        $flavor.receipt
+non-free.list  $flavor.nonfree
+EOT
+
+		# Build the package list.
+		# It can include a list from another flavor with the keyword @include
+		if [ -s "$storage/packages.list" ]; then
+			include=$(grep '^@include' "$storage/packages.list")
+			if [ -n "$include" ]; then
+				include=${include#@include }
+				if [   -s "$FLAVORS_REPOSITORY/$include/packages.list" ]; then
+					cp -f "$FLAVORS_REPOSITORY/$include/packages.list" "$tmp_dir/$flavor.pkglist"
+				else
+					echo -e "\nERROR: Can't find include package list from $include\n"
 				fi
-				# Generate the final/initial package list 
-				[ -s $FLAVORS_REPOSITORY/$FLAVOR/packages.list ] && \
-					get_pkglist $FLAVOR >> $TMP_DIR/$FLAVOR.pkglist
 			fi
-			if grep -q ^ROOTFS_SELECTION \
-				$FLAVORS_REPOSITORY/$FLAVOR/receipt; then
-				. $FLAVORS_REPOSITORY/$FLAVOR/receipt
-				set -- $ROOTFS_SELECTION
-				[ -n "$FRUGAL_RAM" ] || FRUGAL_RAM=$1
-				[ -f $FLAVORS_REPOSITORY/$2/packages.list ] ||
-					tazlito extract-flavor $2
-				get_pkglist $2 > $TMP_DIR/$FLAVOR.pkglist
-				for i in rootcd rootfs; do
-					mkdir $TMP_DIR/$i
-					# Copy extra files from the first flavor
-					[ -d $FLAVORS_REPOSITORY/$2/$i ] &&
-					cp -a $FLAVORS_REPOSITORY/$2/$i $TMP_DIR
-					# Overload extra files by meta flavor
-					[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] &&
-					cp -a $FLAVORS_REPOSITORY/$FLAVOR/$i $TMP_DIR
-					[ -n "$(ls $TMP_DIR/$i)" ] &&
-					( cd $TMP_DIR/$i ; find . | cpio -o -H newc 2> /dev/null ) | \
-					gzip -9 >$TMP_DIR/$FLAVOR.$i
-					rm -rf $TMP_DIR/$i
-				done
-			else
-				for i in rootcd rootfs; do
-					[ -d $FLAVORS_REPOSITORY/$FLAVOR/$i ] || \
-						continue
-					( cd $FLAVORS_REPOSITORY/$FLAVOR/$i ; \
-					find . | cpio -o -H newc 2> /dev/null ) | \
-					gzip -9 >$TMP_DIR/$FLAVOR.$i
-				done
-			fi
-			if [ -s $TMP_DIR/$FLAVOR.rootfs ]; then
-				packed_size=$(($packed_size \
-					+ $(wc -c < $TMP_DIR/$FLAVOR.rootfs) / 100 ))
-				unpacked_size=$(($unpacked_size \
-					+ $(zcat < $TMP_DIR/$FLAVOR.rootfs | wc -c ) / 100 ))
-			fi
-			# Estimate lzma
-			packed_size=$(($packed_size * 2 / 3))
-			iso_size=$(( $packed_size + 26000 ))
-			if [ -s $TMP_DIR/$FLAVOR.rootcd ]; then
-				iso_size=$(($iso_size \
-					+ $(zcat < $TMP_DIR/$FLAVOR.rootcd | wc -c ) / 100 ))
-			fi
-			VERSION=""
-			MAINTAINER=""
-			ROOTFS_SELECTION=""
-			ROOTFS_SIZE="$(cent2human $unpacked_size) (estimated)"
-			INITRAMFS_SIZE="$(cent2human $packed_size) (estimated)"
-			ISO_SIZE="$(cent2human $iso_size) (estimated)"
-			. $FLAVORS_REPOSITORY/$FLAVOR/receipt
-			cat > $TMP_DIR/$FLAVOR.desc <<EOT
+			# Generate the final/initial package list
+			[ -s "$storage/packages.list" ] && \
+				cat "$storage/packages.list" >> "$tmp_dir/$flavor.pkglist"
+			sed -i '/@include/d' "$tmp_dir/$flavor.pkglist"
+		fi
+
+		if grep -q ^ROOTFS_SELECTION "$storage/receipt"; then
+			# Process multi-rootfs flavor
+			. "$storage/receipt"
+			set -- $ROOTFS_SELECTION
+			[ -n "$FRUGAL_RAM" ] || FRUGAL_RAM=$1
+			[ -f "$FLAVORS_REPOSITORY/$2/packages.list" ] || tazlito extract-flavor $2
+			cp "$FLAVORS_REPOSITORY/$2/packages.list" "$tmp_dir/$flavor.pkglist"
+
+			for i in rootcd rootfs; do
+				mkdir "$tmp_dir/$i"
+				# Copy extra files from the first flavor
+				[ -d "$FLAVORS_REPOSITORY/$2/$i" ] &&
+					cp -a "$FLAVORS_REPOSITORY/$2/$i" "$tmp_dir"
+				# Overload extra files by meta flavor
+				[ -d "$storage/$i" ] && cp -a "$storage/$i" "$tmp_dir"
+				[ -n "$(ls $tmp_dir/$i)" ] &&
+					(cd "$tmp_dir/$i"; find . | cpio -o -H newc 2>/dev/null ) | \
+					gzip -9 > "$tmp_dir/$flavor.$i"
+				rm -rf "$tmp_dir/$i"
+			done
+		else
+			# Process plain flavor
+			for i in rootcd rootfs; do
+				[ -d "$storage/$i" ] || continue
+				(cd  "$storage/$i";
+					find . | cpio -o -H newc 2>/dev/null) | gzip -9 > "$tmp_dir/$flavor.$i"
+			done
+		fi
+
+		unset VERSION MAINTAINER ROOTFS_SELECTION
+		set -- $(calc_sizes "$tmp_dir" "$flavor")
+		ROOTFS_SIZE="$1 (estimated)"
+		INITRAMFS_SIZE="$2 (estimated)"
+		ISO_SIZE="$3 (estimated)"
+		PKGNUM="$4"
+		. "$storage/receipt"
+
+		sed '/: $/d' > "$tmp_dir/$flavor.desc" <<EOT
 Flavor          : $FLAVOR
 Description     : $SHORT_DESC
-EOT
-			[ -n "$VERSION" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
 Version         : $VERSION
-EOT
-			[ -n "$MAINTAINER" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
 Maintainer      : $MAINTAINER
-EOT
-			[ -n "$FRUGAL_RAM" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
 LiveCD RAM size : $FRUGAL_RAM
-EOT
-			[ -n "$ROOTFS_SELECTION" ] && cat >> $TMP_DIR/$FLAVOR.desc <<EOT
 Rootfs list     : $ROOTFS_SELECTION
-EOT
-			cat >> $TMP_DIR/$FLAVOR.desc <<EOT
-Build date      : $(date +%Y%m%d\ \at\ \%H:%M:%S)
-Packages        : $(grep -v ^# $TMP_DIR/$FLAVOR.pkglist | wc -l)
+Build date      : $(date '+%Y%m%d at %T')
+Packages        : $PKGNUM
 Rootfs size     : $ROOTFS_SIZE
 Initramfs size  : $INITRAMFS_SIZE
 ISO image size  : $ISO_SIZE
 ================================================================================
 
 EOT
-			rm -f $TMP_DIR/packages.list
-			( cd $TMP_DIR ; ls | cpio -o -H newc 2> /dev/null) | \
-				gzip -9 > $FLAVOR.flavor
-			status
-			rm -Rf $TMP_DIR
-		else
-			echo "No $FLAVOR flavor in $FLAVORS_REPOSITORY."
-		fi ;;
-	
+
+		rm -f $tmp_dir/packages.list
+		pack_flavor "$tmp_dir" "$flavor"
+		status
+		display_unknown "$tmp_dir/err"
+		display_warn    "$flv_dir/warn"
+		cleanup
+		;;
+
+
 	get-flavor)
 		# Get a flavor's files and prepare for gen-distro.
-		FLAVOR=${2%.flavor}
-		echo -e "\n\033[1mPreparing $FLAVOR distro flavor\033[0m"
-		separator
-		if [ -f $FLAVOR.flavor ] || download $FLAVOR.flavor; then
-			echo -n "Cleaning $DISTRO..."
-			rm -R $DISTRO 2> /dev/null
-			mkdir -p $DISTRO
-			status
-			mkdir $TMP_DIR
-			[ -z $noup ] && tazlito upgrade-flavor $FLAVOR.flavor
-			echo -n "Extracting flavor $FLAVOR.flavor... "
-			zcat < $FLAVOR.flavor | ( cd $TMP_DIR; cpio -i --quiet >/dev/null )
-			status
-			echo -n "Creating distro-packages.list..."
-			mv $TMP_DIR/$FLAVOR.nonfree non-free.list 2> /dev/null
-			mv $TMP_DIR/$FLAVOR.pkglist distro-packages.list
-			status
-			if [ -f "$TMP_DIR/$FLAVOR-distro.sh" ]; then
-				echo -n "Extracting distro.sh... "
-				mv $TMP_DIR/$FLAVOR-distro.sh  distro.sh 2> /dev/null
-				status
+		flavor=${2%.flavor}
+		title 'Preparing %s distro flavor' "$flavor"
+		set -e
+		[ -f "$flavor.flavor" ] || download "$flavor.flavor"
+		set +e
+
+		action 'Cleaning %s...' "$DISTRO"
+		[ -d "$DISTRO" ] && rm -r "$DISTRO"
+		# Clean old files
+		for i in non-free.list distro-packages.list distro.sh receipt mirrors err; do
+			[ -f "$i" ] && rm "$i"
+		done
+		mkdir -p "$DISTRO"
+		status
+
+		[ -z "$noup" ] && tazlito upgrade-flavor "$flavor.flavor"
+
+		action 'Extracting flavor %s...' "$flavor.flavor"
+		flv_dir="$(extract_flavor "$flavor" info)"
+		cp -a "$flv_dir"/* .
+		mv packages.list distro-packages.list
+		mv -f info /etc/tazlito
+		status
+
+		for i in rootcd rootfs; do
+			if [ -d "$i" ]; then
+				mkdir -p "$ADDFILES"; mv "$i" "$ADDFILES/$i"
 			fi
-			if [ -f "$TMP_DIR/$FLAVOR.receipt" ]; then
-				echo -n "Extracting receipt... "
-				cp $TMP_DIR/$FLAVOR.receipt  receipt 2> /dev/null
-				status
-			fi
-			infos="$FLAVOR.desc"
-			[ -s $TMP_DIR/$FLAVOR.receipt ] && infos="$infos\n$FLAVOR.receipt"
-			for i in rootcd rootfs; do
-				if [ -f $TMP_DIR/$FLAVOR.$i ]; then
-					echo -n "Adding $i files... "
-					mkdir -p "$ADDFILES/$i"
-					zcat < $TMP_DIR/$FLAVOR.$i | \
-						( cd "$ADDFILES/$i"; cpio -id --quiet > /dev/null)
-					zcat < $TMP_DIR/$FLAVOR.$i | cpio -tv 2> /dev/null \
-						> $TMP_DIR/$FLAVOR.list$i
-					infos="$infos\n$FLAVOR.list$i"
-					status
-				fi
-			done
-			if [ -s $TMP_DIR/$FLAVOR.mirrors ]; then
-				n=""
-				while read line; do
-					mkdir -p $LOCALSTATE/undigest/$FLAVOR$n
-					echo "$line" > $LOCALSTATE/undigest/$FLAVOR$n/mirror
-					n=$(( $n + 1 ))
-				done < $TMP_DIR/$FLAVOR.mirrors
-				infos="$infos\n$FLAVOR.mirrors"
-				tazpkg recharge
-			fi
-			rm -f /etc/tazlito/rootfs.list
-			grep -q '^Rootfs list' $TMP_DIR/$FLAVOR.desc &&
-				grep '^Rootfs list' $TMP_DIR/$FLAVOR.desc | \
-				sed 's/.*: \(.*\)$/\1/' > /etc/tazlito/rootfs.list
-			echo -n "Updating tazlito.conf..."
-			[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
-			grep -v "^#VOLUM_NAME" < tazlito.conf | \
-			sed "s/^VOLUM_NA/VOLUM_NAME=\"SliTaz $FLAVOR\"\\n#VOLUM_NA/" \
-				> tazlito.conf.$$ && mv tazlito.conf.$$ tazlito.conf
-			sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$FLAVOR\"/" tazlito.conf
-			status
-			( cd $TMP_DIR ; echo -e $infos | cpio -o -H newc ) | \
-				gzip -9 > /etc/tazlito/info
-			rm -Rf $TMP_DIR
-		fi
-		separator
-		echo -e "Flavor is ready to be generated by: tazlito gen-distro\n" ;;
+		done
+
+		rm -f /etc/tazlito/rootfs.list
+		grep -q  '^Rootfs list' description &&
+			grep '^Rootfs list' description | sed 's/.*: \(.*\)$/\1/' > /etc/tazlito/rootfs.list
+
+		action 'Updating tazlito.conf...'
+		[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
+		grep -v "^#VOLUM_NAME" < tazlito.conf | \
+		sed "s/^VOLUM_NA/VOLUM_NAME=\"SliTaz $flavor\"\\n#VOLUM_NA/" \
+			> tazlito.conf.$$ && mv tazlito.conf.$$ tazlito.conf
+		sed -i "s/ISO_NAME=.*/ISO_NAME=\"slitaz-$flavor\"/" tazlito.conf
+		status
+
+		footer 'Flavor is ready to be generated by `tazlito gen-distro`'
+		cleanup
+		;;
+
 
 	iso2flavor)
-		if [ -z "$3" -o ! -s "$2" ]; then
-			cat <<EOT
-Usage : tazlito iso2flavor image.iso flavor_name
+		[ -z "$3" -o ! -s "$2" ] && die 'Usage: tazlito iso2flavor <image.iso> <flavor_name>' \
+			'\n\nCreate a file <flavor_name>.flavor from the CD-ROM image file <image.iso>'
 
-Create a file flavor_name.flavor from the cdrom image file image.iso
-EOT
-			exit 1
-		fi
 		FLAVOR=${3%.flavor}
 		mkdir -p $TMP_DIR/iso $TMP_DIR/rootfs $TMP_DIR/flavor
 		mount -o loop,ro $2 $TMP_DIR/iso
-		flavordata $2 | (cd $TMP_DIR/flavor ; cpio -i 2> /dev/null)
+		flavordata $2 | (cd $TMP_DIR/flavor; cpio -i 2>/dev/null)
 		if [ -s $TMP_DIR/iso/boot/rootfs1.gz -a \
-		     ! -s $TMP_DIR/flavor/*.desc ]; then
+		   ! -s $TMP_DIR/flavor/*.desc ]; then
 			echo "META flavors are not supported."
 			umount -d $TMP_DIR/iso
 		elif [ ! -s $TMP_DIR/iso/boot/rootfs.gz -a \
 		       ! -s $TMP_DIR/iso/boot/rootfs1.gz ]; then
-			echo "No /boot/rootfs.gz in iso image. Needs a SliTaz iso."
+			echo "No /boot/rootfs.gz in ISO image. Needs a SliTaz ISO."
 			umount -d $TMP_DIR/iso
 		else
 			for i in $(ls -r $TMP_DIR/iso/boot/rootfs*gz); do
@@ -1882,7 +2151,7 @@ EOT
 				RAM_SIZE=$(du -s $TMP_DIR/rootfs | awk '{ print 32*int(($1+36000)/32768) "M" }')
 				cp -a $TMP_DIR/iso $TMP_DIR/rootcd
 				ISO_SIZE=$(df -h $TMP_DIR/iso | awk 'END { print $2 }')
-				BUILD_DATE=$(date +%Y%m%d\ \at\ \%H:%M:%S -r $TMP_DIR/iso/md5sum)
+				BUILD_DATE=$(date '+%Y%m%d at %T' -r "$TMP_DIR/iso/md5sum")
 				umount -d $TMP_DIR/iso
 				INITRAMFS_SIZE=$(du -chs $TMP_DIR/rootcd/boot/rootfs*.gz | awk 'END { print $1 }')
 				rm -f $TMP_DIR/rootcd/boot/rootfs.gz $TMP_DIR/rootcd/md5sum
@@ -1896,29 +2165,28 @@ EOT
 					cp $TMP_DIR/flavor/*.receipt $TMP_DIR/$FLAVOR.receipt
 					for i in rootfs rootcd ; do
 						[ -s $TMP_DIR/flavor/*.list$i ] &&
-						sed 's/.\{1,45\}//;/^\.$/d' $TMP_DIR/flavor/*.list$i | ( cd $TMP_DIR/$i ; cpio -o -H newc ) | gzip -9 > $TMP_DIR/$FLAVOR.$i
+						sed 's/.\{1,45\}//;/^\.$/d' $TMP_DIR/flavor/*.list$i | \
+							( cd $TMP_DIR/$i ; cpio -o -H newc ) | gzip -9 > $TMP_DIR/$FLAVOR.$i
 					done
 				else
 					find_flavor_rootfs $TMP_DIR/rootfs
 					[ -d $TMP_DIR/rootfs/boot ] && mv $TMP_DIR/rootfs/boot $TMP_DIR/rootcd
 					for i in rootfs rootcd ; do
 						[ "$(ls $TMP_DIR/$i)" ] &&
-						( cd $TMP_DIR/$i ; find * | cpio -o -H newc ) | gzip -9 > $TMP_DIR/$FLAVOR.$i
+						( cd "$TMP_DIR/$i"; find * | cpio -o -H newc ) | gzip -9 > "$TMP_DIR/$FLAVOR.$i"
 					done
-					VERSION=""; MAINTAINER=""
+					unset VERSION MAINTAINER
 					echo -en "Flavor short description \007: "; read -t 30 DESCRIPTION
 					if [ -n "$DESCRIPTION" ]; then
 						echo -en "Flavor version : "; read -t 30 VERSION
 						echo -en "Flavor maintainer (your email) : "; read -t 30 MAINTAINER
 					fi
-					[ -n "$DESCRIPTION" ] || DESCRIPTION="Slitaz $FLAVOR flavor"
-					[ -n "$VERSION" ] || VERSION="1.0"
-					[ -n "$MAINTAINER" ] || MAINTAINER="nobody@slitaz.org"
+
 					cat > $TMP_DIR/$FLAVOR.desc <<EOT
 Flavor          : $FLAVOR
-Description     : $DESCRIPTION
-Version         : $VERSION
-Maintainer      : $MAINTAINER
+Description     : ${DESCRIPTION:-SliTaz $FLAVOR flavor}
+Version         : ${VERSION:-1.0}
+Maintainer      : ${MAINTAINER:-nobody@slitaz.org}
 LiveCD RAM size : $RAM_SIZE
 Build date      : $BUILD_DATE
 Packages        : $PKGCNT
@@ -1928,236 +2196,180 @@ ISO image size  : $ISO_SIZE
 ================================================================================
 
 EOT
-					cat <<EOT
-Tazlito can't detect each file installed during a package post_install.
-You should extract this flavor (tazlito extract-flavor $FLAVOR),
-check the files in /home/slitaz/flavors/$(cat /etc/slitaz-release)/$FLAVOR/rootfs tree and remove
-files generated by post_installs.
-Check /home/slitaz/flavors/$(cat /etc/slitaz-release)/$FLAVOR/receipt too and repack the flavor
-(tazlito pack-flavor $FLAVOR)
-EOT
+					longline "Tazlito can't detect each file installed during \
+a package post_install. You should extract this flavor (tazlito extract-flavor \
+$FLAVOR), check the files in /home/slitaz/flavors/$(cat /etc/slitaz-release)/$FLAVOR/rootfs \
+tree and remove files generated by post_installs.
+Check /home/slitaz/flavors/$(cat /etc/slitaz-release)/$FLAVOR/receipt too and \
+repack the flavor (tazlito pack-flavor $FLAVOR)"
 				fi
-				( cd $TMP_DIR ; ls $FLAVOR.* | cpio -o -H newc ) | gzip -9 > $FLAVOR.flavor
+				( cd $TMP_DIR; ls $FLAVOR.* | cpio -o -H newc ) | gzip -9 > $FLAVOR.flavor
 			fi
 		fi
-		rm -rf $TMP_DIR ;;
+		rm -rf $TMP_DIR
+		;;
 
-	check-list)
-		# Use current packages list in $PWD by default.
-		DISTRO_PKGS_LIST=distro-packages.list
-		[ -d "$2" ] && DISTRO_PKGS_LIST=$2/distro-packages.list
-		[ -f "$2" ] && DISTRO_PKGS_LIST=$2
-		[ ! -f $DISTRO_PKGS_LIST ] && echo "No packages list found." && exit 0
-		newline
-		boldify "LiveCD packages list check"
-		separator
-		for pkg in $(cat $DISTRO_PKGS_LIST)
-		do
-			if ! grep -q "$pkg" $LOCALSTATE/packages.list; then
-				echo "Updating: $pkg"
-				up=$(($up + 1))
-			fi
-		done
-		[ -z $up ] && echo -e "List is up-to-date\n" && exit 0
-		separator
-		echo -e "Updates: $up\n" ;;
-	
+
 	gen-distro)
 		# Generate a live distro tree with a set of packages.
 		#
 		check_root
-		time=$(date +%s)
+		start_time=$(date +%s)
 
-		# Libtaz will set $iso or $cdrom
-		CDROM=""
-		[ "$iso" ] && CDROM="-o loop $iso"
-		[ "$cdrom" ] && CDROM="/dev/cdrom"
+		# Tazlito options: --iso or --cdrom
+		CDROM=''
+		[ -n "$iso"   ] && CDROM="-o loop $iso"
+		[ -n "$cdrom" ] && CDROM="/dev/cdrom"
+
 		# Check if a package list was specified on cmdline.
 		if [ -f "$2" ]; then
-			LIST_NAME=$2
+			LIST_NAME="$2"
 		else
-			LIST_NAME="distro-packages.list"
+			LIST_NAME='distro-packages.list'
 		fi
 
-		if [ -d "$ROOTFS" ] ; then
-			# Delete $ROOTFS if --force is set on command line
-			if [ "$forced" ]; then
-				rm -rf $ROOTFS $ROOTCD
-			else
-				echo -e "\nA rootfs exists in : $DISTRO"
-				echo -e "Please clean the distro tree or change directory path.\n"
-				exit 0
-			fi
+		[ -d "$ROOTFS" -a -z "$forced" ] && die "A rootfs exists in '$DISTRO'." \
+			'Please clean the distro tree or change directory path.'
+		[ -d "$ROOTFS" ] && rm -rf "$ROOTFS"
+		[ -d "$ROOTCD" ] && rm -rf "$ROOTCD"
+
+		# If list not given: build list with all installed packages
+		if [ ! -f "$LIST_NAME" -a -f "$LOCALSTATE/installed.info" ]; then
+			awk -F$'\t' '{print $1}' "$LOCALSTATE/installed.info" >> "$LIST_NAME"
 		fi
-		
-		# Build list with installed packages
-		if [ ! -f "$LIST_NAME" -a -d $INSTALLED ] ; then
-			for i in $(ls $INSTALLED); do
-				if grep -q ^_realver $INSTALLED/$i/receipt ; then
-					VERSION=$(. $INSTALLED/$i/receipt 2>/dev/null ; echo $VERSION) 
-				else
-					eval $(grep ^VERSION= $INSTALLED/$i/receipt)
-				fi
-				EXTRAVERSION=""
-				eval $(grep ^EXTRAVERSION= $INSTALLED/$i/receipt)
-				echo "$i-$VERSION$EXTRAVERSION" >> $LIST_NAME
-			done
-		fi
+
 		# Exit if no list name.
-		if [ ! -f "$LIST_NAME" ]; then
-			echo -e "\nNo packages list found or specified. Please read the docs.\n"
-			exit 0
-		fi
-		# Start generation.
-		newline
-		boldify "Tazlito generating a distro"
-		separator
-		# Misc checks
-		[ -n "$PACKAGES_REPOSITORY" ] || PACKAGES_REPOSITORY="."
-		[ -d $PACKAGES_REPOSITORY ] || mkdir -p $PACKAGES_REPOSITORY
-		# Get the list of packages using cat for a file list.
-		LIST=`cat $LIST_NAME`
-		# Verify if all packages in list are present in $PACKAGES_REPOSITORY.
-		REPACK=""
-		DOWNLOAD=""
-		for pkg in $LIST
-		do
-			[ "$pkg" = "" ] && continue
-			pkg=${pkg%.tazpkg}
-			[ -f $PACKAGES_REPOSITORY/$pkg.tazpkg ] && continue
-			PACKAGE=$(installed_package_name $pkg)
-			[ -n "$PACKAGE" -a "$REPACK" = "y" ] && continue
-			[ -z "$PACKAGE" -a -n "$DOWNLOAD" ] && continue
-			echo -e "\nUnable to find $pkg in the repository."
-			echo -e "Path : $PACKAGES_REPOSITORY\n"
-			if [ -n "$PACKAGE" -a -z "$REPACK" ]; then
-				yesorno "Repack packages from rootfs (y/N) ? "
-				REPACK="$answer"
-				[ "$answer" = "y" ] || REPACK="n"
-				[ "$DOWNLOAD" = "y" ] && break
-			fi
-			if [ -f $MIRROR -a -z "$DOWNLOAD" ]; then
-				yesorno "Download packages from mirror (Y/n) ? "
-				DOWNLOAD="$answer"
-				if [ "$answer" = "n" ]; then
-					[ -z "$PACKAGE" ] && exit 1
-				else
-					DOWNLOAD="y"
-					[ -n "$REPACK" ] && break
-				fi
-			fi
-			[ "$REPACK" = "n" -a "$DOWNLOAD" = "n" ] && exit 1
-		done
+		[ ! -f "$LIST_NAME" ] && die 'No packages list found or specified. Please read the docs.'
 
-		# Mount cdrom to be able to repack boot-loader packages
+		# Start generation.
+		title 'Tazlito generating a distro'
+
+		# Misc checks
+		mkdir -p "$PACKAGES_REPOSITORY"
+		REPACK=$(yesorno 'Repack packages from rootfs?' 'n')
+
+		# Mount CD-ROM to be able to repack boot-loader packages
 		if [ ! -e /boot -a -n "$CDROM" ]; then
 			mkdir $TMP_MNT
-			if mount -r $CDROM $TMP_MNT 2> /dev/null; then
-				ln -s $TMP_MNT/boot /
+			if mount -r "$CDROM $TMP_MNT" 2>/dev/null; then
+				ln -s "$TMP_MNT/boot" /
 				if [ ! -d "$ADDFILES/rootcd" ] ; then
-					mkdir -p $ADDFILES/rootcd
+					mkdir -p "$ADDFILES/rootcd"
 					for i in $(ls $TMP_MNT); do
-						[ "$i" = "boot" ] && continue
-						cp -a $TMP_MNT/$i $ADDFILES/rootcd
+						[ "$i" == 'boot' ] && continue
+						cp -a "$TMP_MNT/$i" "$ADDFILES/rootcd"
 					done
 				fi
 			else
-				rmdir $TMP_MNT
+				rmdir "$TMP_MNT"
 			fi
 		fi
 
 		# Rootfs stuff.
-		echo "Preparing the rootfs directory..."
-		mkdir -p $ROOTFS
-		for pkg in $LIST
-		do
-			[ "$pkg" = "" ] && continue
-			# First copy and extract the package in tmp dir.
-			pkg=${pkg%.tazpkg}
-			PACKAGE=$(installed_package_name $pkg)
-			mkdir -p $TMP_DIR
-			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
-				# Look for package in cache
-				if [ -f $CACHE_DIR/$pkg.tazpkg ]; then
-					ln -s $CACHE_DIR/$pkg.tazpkg $PACKAGES_REPOSITORY
-				# Look for package in running distribution
-				elif [ -n "$PACKAGE" -a "$REPACK" = "y" ]; then
-					tazpkg repack $PACKAGE && \
-					  mv $pkg.tazpkg $PACKAGES_REPOSITORY
-				fi
-			fi
-			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
-				# Get package from mirror
-				[ "$DOWNLOAD" = "y" ] && \
-				download $pkg.tazpkg && \
-				mv $pkg.tazpkg $PACKAGES_REPOSITORY
-			fi
-			if [ ! -f $PACKAGES_REPOSITORY/$pkg.tazpkg ]; then
-				echo "Missing package: $pkg"
-				cleanup
-				exit 1
-			fi
-		done
+		echo 'Preparing the rootfs directory...'
+		mkdir -p "$ROOTFS"
+		mkdir -p "$TMP_DIR"
+
+		strip_versions "$LIST_NAME"
+
+		if [ "$REPACK" == 'y' ]; then
+			# Determine full packages list with all dependencies
+			tmp_dir="$(mktemp -d)"
+			cp "$LIST_NAME" "$tmp_dir/flavor.pkglist"
+			touch "$tmp_dir/full.pkglist"
+			calc_sizes "$tmp_dir" 'flavor' "$tmp_dir/full.pkglist" >/dev/null
+
+			awk -F$'\t' '{printf "%s %s\n", $1, $2}' "$LOCALSTATE/installed.info" | \
+			while read pkgname pkgver; do
+				# Is package in full list?
+				grep -q "^$pkgname$" "$tmp_dir/full.pkglist" || continue
+				# Is package already repacked?
+				[ -e "$PACKAGES_REPOSITORY/$pkgname-$pkgver.tazpkg" ] && continue
+				_ 'Repacking %s...' "$pkgname-$pkgver"
+				tazpkg repack "$pkgname" --quiet
+				[ -f "$pkgname-$pkgver.tazpkg" ] && mv "$pkgname-$pkgver.tazpkg" "$PACKAGES_REPOSITORY"
+				status
+			done
+
+			rm -r "$tmp_dir"
+		fi
+
+		# initial tazpkg setup in empty rootfs
+		export root="$ROOTFS"
+		tazpkg >/dev/null 2>&1
+		# link rootfs packages cache to the regular packages cache
+		rm -r "$ROOTFS/var/cache/tazpkg"
+		ln -s /var/cache/tazpkg "$ROOTFS/var/cache/tazpkg"
+
+		setup_mirrors mirrors
+
+		# Just in case if flavor not contains "tazlito" package
+		mkdir -p "$ROOTFS/etc/tazlito"
+
 		if [ -f non-free.list ]; then
-			echo "Preparing non-free packages..."
-			cp non-free.list $ROOTFS/etc/tazlito/non-free.list
-			for pkg in $(cat non-free.list); do
-				if [ ! -d $INSTALLED/$pkg ]; then
-					if [ ! -d $INSTALLED/get-$pkg ]; then
+			# FIXME: working in the ROOTFS chroot?
+			newline
+			echo 'Preparing non-free packages...'
+			cp 'non-free.list' "$ROOTFS/etc/tazlito/non-free.list"
+			for pkg in $(cat 'non-free.list'); do
+				if [ ! -d "$INSTALLED/$pkg" ]; then
+					if [ ! -d "$INSTALLED/get-$pkg" ]; then
 						tazpkg get-install get-$pkg
 					fi
-					get-$pkg
+					get-$pkg "$ROOTFS"
 				fi
 				tazpkg repack $pkg
 				pkg=$(ls $pkg*.tazpkg)
-				grep -q "^$pkg$" $LIST_NAME || \
-					echo $pkg >>$LIST_NAME
+				grep -q "^$pkg$" $LIST_NAME || echo $pkg >> $LIST_NAME
 				mv $pkg $PACKAGES_REPOSITORY
 			done
 		fi
 		cp $LIST_NAME $DISTRO/distro-packages.list
-		sed 's/\(.*\)/\1.tazpkg/' < $DISTRO/distro-packages.list > $DISTRO/list-packages
-		cd $PACKAGES_REPOSITORY
+		newline
 
-		# Use packages repository as mirror, don't download unsynced packages from mirror server
-		mkdir -p $ROOTFS/home/slitaz; ln -s ../../../../packages $ROOTFS/home/slitaz/packages
-		mkdir -p "$ROOTFS/var/lib/tazpkg"; echo '/home/slitaz/packages' > "$ROOTFS/var/lib/tazpkg/mirror"
-		tazpkg --root=$ROOTFS >/dev/null 2>&1 # initial tazpkg setup in empty rootfs
-
-		for pkg in $(cat $DISTRO/list-packages)
-		do
-			echo -n "Installing package: $pkg"
-			yes y | tazpkg -i $pkg --root=$ROOTFS 2>&1 >> $log || exit 1
+		for pkg in $(cat $DISTRO/distro-packages.list); do
+			action 'Installing package: %s' "$pkg"
+			yes y | tazpkg -gi $pkg --root=$ROOTFS --quiet >> $log || exit 1
 			status
 		done
+		newline
 
-		# Clean packages cache
-		find $ROOTFS/var/cache/tazpkg -name '*.tazpkg' -delete
+		restore_mirrors
+
+		# Un-link packages cache
+		rm $ROOTFS/var/cache/tazpkg
 		# Clean /var/lib/tazpkg
-		rm $ROOTFS/var/lib/tazpkg/ID* $ROOTFS/var/lib/tazpkg/descriptions.txt \
-			$ROOTFS/var/lib/tazpkg/extra.list $ROOTFS/var/lib/tazpkg/files* \
-			$ROOTFS/var/lib/tazpkg/packages* 2>/dev/null
+		rm  $ROOTFS/var/lib/tazpkg/ID* \
+			$ROOTFS/var/lib/tazpkg/descriptions.txt \
+			$ROOTFS/var/lib/tazpkg/extra.list \
+			$ROOTFS/var/lib/tazpkg/files* \
+			$ROOTFS/var/lib/tazpkg/packages* \
+			$ROOTFS/var/lib/tazpkg/priority \
+		-rf $ROOTFS/var/lib/tazpkg/undigest \
+			2>/dev/null
 		# Back to default mirror
-		rm -rf $ROOTFS/home/slitaz
 		echo "$DEFAULT_MIRROR" > $ROOTFS/var/lib/tazpkg/mirror
 
 		cd $DISTRO
 		cp distro-packages.list $ROOTFS/etc/tazlito
 		# Copy all files from $ADDFILES/rootfs to the rootfs.
 		if [ -d "$ADDFILES/rootfs" ] ; then
-			echo -n "Copying addfiles content to the rootfs... "
+			action 'Copying addfiles content to the rootfs...'
 			cp -a $ADDFILES/rootfs/* $ROOTFS
 			status
 		fi
-		echo -n "Root filesystem is generated..." && status
+
+		action 'Root filesystem is generated...'; status
+
 		# Root CD part.
-		echo -n "Preparing the rootcd directory..."
+		action 'Preparing the rootcd directory...'
 		mkdir -p $ROOTCD
 		status
+
 		# Move the boot dir with the Linux kernel from rootfs.
 		# The boot dir goes directly on the CD.
 		if [ -d "$ROOTFS/boot" ] ; then
-			echo -n "Moving the boot directory..."
+			action 'Moving the boot directory...'
 			mv $ROOTFS/boot $ROOTCD
 			cd $ROOTCD/boot
 			make_bzImage_hardlink
@@ -2166,41 +2378,43 @@ EOT
 		cd $DISTRO
 		# Copy all files from $ADDFILES/rootcd to the rootcd.
 		if [ -d "$ADDFILES/rootcd" ] ; then
-			echo -n "Copying addfiles content to the rootcd... "
+			action 'Copying addfiles content to the rootcd...'
 			cp -a $ADDFILES/rootcd/* $ROOTCD
 			status
 		fi
 		# Execute the distro script used to perform tasks in the rootfs
 		# before compression. Give rootfs path in arg
-		[ -z $DISTRO_SCRIPT ] && DISTRO_SCRIPT=$TOP_DIR/distro.sh
-		if [ -x $DISTRO_SCRIPT ]; then
-			echo "Executing distro script..."
+		[ -z "$DISTRO_SCRIPT" ] && DISTRO_SCRIPT="$TOP_DIR/distro.sh"
+		if [ -x "$DISTRO_SCRIPT" ]; then
+			echo 'Executing distro script...'
 			sh $DISTRO_SCRIPT $DISTRO
 		fi
-		
-		# Execute the custom_rules found in receipt.
-		if [ -s $TOP_DIR/receipt ]; then
-			if grep -q ^custom_rules $TOP_DIR/receipt; then
-				echo -e "Executing: custom_rules\n"
-				. $TOP_DIR/receipt
-				custom_rules || echo -e "\nERROR: custom_rules failed\n" 
+
+		# Execute the custom_rules() found in receipt.
+		if [ -s "$TOP_DIR/receipt" ]; then
+			if grep -q ^custom_rules "$TOP_DIR/receipt"; then
+				echo -e "Executing: custom_rules()\n"
+				. "$TOP_DIR/receipt"
+				custom_rules || echo -e "\nERROR: custom_rules() failed\n" 
 			fi
-		fi 
-		
+		fi
+
 		# Multi-rootfs
 		if [ -s /etc/tazlito/rootfs.list ]; then
 
-			FLAVOR_LIST="$(awk '{ for (i = 2; i <= NF; i+=2) \
-			  printf("%s ",$i) }' < /etc/tazlito/rootfs.list)"
+			FLAVOR_LIST="$(awk '{
+				for (i = 2; i <= NF; i+=2)
+					printf "%s ", i;
+			}' /etc/tazlito/rootfs.list)"
 
-			[ -s $ROOTCD/boot/isolinux/isolinux.msg ] &&
-			sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
-			  $ROOTCD/boot/isolinux/isolinux.msg 2> /dev/null
+			[ -s "$ROOTCD/boot/isolinux/isolinux.msg" ] &&
+				sed -i "s/ *//;s/)/), flavors $FLAVOR_LIST/" \
+					"$ROOTCD/boot/isolinux/isolinux.msg" 2>/dev/null
 
-			[ -f $ROOTCD/boot/isolinux/ifmem.c32 -o \
-			  -f $ROOTCD/boot/isolinux/c32box.c32 ] ||
-			cp /boot/isolinux/c32box.c32 $ROOTCD/boot/isolinux 2> /dev/null ||
-			cp /boot/isolinux/ifmem.c32 $ROOTCD/boot/isolinux
+			[ -f "$ROOTCD/boot/isolinux/ifmem.c32" -o \
+			  -f "$ROOTCD/boot/isolinux/c32box.c32" ] ||
+			cp '/boot/isolinux/c32box.c32' "$ROOTCD/boot/isolinux" 2>/dev/null ||
+			cp '/boot/isolinux/ifmem.c32'  "$ROOTCD/boot/isolinux"
 
 			n=0
 			last=$ROOTFS
@@ -2209,10 +2423,10 @@ EOT
 				newline
 				boldify "Building $flavor rootfs..."
 
-				[ -s $TOP_DIR/$flavor.flavor ] &&
-					cp $TOP_DIR/$flavor.flavor .
+				[ -s   "$TOP_DIR/$flavor.flavor" ] &&
+					cp "$TOP_DIR/$flavor.flavor" .
 
-				if [ ! -s $flavor.flavor ]; then
+				if [ ! -s "$flavor.flavor" ]; then
 					# We may have it in $FLAVORS_REPOSITORY
 					if [ -d "$FLAVORS_REPOSITORY/$flavor" ]; then
 						tazlito pack-flavor $flavor
@@ -2221,49 +2435,67 @@ EOT
 					fi
 				fi
 
-				echo -n "Extracting $flavor.pkglist and $flavor.rootfs..."
-				zcat < $flavor.flavor | cpio -i --quiet \
-					$flavor.pkglist $flavor.rootfs
-				sed 's/.*/&.tazpkg/' < $flavor.pkglist \
-					> $DISTRO/list-packages0$n
+				action 'Extracting %s and %s...' "$flavor.pkglist" "$flavor.rootfs"
+				zcat $flavor.flavor | cpio -i --quiet $flavor.pkglist $flavor.rootfs
+				sed 's/.*/&.tazpkg/' < $flavor.pkglist > $DISTRO/list-packages0$n
 				status
+
+				strip_versions "$DISTRO/list-packages0$n"
 
 				mkdir ${ROOTFS}0$n
 				# Install packages
-				cd ${PACKAGES_REPOSITORY}
+				cd $PACKAGES_REPOSITORY
 
-				# Use packages repository as mirror, don't download unsynced packages from mirror server
-				mkdir -p ${ROOTFS}0$n/home/slitaz; ln -s ../../../../packages ${ROOTFS}0$n/home/slitaz/packages
-				mkdir -p "${ROOTFS}0$n/var/lib/tazpkg"
-				echo '/home/slitaz/packages' > "${ROOTFS}0$n/var/lib/tazpkg/mirror"
-				tazpkg --root=${ROOTFS}0$n >/dev/null 2>&1 # initial tazpkg setup in empty rootfs
+				# initial tazpkg setup in empty rootfs
+				export root="${ROOTFS}0$n"
+				tazpkg >/dev/null 2>&1
+				# link rootfs packages cache to the regular packages cache
+				rm -r "${ROOTFS}0$n/var/cache/tazpkg"
+				ln -s /var/cache/tazpkg "${ROOTFS}0$n/var/cache/tazpkg"
 
-				for pkg in $(cat $DISTRO/list-packages0$n)
-				do
-					echo -n "Installing package: $pkg"
-					yes y | tazpkg -i $pkg --root=${ROOTFS}0$n 2>&1 >> $log || exit 1
+				setup_mirrors mirrors
+
+				# Just in case if flavor not contains "tazlito" package
+				mkdir -p "${ROOTFS}0$n/etc/tazlito"
+
+
+				for pkg in $(cat $DISTRO/list-packages0$n); do
+					action 'Installing package: %s' "$pkg"
+					yes y | tazpkg -gi $pkg --root=${ROOTFS}0$n --quiet >> $log || exit 1
 					status
 				done
 
-				rm -rf ${ROOTFS}0$n/boot ${ROOTFS}0$n/var/lib/tazpkg/packages.*
-				# Clean packages cache
-				find ${ROOTFS}0$n/var/cache/tazpkg -name '*.tazpkg' -delete
+				restore_mirrors
+
+				rm -rf ${ROOTFS}0$n/boot
+
+				# Un-link packages cache
+				rm ${ROOTFS}0$n/var/cache/tazpkg
+
 				# Clean /var/lib/tazpkg
-				rm ${ROOTFS}0$n/var/lib/tazpkg/ID* ${ROOTFS}0$n/var/lib/tazpkg/descriptions.txt \
-					${ROOTFS}0$n/var/lib/tazpkg/extra.list ${ROOTFS}0$n/var/lib/tazpkg/files* \
+				rm  ${ROOTFS}0$n/var/lib/tazpkg/ID* \
+					${ROOTFS}0$n/var/lib/tazpkg/descriptions.txt \
+					${ROOTFS}0$n/var/lib/tazpkg/extra.list \
+					${ROOTFS}0$n/var/lib/tazpkg/files* \
+					${ROOTFS}0$n/var/lib/tazpkg/packages.* \
+					${ROOTFS}0$n/var/lib/tazpkg/priority \
+				-rf ${ROOTFS}0$n/var/lib/tazpkg/undigest \
 					2>/dev/null
+
 				# Back to default mirror
-				rm -rf ${ROOTFS}0$n/home/slitaz
 				echo "$DEFAULT_MIRROR" > ${ROOTFS}0$n/var/lib/tazpkg/mirror
+
 
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
 					echo -n "Adding $flavor rootfs extra files..."
 					zcat < $flavor.rootfs | ( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
-				echo -n "Moving list-packages0$n to rootfs0$n"
+
+				action 'Moving %s to %s' "list-packages0$n" "rootfs0$n"
 				mv $DISTRO/list-packages0$n ${ROOTFS}0$n/etc/tazlito/distro-packages.list
 				status
+
 				rm -f $flavor.flavor install-list
 				mergefs ${ROOTFS}0$n $last
 				last=${ROOTFS}0$n
@@ -2289,47 +2521,49 @@ EOT
 		fi
 		gen_livecd_isolinux
 		distro_stats
-		cleanup ;;
-		
+		cleanup
+		;;
+
+
 	clean-distro)
 		# Remove old distro tree.
 		#
 		check_root
-		newline
-		boldify "Cleaning : $DISTRO"
-		separator
+		title 'Cleaning: %s' "$DISTRO"
 		if [ -d "$DISTRO" ] ; then
 			if [ -d "$ROOTFS" ] ; then
-				echo -n "Removing the rootfs..."
-				rm -f $DISTRO/$INITRAMFS
+				action 'Removing the rootfs...'
+				rm -f  $DISTRO/$INITRAMFS
 				rm -rf $ROOTFS
 				status
 			fi
 			if [ -d "$ROOTCD" ] ; then
-				echo -n "Removing the rootcd..."
+				action 'Removing the rootcd...'
 				rm -rf $ROOTCD
 				status
 			fi
-			echo -n "Removing eventual ISO image..."
+			action 'Removing eventual ISO image...'
 			rm -f $DISTRO/$ISO_NAME.iso
 			rm -f $DISTRO/$ISO_NAME.md5
 			status
 		fi
-		separator
-		newline ;;
-	
+		footer
+		;;
+
+
 	check-distro)
 		# Check for a few LiveCD needed files not installed by packages.
 		#
+		# TODO: Remove this function.
+		# First two files are maintained by tazpkg while it runs on rootfs,
+		# while last one file should be maintained by tazlito itself.
 		check_rootfs
-		newline
-		echo -e "\033[1mChecking distro :\033[0m $ROOTFS"
-		separator
+		title 'Checking distro: %s' "$ROOTFS"
 		# SliTaz release info.
 		if [ ! -f "$ROOTFS/etc/slitaz-release" ]; then
 			echo "Missing release info : /etc/slitaz-release"
 		else
-			release=`cat $ROOTFS/etc/slitaz-release`
+			release=$(cat $ROOTFS/etc/slitaz-release)
 			echo -n "Release      : $release"
 			status
 		fi
@@ -2338,53 +2572,42 @@ EOT
 			echo -n "Mirror URL   : Missing $LOCALSTATE/mirror"
 			todomsg
 		else
-			echo -n "Mirror configuration exists..."
+			action 'Mirror configuration exists...'
 			status
 		fi
 		# Isolinux msg
 		if grep -q "cooking-XXXXXXXX" /$ROOTCD/boot/isolinux/isolinux.*g; then
-			echo -n "Isolinux msg : Missing cooking date XXXXXXXX (ex `date +%Y%m%d`)"
+			echo -n "Isolinux msg : Missing cooking date XXXXXXXX (ex $(date +%Y%m%d))"
 			todomsg
 		else
-			echo -n "Isolinux message seems good..."
+			action 'Isolinux message seems good...'
 			status
 		fi
-		separator
-		newline ;;
-	
+		footer
+		;;
+
+
 	writeiso)
-		# Writefs to ISO image including /home unlike gen-distro we dont use
+		# Writefs to ISO image including /home unlike gen-distro we don't use
 		# packages to generate a rootfs, we build a compressed rootfs with all
 		# the current filesystem similar to 'tazusb writefs'.
 		#
-		DISTRO="/home/slitaz/distro"
+		DISTRO='/home/slitaz/distro'
 		ROOTCD="$DISTRO/rootcd"
-		if [ -z $2 ]; then
-			COMPRESSION=none
-		else
-			COMPRESSION=$2
-		fi
-		if [ -z "$3" ]; then
-			ISO_NAME="slitaz"
-		else
-			ISO_NAME="$3"
-		fi
+		COMPRESSION="${2:-none}"
+		ISO_NAME="${3:-slitaz}"
 		check_root
 		# Start info
+		title 'Write filesystem to ISO'
+		longline "The command writeiso will write the current filesystem into a \
+suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)."
 		newline
-		boldify "Write filesystem to ISO"
-		separator
-		cat <<EOT
-The command writeiso will write the current filesystem into a suitable cpio
-archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso).
+		emsg "<b>Archive compression:</b> <c 36>$COMPRESSION</c>"
 
-$(boldify "Archive compression:") $(colorize 36 "$COMPRESSION")
-
-EOT
-		[ $COMPRESSION == "gzip" ] && colorize 31 "gzip-compressed rootfs unsupported and may fail to boot"
+		[ "$COMPRESSION" == 'gzip' ] && colorize 31 "gzip-compressed rootfs unsupported and may fail to boot"
 		# Save some space
-		rm /var/cache/tazpkg/* -r -f
-		rm /var/lib/tazpkg/*.bak -f
+		rm -rf /var/cache/tazpkg/*
+		rm -f  /var/lib/tazpkg/*.bak
 		rm -rf $DISTRO
 
 		# Optionally remove sound card selection and screen resolution.
@@ -2403,8 +2626,9 @@ EOT
 			*)
 				echo -n "Keeping current sound card and screen configurations..." ;;
 		esac
-		status && newline
-		
+		status
+		newline
+
 		# Optionally remove i18n settings
 		echo "Do you wish to remove local/keymap settings ? "
 		echo -n "Press ENTER to keep or answer (No|yes|exit): "
@@ -2421,7 +2645,7 @@ EOT
 		esac
 		status
 		fi
-		
+
 		# Clean-up files by default
 		newline > /etc/udev/rules.d/70-persistent-net.rules
 		newline > /etc/udev/rules.d/70-persistant-cd.rules
@@ -2430,16 +2654,13 @@ EOT
 		# and some new users might have been added.
 		cd /
 		echo 'init' > /tmp/list
-		for dir in bin etc sbin var dev lib root usr home opt
-		do
+		for dir in bin etc sbin var dev lib root usr home opt; do
 			[ -d $dir ] && find $dir
-		done >>/tmp/list
+		done >> /tmp/list
 
-		for dir in proc sys tmp mnt media media/cdrom media/flash \
-			media/usbdisk run run/udev
-		do
+		for dir in proc sys tmp mnt media media/cdrom media/flash media/usbdisk run run/udev; do
 			[ -d $dir ] && echo $dir
-		done >>/tmp/list
+		done >> /tmp/list
 
 		sed '/var\/run\/.*pid$/d ; /var\/run\/utmp/d ; /.*\/.gvfs/d ; /home\/.*\/.cache\/.*/d' -i /tmp/list
 		
@@ -2449,8 +2670,7 @@ EOT
 		mv -f /var/log/wtmp /tmp/tazlito-wtmp
 		touch /var/log/wtmp
 		
-		for removelog in \
-		auth boot messages dmesg daemon slim .*old Xorg tazpanel cups; do
+		for removelog in auth boot messages dmesg daemon slim .*old Xorg tazpanel cups; do
 			sed -i "/var\/log\/$removelog/d" /tmp/list
 		done
 
@@ -2462,10 +2682,9 @@ EOT
 		sleep 2
 		cd - > /dev/null
 		echo -en "\nFilesystem size:"
-		while [ ! -f /tmp/rootfs ]
-		do
+		while [ ! -f /tmp/rootfs ]; do
 			sleep 1
-			echo -en "\\033[18G`du -sh /rootfs.gz | awk '{print $1}'`    "
+			echo -en "\\033[18G$(du -sh /$INITRAMFS | awk '{print $1}')    "
 		done
 		mv -f /tmp/tazlito-wtmp /var/log/wtmp
 		echo -e "\n"
@@ -2473,21 +2692,21 @@ EOT
 
 		# Move freshly generated rootfs to the cdrom.
 		mkdir -p $ROOTCD/boot
-		mv -f /rootfs.gz $ROOTCD/boot
-		echo "Located in: $ROOTCD/boot/rootfs.gz"
+		mv -f /$INITRAMFS $ROOTCD/boot
+		echo "Located in: $ROOTCD/boot/$INITRAMFS"
 
 		# Now we need the kernel and isolinux files.
-		copy_from_cd()
-		{
+		copy_from_cd() {
 			cp /media/cdrom/boot/bzImage* $ROOTCD/boot
 			cp -a /media/cdrom/boot/isolinux $ROOTCD/boot
 			unmeta_boot $ROOTCD
 			umount /media/cdrom
 		}
-		bootloader="/var/lib/tazpkg/installed/syslinux/volatile.cpio.gz"
+
+		bootloader='/var/lib/tazpkg/installed/syslinux/volatile.cpio.gz'
 		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
 			copy_from_cd;
-		elif  mount |grep /media/cdrom; then
+		elif  mount | grep /media/cdrom; then
 			copy_from_cd;
 		elif [ -f "$bootloader" -a -f /boot/vmlinuz*slitaz* ]; then
 			cp $bootloader $ROOTCD
@@ -2500,11 +2719,10 @@ EOT
 				cp /boot/vmlinuz*slitaz64 $ROOTCD/boot/bzImage64
 		else
 			touch /tmp/.write-iso-error
-			echo -e "
-When SliTaz is running in RAM the kernel and bootloader files are kept
-on the cdrom. Please insert a LiveCD or loop mount the slitaz.iso to
-/media/cdrom (run # mount -o loop slitaz-rolling.iso /media/cdrom )
-or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
+			longline "When SliTaz is running in RAM the kernel and bootloader \
+files are kept on the CD-ROM. Please insert a Live CD or loop mount the \
+slitaz.iso to /media/cdrom (run # mount -o loop slitaz-rolling.iso /media/cdrom ) \
+or # (tazpkg -gi linux --forced) to let Tazlito copy the files."
 			echo -en "----\nENTER to continue..."; read i
 			[ ! -d /media/cdrom/boot/isolinux ] && exit 1
 			copy_from_cd
@@ -2515,21 +2733,21 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
 		newline
 		cd $DISTRO
 		echo "Generating ISO image..."
-		genisoimage -R -o $ISO_NAME.iso -b boot/isolinux/isolinux.bin \
-		-c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-		-V "SliTaz" -p "$(id -un)" -input-charset iso8859-1 \
-		-P "$(hostname)" -boot-info-table $ROOTCD
+		genisoimage -R   -o $ISO_NAME.iso   -b boot/isolinux/isolinux.bin \
+		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
+		-V "SliTaz"   -p "$(id -un)"   -input-charset utf-8 \
+		-P "$(hostname)"   -boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
-			echo -n "Creating hybrid ISO/disk..."
-			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2> /dev/null
+			action 'Creating hybrid ISO/disk...'
+			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2>/dev/null
 			status
 		fi
 		if [ -x /usr/bin/iso2exe ]; then
-			echo -n "Creating hybrid ISO/EXE..."
-			/usr/bin/iso2exe $ISO_NAME.iso 2> /dev/null
+			action 'Creating hybrid ISO/EXE...'
+			/usr/bin/iso2exe $ISO_NAME.iso 2>/dev/null
 			status
 		fi
-		echo -n "Creating the ISO md5sum..."
+		action 'Creating the ISO md5sum...'
 		md5sum $ISO_NAME.iso > $ISO_NAME.md5
 		status
 
@@ -2538,57 +2756,52 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
 		rm -f /tmp/.write-iso
 		newline
 		if [ -z $LaunchedByTazpanel ]; then
-		echo -n "Exit or burn ISO to cdrom (Exit|burn)? "; read anser
+		echo -n "Exit or burn ISO to CD-ROM (Exit|burn)? "; read anser
 		case $anser in
 			burn)
-				umount /dev/cdrom 2> /dev/null
+				umount /dev/cdrom 2>/dev/null
 				eject
-				echo -n "Please insert a blank cdrom and press ENTER..."
+				echo -n "Please insert a blank CD-ROM and press ENTER..."
 				read i && sleep 2
 				tazlito burn-iso $DISTRO/$ISO_NAME.iso
 				echo -en "----\nENTER to continue..."; read i ;;
 			*)
 				exit 0 ;;
 		esac
-		fi ;;
-	
+		fi
+		;;
+
+
 	burn-iso)
-		# Guess cdrom device, ask user and burn the ISO.
+		# Guess CD-ROM device, ask user and burn the ISO.
 		#
 		check_root
-		DRIVE_NAME=$(grep "drive name" < /proc/sys/dev/cdrom/info | cut -f 3)
-		DRIVE_SPEED=$(grep "drive speed" < /proc/sys/dev/cdrom/info | cut -f 3)
+		DRIVE_NAME=$(grep  "drive name"  /proc/sys/dev/cdrom/info | cut -f3)
+		DRIVE_SPEED=$(grep "drive speed" /proc/sys/dev/cdrom/info | cut -f3)
 		# We can specify an alternative ISO from the cmdline.
-		if [ -n "$2" ] ; then
-			iso=$2
-		else
-			iso=$DISTRO/$ISO_NAME.iso
-		fi
-		if [ ! -f "$iso" ]; then
-			echo -e "\nUnable to find ISO : $iso\n"
-			exit 0
-		fi
-		newline
-		boldify "Tazlito burn ISO"
-		separator
-		echo "Cdrom device  : /dev/$DRIVE_NAME"
+		iso="${2:-$DISTRO/$ISO_NAME.iso}"
+		[ ! -f "$iso" ] && die "Unable to find ISO: $iso"
+
+		title 'Tazlito burn ISO'
+		echo "CD-ROM device : /dev/$DRIVE_NAME"
 		echo "Drive speed   : $DRIVE_SPEED"
 		echo "ISO image     : $iso"
-		separator
-		newline
-		yesorno "Burn ISO image (y/N) ? "
-		if [ "$answer" == "y" ]; then
-			newline
-			echo "Starting Wodim to burn the iso..." && sleep 2
-			separator
-			wodim speed=$DRIVE_SPEED dev=/dev/$DRIVE_NAME $iso
-			separator
-			echo "ISO image is burned to cdrom."
-		else
-			echo -e "\nExiting. No ISO burned."
-		fi
-		newline ;;
-	
+		footer
+
+		case $(yesorno 'Burn ISO image?' 'n') in
+			y)
+				title 'Starting Wodim to burn the ISO...'
+				sleep 2
+				wodim speed=$DRIVE_SPEED dev=/dev/$DRIVE_NAME $iso
+				footer 'ISO image is burned to CD-ROM.'
+				;;
+			*)
+				die 'Exiting. No ISO burned.'
+				;;
+		esac
+		;;
+
+
 	merge)
 		# Merge multiple rootfs into one iso.
 		#
@@ -2596,9 +2809,9 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files.\n"
 			cat <<EOT
 Usage: tazlito merge size1 iso size2 rootfs2 [sizeN rootfsN]...
 
-Merge multiple rootfs into one iso. Rootfs are like russian dolls
+Merge multiple rootfs into one ISO. Rootfs are like russian dolls
 i.e: rootfsN is a subset of rootfsN-1
-rootfs1 is found in iso, sizeN is the RAM size needed to launch rootfsN.
+rootfs1 is found in ISO, sizeN is the RAM size needed to launch rootfsN.
 The boot loader will select the rootfs according to the RAM size detected.
 
 Example:
@@ -2617,10 +2830,12 @@ EOT
 		mkdir -p $TMP_DIR/mnt $TMP_DIR/rootfs1
 
 		ISO=$1.merged
+
 		# Extract filesystems
-		echo -n "Mounting $1"
+		action 'Mounting %s' "$1"
 		mount -o loop,ro $1 $TMP_DIR/mnt 2> /dev/null
 		status || cleanup_merge
+
 		cp -a $TMP_DIR/mnt $TMP_DIR/iso
 		make_bzImage_hardlink $TMP_DIR/iso/boot
 		umount -d $TMP_DIR/mnt
@@ -2643,10 +2858,11 @@ EOT
 			cp /boot/isolinux/ifmem.c32 $TMP_DIR/iso/boot/isolinux
 		fi
 
-		echo -n "Extracting iso/rootfs.gz"
+		action 'Extracting iso/rootfs.gz'
 		extract_rootfs $TMP_DIR/iso/boot/rootfs.gz $TMP_DIR/rootfs1 &&
-		[ -d $TMP_DIR/rootfs1/etc ]
+			[ -d $TMP_DIR/rootfs1/etc ]
 		status || cleanup_merge
+
 		n=1
 		while [ -n "$2" ]; do
 			shift	# skip rootfs N-1
@@ -2655,103 +2871,101 @@ EOT
 			append="$append $1 slitaz$n"
 			shift	# skip size N
 			mkdir -p $TMP_DIR/rootfs$n
-			echo -n "Extracting $1"
+
+			action 'Extracting %s' "$1"
 			extract_rootfs $1 $TMP_DIR/rootfs$n &&
-			[ -d $TMP_DIR/rootfs$n/etc ]
+			[ -d "$TMP_DIR/rootfs$n/etc" ]
 			status || cleanup_merge
+
 			mergefs $TMP_DIR/rootfs$n $TMP_DIR/rootfs$p
-			echo "Creating rootfs$p.gz"
-			pack_rootfs $TMP_DIR/rootfs$p $TMP_DIR/iso/boot/rootfs$p.gz
+			action 'Creating rootfs%s.gz' "$p"
+			pack_rootfs "$TMP_DIR/rootfs$p" "$TMP_DIR/iso/boot/rootfs$p.gz"
 			status
 		done
-		echo "Creating rootfs$n.gz"
-		pack_rootfs $TMP_DIR/rootfs$n $TMP_DIR/iso/boot/rootfs$n.gz
+		action 'Creating rootfs%s.gz' "$n"
+		pack_rootfs "$TMP_DIR/rootfs$n" "$TMP_DIR/iso/boot/rootfs$n.gz"
 		status
 		rm -f $TMP_DIR/iso/boot/rootfs.gz
 		update_bootconfig $TMP_DIR/iso/boot/isolinux "$append"
 		create_iso $ISO $TMP_DIR/iso
-		rm -rf $TMP_DIR ;;
+		rm -rf $TMP_DIR
+		;;
+
 
 	repack)
 		# Repack an iso with maximum lzma compression ratio.
 		#
 		ISO=$2
 		mkdir -p $TMP_DIR/mnt
-		
+
 		# Extract filesystems
-		echo -n "Mounting $ISO"
-		mount -o loop,ro $ISO $TMP_DIR/mnt 2> /dev/null
+		action 'Mounting %s' "$ISO"
+		mount -o loop,ro $ISO $TMP_DIR/mnt 2>/dev/null
 		status || cleanup_merge
+
 		cp -a $TMP_DIR/mnt $TMP_DIR/iso
 		umount -d $TMP_DIR/mnt
 
 		for i in $TMP_DIR/iso/boot/rootfs* ; do
-			echo -n "Repacking $(basename $i)"
-			(zcat $i 2> /dev/null || unlzma < $i || cat $i) \
-				2>/dev/null > $TMP_DIR/rootfs
-			lzma e $TMP_DIR/rootfs $i \
-				 $(lzma_switches $TMP_DIR/rootfs)
+			action 'Repacking %s' "$(basename $i)"
+			(zcat $i 2>/dev/null || unlzma < $i || cat $i) 2>/dev/null > $TMP_DIR/rootfs
+			lzma e $TMP_DIR/rootfs $i $(lzma_switches $TMP_DIR/rootfs)
 			align_to_32bits $i
 			status
 		done
 
 		create_iso $ISO $TMP_DIR/iso
-		rm -rf $TMP_DIR ;;
+		rm -rf $TMP_DIR
+		;;
+
 
 	build-loram)
-		# Build a Live CD for low ram systems.
+		# Build a Live CD for low RAM systems.
 		#
-		ISO=$2
-		OUTPUT=$3
-		if [ -z "$3" ]; then
-			echo "Usage: tazlito $1 input.iso output.iso [cdrom|smallcdrom|http|ram]"
-			exit 1
-		fi
-		mkdir -p $TMP_DIR/iso
-		mount -o loop,ro -t iso9660 $ISO $TMP_DIR/iso
+		ISO="$2"
+		OUTPUT="$3"
+		[ -z "$3" ] && \
+			die "Usage: tazlito build-loram <input>.iso <output>.iso [cdrom|smallcdrom|http|ram]"
+		mkdir -p "$TMP_DIR/iso"
+		mount -o loop,ro -t iso9660 "$ISO" "$TMP_DIR/iso"
 		loopdev=$( (losetup -a 2>/dev/null || losetup) | sed "/$ISO$/!d;s/:.*//;q")
 		if ! check_iso_for_loram ; then
-			echo "$2 is not a valid SliTaz live CD. Abort."
-			umount -d $TMP_DIR/iso
-			rm -rf $TMP_DIR
-			exit 1
+			umount -d "$TMP_DIR/iso"
+			die "$ISO is not a valid SliTaz live CD. Abort."
 		fi
 		case "$4" in
 			cdrom)		build_loram_cdrom ;;
 			http)		build_loram_http ;;
-			*)		build_loram_ram ;;
+			*)			build_loram_ram ;;
 		esac
 		umount $TMP_DIR/iso	# no -d: needs /proc
 		losetup -d $loopdev
-		rm -rf $TMP_DIR ;;
+		rm -rf $TMP_DIR
+		;;
+
 
 	emu-iso)
 		# Emulate an ISO image with Qemu.
-		if [ -n "$2" ] ; then
-			iso=$2
-		else
-			iso=$DISTRO/$ISO_NAME.iso
-		fi
-		if [ ! -f "$iso" ]; then
-			echo -e "\nUnable to find ISO : $iso\n"
-			exit 0
-		fi
-		if [ ! -x "/usr/bin/qemu" ]; then
-			echo -e "\nUnable to find Qemu binary. Please install: qemu\n"
-			exit 0
-		fi
+		iso="${2:-$DISTRO/$ISO_NAME.iso}"
+		[ -f "$iso" ] || die "Unable to find ISO file '$iso'."
+		[ -x '/usr/bin/qemu' ] || die "Unable to find Qemu binary. Please install package 'qemu'."
 		echo -e "\nStarting Qemu emulator:\n"
 		echo -e "qemu $QEMU_OPTS $iso\n"
-		qemu $QEMU_OPTS $iso ;;
+		qemu $QEMU_OPTS $iso
+		;;
+
 
 	deduplicate)
 		# Deduplicate files in a tree
 		shift
-		deduplicate "$@" ;;
-	
+		deduplicate "$@"
+		;;
+
+
 	usage|*)
 		# Print usage also for all unknown commands.
-		usage ;;
+		usage
+		;;
 esac
 
 exit 0

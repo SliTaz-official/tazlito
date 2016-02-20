@@ -1,0 +1,85 @@
+.TH "tazlito.conf" "5" "17 Feb 2016"
+.SH NAME
+tazlito.conf \(em configuration for Tazlito
+.SH SYNOPSIS
+.B tazlito.conf
+.SH DESCRIPTON
+tazlito(1) uses this configuration file to work. If current directory contains
+.IR tazlito.conf ,
+it will be used, otherwise system-wide file
+.I /etc/tazlito/tazlito.conf
+will be used.
+.PP
+It have shell script syntax, so empty lines and lines starting with \(lq#\(rq
+are ignored.
+.SH VARIABLES
+.TP
+.B SLITAZ_VERSION
+SliTaz version to use for ISO name and files path.
+.sp
+Default value is the current SliTaz system version (determined by
+.I /etc/slitaz-release
+file content), for example, \(lq5.0\(rq.
+.TP
+.B ISO_NAME
+Name of the ISO image to generate.
+.sp
+Default value is
+.RI \(lqslitaz- SLITAZ_VERSION \(rq
+(is \(lqslitaz-5.0\(rq).
+.TP
+.B VOLUM_NAME
+ISO image volume name.
+.sp
+Default value is \(lqSliTaz LiveCD\(rq.
+.TP
+.B PREPARED
+Name of the preparer.
+.sp
+Default value is the login name of the user prepared the ISO (determined by the
+content of the environment variable
+.IR USER ),
+for example \(lqtux\(rq.
+.TP
+.B WORK_DIR
+Tazlito working directory containing flavors, distro and packages files.
+.sp
+Default value is
+.RI \(lq/home/slitaz/ SLITAZ_VERSION \(rq
+(is \(lq/home/slitaz/5.0\(rq).
+.TP
+.B PACKAGES_REPOSITORY
+Path to the packages repository.
+.sp
+Default value is
+.RI \(lq WORK_DIR /packages\(rq,
+(is \(lq/home/slitaz/5.0/packages\(rq).
+.TP
+.B DISTRO
+Path to the distro tree to gen-distro from a list of packages.
+.sp
+Default value is
+.RI \(lq WORK_DIR /distro\(rq
+(is \(lq/home/slitaz/5.0/distro\(rq).
+.TP
+.B FLAVORS_REPOSITORY
+Path to the Live CD flavors files ( http://hg.slitaz.org/flavors ).
+.sp
+Default value is
+.RI \(lq WORK_DIR /flavors\(rq
+(is \(lq/home/slitaz/5.0/flavors\(rq).
+.TP
+.B ADDFILES
+Path to the directory containing additional files to copy into the rootfs and
+rootcd of the Live CD.
+.sp
+Default value is
+.RI \(lq DISTRO /addfiles\(rq
+(is \(lq/home/slitaz/5.0/distro/addfiles\(rq).
+.TP
+.B QEMU_OPTS
+QEMU emulator options for the tazlito command \(lqemu-iso\(rq.
+.sp
+Default value is \(lq-m 256\(rq. See the QEMU documentation for details.
+.SH SEE ALSO
+tazlito(1), flavor(5)
