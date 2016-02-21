@@ -754,23 +754,18 @@ EOT
 				if (/bzImage/) linux = "linux /boot/bzImage ";
 				i = index($0, "rootfs.gz");
 				append = substr($0, i+9);
-				print "	kernel /boot/isolinux/ifmem.c32"
-				printf "\tappend%s noram", sel;
-				print ""
-				print "label noram"
-				print "	MENU HIDE"
-				print "	config noram.cfg"
-				print ""
+				printf "\tkernel /boot/isolinux/ifmem.c32\n";
+				printf "\tappend%s noram\n", sel;
+				printf "\nlabel noram\n\tMENU HIDE\n\tconfig noram.cfg\n\n";
 				for (i = 1; i <= n; i++) {
 					print "LABEL slitaz" i
-					printf "\tMENU LABEL SliTaz slitaz%d Live", i;
-					print kernel;
+					printf "\tMENU LABEL SliTaz slitaz%d Live\n", i;
+					printf "%s\n",  kernel;
 					initrd = "initrd=/boot/rootfs" n ".gz"
 					for (j = n - 1; j >= i; j--) {
 						initrd = initrd ",/boot/rootfs" j ".gz";
 					}
-					printf "\tappend %s%s%s\n", linux, initrd, append;
-					print "";
+					printf "\tappend %s%s%s\n\n", linux, initrd, append;
 				}
 			}
 			else if (/bzImage/) kernel = $0;
