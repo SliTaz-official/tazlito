@@ -140,7 +140,7 @@ yesorno() {
 		Y|y) answer="y";;
 		N|n) answer="n";;
 		*)
-			read answer
+			read -t 30 answer
 			[ -z "$answer" ] && answer="$2"
 			[ "$answer" != 'y' -a "$answer" != 'n' ] && answer="$2"
 			;;
@@ -1350,7 +1350,7 @@ setup_mirrors() {
 	# And, finally, main mirror with the lowest (failsafe) priority (nothing to do)
 
 	# Show list of mirrors
-	awk -vdb="$root$LOCALSTATE" '
+	[ -f "$priority" ] && awk -vdb="$root$LOCALSTATE" '
 	function show(num, name, url,   pad, len) {
 		pad = "................................";
 		len = (32 - length(name));
@@ -1550,6 +1550,7 @@ calc_sizes() {
 
 
 # Display list of unknown packages (informative)
+
 display_unknown() {
 	[ -s "$1" ] || return
 	echo "Unknown packages:" >&2
@@ -1559,12 +1560,69 @@ display_unknown() {
 
 
 # Display warnings about critical packages absent (informative)
+
 display_warn() {
 	[ -s "$1" ] || return
 	echo "Absent critical packages:" >&2
 	cat "$1" >&2
 	rm  "$1"
 	echo "Probably ISO image will be unusable."
+}
+
+
+# Install packages to rootfs
+
+install_list_to_rootfs() {
+	local list="$1" rootfs="$2" pkg i ii
+
+	# initial tazpkg setup in empty rootfs
+	export root="$rootfs"
+	tazpkg --root=$rootfs >/dev/null 2>&1
+	# link rootfs packages cache to the regular packages cache
+	rm -r "$rootfs/var/cache/tazpkg"
+	ln -s /var/cache/tazpkg "$rootfs/var/cache/tazpkg"
+
+	setup_mirrors mirrors
+
+	# Just in case if flavor not contains "tazlito" package
+	mkdir -p "$rootfs/etc/tazlito"
+
+	for pkg in $(cat $list); do
+		action 'Installing package: %s' "$pkg"
+		yes y | tazpkg -gi $pkg --root=$rootfs --quiet >> $log || exit 1
+		status
+	done
+	newline
+
+	restore_mirrors
+	# Remove 'fresh' and 'repacked' undigest repos leaving all other
+	for i in fresh repacked; do
+		ii="$rootfs/var/lib/tazpkg/undigest/$i"
+		[ -d "$ii" ] && rm -rf "$ii"
+		ii="$rootfs/var/lib/tazpkg/priority"
+		if [ -f "$ii" ]; then
+			sed -i "/$i/d" "$ii"
+			[ -s "$ii" ] || rm "$ii"
+		fi
+	done
+	[ -d "$rootfs/var/lib/tazpkg/undigest" ] && \
+	for i in $(find "$rootfs/var/lib/tazpkg/undigest" -type f); do
+		# Remove all undigest PKGDB files but 'mirror'
+		[ "$(basename "$i")" != 'mirror' ] && rm "$i"
+	done
+	[ -d "$rootfs/var/lib/tazpkg/undigest" ] && \
+		rmdir --ignore-fail-on-non-empty "$rootfs/var/lib/tazpkg/undigest"
+
+	# Un-link packages cache
+	rm "$rootfs/var/cache/tazpkg"
+
+	# Clean /var/lib/tazpkg
+	rm  $rootfs/var/lib/tazpkg/ID* \
+		$rootfs/var/lib/tazpkg/descriptions.txt \
+		$rootfs/var/lib/tazpkg/extra.list \
+		$rootfs/var/lib/tazpkg/files* \
+		$rootfs/var/lib/tazpkg/packages.* \
+		2>/dev/null
 }
 
 
@@ -2289,18 +2347,6 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			rm -r "$tmp_dir"
 		fi
 
-		# initial tazpkg setup in empty rootfs
-		export root="$ROOTFS"
-		tazpkg >/dev/null 2>&1
-		# link rootfs packages cache to the regular packages cache
-		rm -r "$ROOTFS/var/cache/tazpkg"
-		ln -s /var/cache/tazpkg "$ROOTFS/var/cache/tazpkg"
-
-		setup_mirrors mirrors
-
-		# Just in case if flavor not contains "tazlito" package
-		mkdir -p "$ROOTFS/etc/tazlito"
-
 		if [ -f non-free.list ]; then
 			# FIXME: working in the ROOTFS chroot?
 			newline
@@ -2322,28 +2368,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		cp $LIST_NAME $DISTRO/distro-packages.list
 		newline
 
-		for pkg in $(cat $DISTRO/distro-packages.list); do
-			action 'Installing package: %s' "$pkg"
-			yes y | tazpkg -gi $pkg --root=$ROOTFS --quiet >> $log || exit 1
-			status
-		done
-		newline
-
-		restore_mirrors
-
-		# Un-link packages cache
-		rm $ROOTFS/var/cache/tazpkg
-		# Clean /var/lib/tazpkg
-		rm  $ROOTFS/var/lib/tazpkg/ID* \
-			$ROOTFS/var/lib/tazpkg/descriptions.txt \
-			$ROOTFS/var/lib/tazpkg/extra.list \
-			$ROOTFS/var/lib/tazpkg/files* \
-			$ROOTFS/var/lib/tazpkg/packages* \
-			$ROOTFS/var/lib/tazpkg/priority \
-		-rf $ROOTFS/var/lib/tazpkg/undigest \
-			2>/dev/null
-		# Back to default mirror
-		echo "$DEFAULT_MIRROR" > $ROOTFS/var/lib/tazpkg/mirror
+		install_list_to_rootfs "$DISTRO/distro-packages.list" "$ROOTFS"
 
 		cd $DISTRO
 		cp distro-packages.list $ROOTFS/etc/tazlito
@@ -2441,45 +2466,9 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				# Install packages
 				cd $PACKAGES_REPOSITORY
 
-				# initial tazpkg setup in empty rootfs
-				export root="${ROOTFS}0$n"
-				tazpkg >/dev/null 2>&1
-				# link rootfs packages cache to the regular packages cache
-				rm -r "${ROOTFS}0$n/var/cache/tazpkg"
-				ln -s /var/cache/tazpkg "${ROOTFS}0$n/var/cache/tazpkg"
-
-				setup_mirrors mirrors
-
-				# Just in case if flavor not contains "tazlito" package
-				mkdir -p "${ROOTFS}0$n/etc/tazlito"
-
-
-				for pkg in $(cat $DISTRO/list-packages0$n); do
-					action 'Installing package: %s' "$pkg"
-					yes y | tazpkg -gi $pkg --root=${ROOTFS}0$n --quiet >> $log || exit 1
-					status
-				done
-
-				restore_mirrors
+				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
 				rm -rf ${ROOTFS}0$n/boot
-
-				# Un-link packages cache
-				rm ${ROOTFS}0$n/var/cache/tazpkg
-
-				# Clean /var/lib/tazpkg
-				rm  ${ROOTFS}0$n/var/lib/tazpkg/ID* \
-					${ROOTFS}0$n/var/lib/tazpkg/descriptions.txt \
-					${ROOTFS}0$n/var/lib/tazpkg/extra.list \
-					${ROOTFS}0$n/var/lib/tazpkg/files* \
-					${ROOTFS}0$n/var/lib/tazpkg/packages.* \
-					${ROOTFS}0$n/var/lib/tazpkg/priority \
-				-rf ${ROOTFS}0$n/var/lib/tazpkg/undigest \
-					2>/dev/null
-
-				# Back to default mirror
-				echo "$DEFAULT_MIRROR" > ${ROOTFS}0$n/var/lib/tazpkg/mirror
-
 
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
