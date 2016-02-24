@@ -1375,7 +1375,7 @@ setup_mirrors() {
 
 pi_lists() {
 	local pi
-	[ -s "$root$LOCALSTATE/packages.info" ] || tazpkg recharge >/dev/null 2>&1
+	[ -s "$root$LOCALSTATE/packages.info" ] || tazpkg recharge --root="$root" >/dev/null 2>&1
 	local priority="$root$LOCALSTATE/priority"
 	local undigest="$root$LOCALSTATE/undigest"
 
@@ -1574,9 +1574,9 @@ display_warn() {
 
 install_list_to_rootfs() {
 	local list="$1" rootfs="$2" pkg i ii
+	local undigest="$rootfs/var/lib/tazpkg/undigest"
 
 	# initial tazpkg setup in empty rootfs
-	export root="$rootfs"
 	tazpkg --root=$rootfs >/dev/null 2>&1
 	# link rootfs packages cache to the regular packages cache
 	rm -r "$rootfs/var/cache/tazpkg"
@@ -1587,6 +1587,7 @@ install_list_to_rootfs() {
 	# Just in case if flavor not contains "tazlito" package
 	mkdir -p "$rootfs/etc/tazlito"
 
+	newline
 	for pkg in $(cat $list); do
 		action 'Installing package: %s' "$pkg"
 		yes y | tazpkg -gi $pkg --root=$rootfs --quiet >> $log || exit 1
@@ -1597,7 +1598,7 @@ install_list_to_rootfs() {
 	restore_mirrors
 	# Remove 'fresh' and 'repacked' undigest repos leaving all other
 	for i in fresh repacked; do
-		ii="$rootfs/var/lib/tazpkg/undigest/$i"
+		ii="$undigest/$i"
 		[ -d "$ii" ] && rm -rf "$ii"
 		ii="$rootfs/var/lib/tazpkg/priority"
 		if [ -f "$ii" ]; then
@@ -1605,24 +1606,19 @@ install_list_to_rootfs() {
 			[ -s "$ii" ] || rm "$ii"
 		fi
 	done
-	[ -d "$rootfs/var/lib/tazpkg/undigest" ] && \
-	for i in $(find "$rootfs/var/lib/tazpkg/undigest" -type f); do
+	[ -d "$undigest" ] && \
+	for i in $(find "$undigest" -type f); do
 		# Remove all undigest PKGDB files but 'mirror'
 		[ "$(basename "$i")" != 'mirror' ] && rm "$i"
 	done
-	[ -d "$rootfs/var/lib/tazpkg/undigest" ] && \
-		rmdir --ignore-fail-on-non-empty "$rootfs/var/lib/tazpkg/undigest"
+	[ -d "$undigest" ] && \
+		rmdir --ignore-fail-on-non-empty "$undigest"
 
 	# Un-link packages cache
 	rm "$rootfs/var/cache/tazpkg"
 
 	# Clean /var/lib/tazpkg
-	rm  $rootfs/var/lib/tazpkg/ID* \
-		$rootfs/var/lib/tazpkg/descriptions.txt \
-		$rootfs/var/lib/tazpkg/extra.list \
-		$rootfs/var/lib/tazpkg/files* \
-		$rootfs/var/lib/tazpkg/packages.* \
-		2>/dev/null
+	(cd $rootfs/var/lib/tazpkg; rm ID* descriptions.txt extra.list files* packages.* 2>/dev/null)
 }
 
 
@@ -2321,8 +2317,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		# Rootfs stuff.
 		echo 'Preparing the rootfs directory...'
 		mkdir -p "$ROOTFS"
-		mkdir -p "$TMP_DIR"
-
+		export root="$ROOTFS"
 		strip_versions "$LIST_NAME"
 
 		if [ "$REPACK" == 'y' ]; then
@@ -2460,11 +2455,9 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				sed 's/.*/&.tazpkg/' < $flavor.pkglist > $DISTRO/list-packages0$n
 				status
 
-				strip_versions "$DISTRO/list-packages0$n"
-
 				mkdir ${ROOTFS}0$n
-				# Install packages
-				cd $PACKAGES_REPOSITORY
+				export root="${ROOTFS}0$n"
+				strip_versions "$DISTRO/list-packages0$n"
 
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
