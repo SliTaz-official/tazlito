@@ -1,0 +1,166 @@
+#!/usr/bin/awk -f
+# calc_sizes - module of TazLito - SliTaz Live Tool.
+
+# Calculate sizes (estimated) and real packages number (including all dependencies)
+# using given extracted flavor and current mirrors.
+#
+# Input: <unpacked flavor dir> <flavor name> [<output full list file>]
+# Output in human readable form:
+# <unpacked size> <packed size> <size of ISO> <number of packages>
+# File $1/err output: unknown packages
+# File $1/warn output: warnings about missing packages
+# TODO: use 'equivalent packages' rules
+
+BEGIN {
+	FS = "\t";
+	K = 1024; M = K * 1024; G = M * 1024;
+	dir = ARGV[1]; flavor = ARGV[2]; outfile = ARGV[3];
+
+	# Get listing of dir
+	"ls " dir " | tr '\n' ' '" | getline lsdir;
+
+	# Calculate rootfs_p, rootfs_u, and rootcd_u
+	if (index(lsdir, flavor ".rootfs")) {
+		"wc -c < " dir "/" flavor ".rootfs"       | getline rootfs_p;
+		"zcat "    dir "/" flavor ".rootfs|wc -c" | getline rootfs_u;
+	}
+	if (index(lsdir, flavor ".rootcd"))
+		"zcat "    dir "/" flavor ".rootcd | wc -c" | getline rootcd_u;
+
+	errfile  = dir "/err";
+	warnfile = dir "/warn";
+	system("rm " errfile " " warnfile " " outfile " 2>/dev/null");
+
+	root = ENVIRON["root"];
+
+	# Get list of 'packages.info' lists using priority
+	pkgdb = root "/var/lib/tazpkg";
+	"ls " pkgdb " | tr '\n' ' '" | getline lsdir;
+	if (! index(lsdir, "packages.info"))
+		"tazpkg recharge --root=" root " >/dev/null 2>&1";
+	if (index(lsdir, "priority"))
+		"cat " pkgdb "/priority | tr '\n' ' '" | getline loop;
+	loop = loop "main";
+	if (index(lsdir, "undigest"))
+		"ls " pkgdb "/undigest | tr '\n' ' '" | getline undigest;
+	loop = loop " " undigest;
+	split(loop, repos, / +/);
+	ARGC = 1;
+	for (i in repos) {
+		if (repos[i] && ! arr[repos[i]]) {
+			arr[repos[i]] = 1;
+			if (repos[i] == "main")
+				pi = pkgdb "/packages.info";
+			else
+				pi = pkgdb "/undigest/" repos[i] "/packages.info";
+			if (!system("test -e "pi)) {
+				ARGV[ARGC] = pi;
+				ARGC ++;
+			}
+		}
+	}
+	ARGV[ARGC] = dir "/" flavor ".pkglist"; ARGC ++;
+}
+
+# Convert human-readable format to bytes
+function h2b(h) {
+	if (h ~ "K")	return h * K;
+	if (h ~ "M")	return h * M;
+	if (h ~ "G")	return h * G;
+					return h;
+}
+
+# Convert bytes to human-readable format
+function b2h(b,   p) {
+	     if (b >= G)	{ b /= G; p = "G"; }
+	else if (b >= M)	{ b /= M; p = "M"; }
+	else				{ b /= K; p = "K"; }
+	if (b >= 100)	return sprintf(  "%d%s", b, p);
+	else			return sprintf("%.1f%s", b, p);
+}
+
+# Mark package with its dependencies (to be processed later)
+function mark_deps(pkg,   localdepend, localdepends) {
+	if (sizes[pkg]) {
+		if (! pkgs[pkg]) {
+			pkgs[pkg] = sizes[pkg];
+
+			if (depends[pkg]) {
+				split(depends[pkg], localdepends, " ");
+				# Recursive call
+				for (localdepend in localdepends)
+					mark_deps(localdepends[localdepend]);
+			}
+		}
+	} else {
+		printf "  %s\n", $1 >> errfile;
+	}
+}
+
+# Calculate unpacked and packed sizes of /boot
+function calc(pkg, size_u, size_p) {
+	if (pkgs[pkg]) {
+		boot_u += h2b(size_u);
+		boot_p += h2b(size_p);
+	}
+}
+
+# main loop
+{
+	if (FILENAME ~ ".info") {
+		# Step #1: fill arrays "sizes" and "depends"
+		if (! sizes[$1]) {
+			  sizes[$1] = $7;
+			depends[$1] = $8;
+		}
+	} else {
+		# Step #2: mark packages and its dependencies
+		mark_deps($1);
+	}
+}
+
+END {
+	# Calculate sums for all marked packages and its deps
+	for (pkg in pkgs) {
+		num_pkgs ++;
+		split(pkgs[pkg], s, " ");
+		size_packed   += h2b(s[1]);
+		size_unpacked += h2b(s[2]);
+		if (outfile) print pkg >> outfile;
+	}
+	# Add files placed in flavor.rootfs
+	size_packed   += rootfs_p;
+	size_unpacked += rootfs_u;
+
+	# Check critical packages: "syslinux" and one of the packages containing "vmlinuz*"
+	if (! pkgs["syslinux"]) printf "  * Syslinux\n" >> warnfile;
+	if (! pkgs["linux"]       && ! pkgs["linux-without-modules"] && \
+		! pkgs["linux64"]     && ! pkgs["linux64-without-modules"] && \
+		! pkgs["linux-libre"] && ! pkgs["linux-libre-without-modules"] && \
+		! pkgs["linux-uml"]) printf "  * Linux kernel\n" >> warnfile;
+
+	# Calculate unpacked and packed sizes of /boot
+	calc("syslinux",					"156K",  "120K" );
+	calc("gpxe",						"196K",  "188K" );
+	calc("ipxe",						"316K",  "312K" );
+	calc("memtest",						"52K",   "48K"  );
+	calc("memtest-serial",				"52K",   "48K"  );
+	calc("slitaz-configs-base",			"36K",   "28K"  );
+	calc("linux",						"2.8M",  "2.8M" );
+	calc("linux-without-modules",		"12.6M", "12.8M");
+	calc("linux64",						"3.0M",  "3.0M" );
+	calc("linux64-without-modules",		"13.2M", "13.4M");
+	calc("linux-libre",					"2.3M",  "2.3M" );
+	calc("linux-libre-without-modules",	"6.9M",  "6.9M" );
+	calc("linux-uml",					"3.0M",  "1.1M" );
+
+	# /boot is moved away from rootfs
+	size_packed   -= boot_p;
+	size_unpacked -= boot_u;
+
+	# Add rootcd payload and /boot content sizes
+	size_iso = size_packed + rootcd_u + boot_u;
+
+	printf "%s %s ",  b2h(size_unpacked), b2h(size_packed);
+	printf "%s %d\n", b2h(size_iso), num_pkgs;
+}

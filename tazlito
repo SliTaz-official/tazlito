@@ -59,6 +59,13 @@ die() {
 }
 
 
+# Run Tazlito module
+module() {
+	local mod="$1"; shift
+	/usr/libexec/tazlito/$mod $@
+}
+
+
 
 # Try to include config file, continue if command is gen-config or exit.
 # The main config used by default is in /etc/tazlito.
@@ -271,7 +278,7 @@ create_iso() {
 	cd - >/dev/null
 	title 'Generating ISO image'
 
-	echo "Generating $1"
+	_ 'Generating %s' "$1"
 	make_bzImage_hardlink $2/boot
 	genisoimage -R   -o $1   -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
@@ -443,7 +450,7 @@ deduplicate() {
 				fi
 				old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
 			done
-			echo "$save Kbytes saved in $hardlinks duplicate files."
+			_ '%s Kbytes saved in %s duplicate files.' "$save" "$hardlinks"
 		)
 
 	find "$@" -type l -xdev -exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
@@ -466,7 +473,7 @@ deduplicate() {
 					old_inode="$inode"
 				fi
 			done
-			echo "$hardlinks duplicate symlinks."
+			_ '%s duplicate symlinks.' "$hardlinks"
 		)
 }
 
@@ -506,7 +513,7 @@ distro_sizes() {
 		sec=$time
 		div=$(( ($time + 30) / 60))
 		[ "$div" -ne 0 ] && min="~ ${div}m"
-		echo "Build time      : ${sec}s $min"
+		_ 'Build time      : %ss %s' "$sec" "$min"
 	fi
 	cat <<EOT
 Build date      : $(date +%Y%m%d)
@@ -688,7 +695,7 @@ cleanup_merge() {
 
 update_bootconfig() {
 	local files
-	echo -n "Updating boot config files..."
+	action 'Updating boot config files...'
 	files="$(grep -l 'include common' $1/*.cfg)"
 	for file in $files; do
 		awk -v n=$(echo $2 | awk '{ print NF/2 }') '{
@@ -820,14 +827,12 @@ EOT
 
 install_package() {
 	if [ -z "$2" ]; then
-		_n 'Install package %s? ' "$1"
+		answer=$(yesorno "$(_ 'Install package %s?' "$1")" 'n')
 	else
-		_n 'Install package %s for Kernel %s? ' "$1" "$2"
+		answer=$(yesorno "$(_n 'Install package %s for Kernel %s? ' "$1" "$2")" 'n')
 	fi
-	echo -n '[y = yes] '
-	read answer
 	case "$answer" in
-		y*|Y*|o*|O*)
+		y)
 			# We don't want package on host cache.
 			action 'Getting and installing package: %s' "$1"
 			yes y | tazpkg get-install $1 --quiet 2>&1 >> $log || exit 1
@@ -904,13 +909,13 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 			cp /usr/share/boot/httpfs-static $TMP_DIR/initfs/bin/httpfs
 		else
 			[ ! -f /usr/bin/httpfs ] && ! install_package httpfs-fuse && return 1
-			cp /usr/bin/httpfs $TMP_DIR/initfs/bin
-			cp -a /lib/librt* $TMP_DIR/initfs/lib
-			cp -a /lib/libdl* $TMP_DIR/initfs/lib
-			cp -a /lib/libpthread* $TMP_DIR/initfs/lib
+			cp /usr/bin/httpfs      $TMP_DIR/initfs/bin
+			cp -a /lib/librt*       $TMP_DIR/initfs/lib
+			cp -a /lib/libdl*       $TMP_DIR/initfs/lib
+			cp -a /lib/libpthread*  $TMP_DIR/initfs/lib
 			cp -a /usr/lib/libfuse* $TMP_DIR/initfs/lib
-			cp -a /lib/libresolv* $TMP_DIR/initfs/lib
-			cp -a /lib/libnss_dns* $TMP_DIR/initfs/lib
+			cp -a /lib/libresolv*   $TMP_DIR/initfs/lib
+			cp -a /lib/libnss_dns*  $TMP_DIR/initfs/lib
 			need_lib=true
 		fi
 		cd $TMP_DIR/initfs
@@ -920,7 +925,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 		done
 		cd - > /dev/null
 		longline "Default URLs for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-$(cat $TMP_DIR/initfs/etc/slitaz-release)-loram-cdrom.iso: $urliso"
-		echo -n "List of URLs to insert: "
+		_n 'List of URLs to insert: '
 		read -t 30 urliso2
 		urliso="$urliso2 $urliso"
 	fi
@@ -1304,7 +1309,7 @@ setup_mirrors() {
 		ln -s "$fresh" '/var/www/tazlito/fresh'
 		# Setup first undigest mirror
 		mkdir -p "$undigest/fresh"
-		echo "http://localhost/tazlito/fresh/" > "$undigest/fresh/mirror"
+		echo 'http://localhost/tazlito/fresh/' > "$undigest/fresh/mirror"
 		echo 'fresh' >> "$priority"
 		# Rebuild mirror DB if needed
 		[ ! -e "$fresh/IDs" ] && tazpkg mkdb "$fresh" --forced --root=''
@@ -1328,7 +1333,7 @@ setup_mirrors() {
 		ln -s "$repacked" '/var/www/tazlito/repacked'
 		# Setup second undigest mirror
 		mkdir -p "$undigest/repacked"
-		echo "http://localhost/tazlito/repacked/" > "$undigest/repacked/mirror"
+		echo 'http://localhost/tazlito/repacked/' > "$undigest/repacked/mirror"
 		echo 'repacked' >> "$priority"
 		# Rebuild mirror DB if needed
 		[ ! -e "$repacked/IDs" ] && tazpkg mkdb "$repacked" --forced --root=''
@@ -1410,7 +1415,7 @@ strip_versions() {
 			# Collect package names
 			FS = "\t"; pkg[$1] = 1;
 		} else {
-			FS = "-"; OFS = "-"; $0 = $0;		# Fix bug with FS for first record
+			FS = OFS = "-"; $0 = $0;		# Fix bug with FS for first record
 			while (NF > 1 && ! pkg[$0])
 				NF --;
 			printf "%s\n", $0;
@@ -1420,132 +1425,6 @@ strip_versions() {
 	cat "$tmp_list" > "$in_list"
 	rm "$tmp_list"
 	status
-}
-
-
-# Calculate sizes (estimated) and real packages number (including all dependencies)
-# using given extracted flavor and current mirrors.
-#
-# Input: <unpacked flavor dir> <flavor name> [<output full list file>]
-# Output in human readable form:
-# <unpacked size> <packed size> <size of ISO> <number of packages>
-# File $1/err output: unknown packages
-# File $1/warn output: warnings about missing packages
-# TODO: use 'equivalent packages' rules
-
-calc_sizes() {
-	local dir="$1" flavor="$2" outfile="$3"
-	local rootfs_packed=0 rootfs_unpacked=0 rootcd_unpacked=0
-
-	if [ -s "$dir/$flavor.rootfs" ]; then
-		rootfs_packed="$(wc -c < "$dir/$flavor.rootfs")";
-		rootfs_unpacked="$(zcat  "$dir/$flavor.rootfs" | wc -c)";
-	fi
-	if [ -s "$dir/$flavor.rootcd" ]; then
-		rootcd_unpacked="$(zcat  "$dir/$flavor.rootcd" | wc -c)";
-	fi
-
-	awk -F$'\t' \
-	-vrootfs_p="$rootfs_packed" -vrootfs_u="$rootfs_unpacked" -vrootcd_u="$rootcd_unpacked" \
-	-voutfile="$outfile" -verrfile="$dir/err" -vwarnfile="$dir/warn" '
-	BEGIN {
-		K = 1024; M = K * 1024; G = M * 1024;
-	}
-	function h2b(h) {
-		# Convert human-readable format to bytes
-		if (h ~ "K")	return h * K;
-		if (h ~ "M")	return h * M;
-		if (h ~ "G")	return h * G;
-						return h;
-	}
-	function b2h(b,   p) {
-		# Convert bytes to human-readable format
-		     if (b >= G)	{ b /= G; p = "G"; }
-		else if (b >= M)	{ b /= M; p = "M"; }
-		else				{ b /= K; p = "K"; }
-		if (b >= 100)	printf   "%d%s\n", b, p;
-		else			printf "%.1f%s\n", b, p;
-	}
-	function mark_deps(pkg,   localdepend, localdepends) {
-		# Mark package with its dependencies (to be processed later)
-		if (sizes[pkg]) {
-			if (! pkgs[pkg]) {
-				pkgs[pkg] = sizes[pkg];
-
-				if (depends[pkg]) {
-					split(depends[pkg], localdepends, " ");
-					# Recursive call
-					for (localdepend in localdepends)
-						mark_deps(localdepends[localdepend]);
-				}
-			}
-		} else {
-			printf "  %s\n", $1 >> errfile;
-		}
-	}
-	function calc(pkg, size_u, size_p) {
-		# Calculate unpacked and packed sizes of /boot
-		if (pkgs[pkg]) { boot_u += h2b(size_u); boot_p += h2b(size_p); }
-	}
-	# main loop
-	{
-		if (FILENAME ~ "packages.info") {
-			# Step #1: fill arrays "sizes" and "depends"
-			if (! sizes[$1]) {
-				  sizes[$1] = $7;
-				depends[$1] = $8;
-			}
-		} else {
-			# Step #2: mark packages and its dependencies
-			mark_deps($1);
-		}
-	}
-	END {
-		# Calculate sums for all marked packages and its deps
-		for (pkg in pkgs) {
-			num_pkgs ++;
-			split(pkgs[pkg], s, " ");
-			size_packed   += h2b(s[1]);
-			size_unpacked += h2b(s[2]);
-			if (outfile) print pkg >> outfile;
-		}
-		# Add files placed in flavor.rootfs
-		size_packed   += rootfs_p;
-		size_unpacked += rootfs_u;
-
-		# Check critical packages: "syslinux" and one of the packages containing "vmlinuz*"
-		printf "" > warnfile;
-		if (! pkgs["syslinux"]) printf "  * Syslinux\n" >> warnfile;
-		if (! pkgs["linux"]       && ! pkgs["linux-without-modules"] && \
-			! pkgs["linux64"]     && ! pkgs["linux64-without-modules"] && \
-			! pkgs["linux-libre"] && ! pkgs["linux-libre-without-modules"] && \
-			! pkgs["linux-uml"]) printf "  * Linux kernel\n" >> warnfile;
-
-		# Calculate unpacked and packed sizes of /boot
-		calc("syslinux",					"156K",  "120K" );
-		calc("gpxe",						"196K",  "188K" );
-		calc("ipxe",						"316K",  "312K" );
-		calc("memtest",						"52K",   "48K"  );
-		calc("memtest-serial",				"52K",   "48K"  );
-		calc("slitaz-configs-base",			"36K",   "28K"  );
-		calc("linux",						"2.8M",  "2.8M" );
-		calc("linux-without-modules",		"12.6M", "12.8M");
-		calc("linux64",						"3.0M",  "3.0M" );
-		calc("linux64-without-modules",		"13.2M", "13.4M");
-		calc("linux-libre",					"2.3M",  "2.3M" );
-		calc("linux-libre-without-modules",	"6.9M",  "6.9M" );
-		calc("linux-uml",					"3.0M",  "1.1M" );
-
-		# /boot is moved away from rootfs
-		size_packed   -= boot_p;
-		size_unpacked -= boot_u;
-
-		# Add rootcd payload and /boot content sizes
-		size_iso = size_packed + rootcd_u + boot_u;
-
-		printf "%s %s ",  b2h(size_unpacked), b2h(size_packed);
-		printf "%s %d\n", b2h(size_iso), num_pkgs;
-	}' $(pi_lists) "$dir/$flavor.pkglist"
 }
 
 
@@ -1980,7 +1859,7 @@ EOT
 		action 'Updating %s...' "$flavor.desc"
 
 		[ -f "$flv_dir/$flavor.mirrors" ] && setup_mirrors "$flv_dir/$flavor.mirrors" >/dev/null
-		set -- $(calc_sizes "$flv_dir" "$flavor")
+		set -- $(module calc_sizes "$flv_dir" "$flavor")
 		restore_mirrors >/dev/null
 
 		sed -i -e '/Image is ready/d' \
@@ -2090,7 +1969,7 @@ EOT
 		fi
 
 		unset VERSION MAINTAINER ROOTFS_SELECTION
-		set -- $(calc_sizes "$tmp_dir" "$flavor")
+		set -- $(module calc_sizes "$tmp_dir" "$flavor")
 		ROOTFS_SIZE="$1 (estimated)"
 		INITRAMFS_SIZE="$2 (estimated)"
 		ISO_SIZE="$3 (estimated)"
@@ -2158,7 +2037,7 @@ EOT
 		grep -q  '^Rootfs list' description &&
 			grep '^Rootfs list' description | sed 's/.*: \(.*\)$/\1/' > /etc/tazlito/rootfs.list
 
-		action 'Updating tazlito.conf...'
+		action 'Updating %s...' 'tazlito.conf'
 		[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
 		grep -v "^#VOLUM_NAME" < tazlito.conf | \
 		sed "s/^VOLUM_NA/VOLUM_NAME=\"SliTaz $flavor\"\\n#VOLUM_NA/" \
@@ -2181,11 +2060,11 @@ EOT
 		flavordata $2 | (cd $TMP_DIR/flavor; cpio -i 2>/dev/null)
 		if [ -s $TMP_DIR/iso/boot/rootfs1.gz -a \
 		   ! -s $TMP_DIR/flavor/*.desc ]; then
-			echo "META flavors are not supported."
+			_ 'META flavors are not supported.'
 			umount -d $TMP_DIR/iso
 		elif [ ! -s $TMP_DIR/iso/boot/rootfs.gz -a \
 		       ! -s $TMP_DIR/iso/boot/rootfs1.gz ]; then
-			echo "No /boot/rootfs.gz in ISO image. Needs a SliTaz ISO."
+			_ 'No %s in ISO image. Needs a SliTaz ISO.' '/boot/rootfs.gz'
 			umount -d $TMP_DIR/iso
 		else
 			for i in $(ls -r $TMP_DIR/iso/boot/rootfs*gz); do
@@ -2193,7 +2072,8 @@ EOT
 				( cd $TMP_DIR/rootfs ; cpio -idmu > /dev/null 2>&1 )
 			done
 			if [ ! -s $TMP_DIR/rootfs/etc/slitaz-release ]; then
-				echo "No file /etc/slitaz-release in /boot/rootfs.gz of iso image. Needs a non loram SliTaz iso."
+				_ 'No file %s in %s of ISO image. Needs a non-loram SliTaz ISO.' \
+					'/etc/slitaz-release' '/boot/rootfs.gz'
 				umount -d $TMP_DIR/iso
 			else
 				ROOTFS_SIZE=$(du -hs $TMP_DIR/rootfs | awk '{ print $1 }')
@@ -2227,8 +2107,8 @@ EOT
 					unset VERSION MAINTAINER
 					echo -en "Flavor short description \007: "; read -t 30 DESCRIPTION
 					if [ -n "$DESCRIPTION" ]; then
-						echo -en "Flavor version : "; read -t 30 VERSION
-						echo -en "Flavor maintainer (your email) : "; read -t 30 MAINTAINER
+						_n 'Flavor version : '; read -t 30 VERSION
+						_n 'Flavor maintainer (your email) : '; read -t 30 MAINTAINER
 					fi
 
 					cat > $TMP_DIR/$FLAVOR.desc <<EOT
@@ -2325,7 +2205,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			tmp_dir="$(mktemp -d)"
 			cp "$LIST_NAME" "$tmp_dir/flavor.pkglist"
 			touch "$tmp_dir/full.pkglist"
-			calc_sizes "$tmp_dir" 'flavor' "$tmp_dir/full.pkglist" >/dev/null
+			module calc_sizes "$tmp_dir" 'flavor' "$tmp_dir/full.pkglist" >/dev/null
 
 			awk -F$'\t' '{printf "%s %s\n", $1, $2}' "$LOCALSTATE/installed.info" | \
 			while read pkgname pkgver; do
@@ -2465,12 +2345,12 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 
 				cd $DISTRO
 				if [ -s $flavor.rootfs ]; then
-					echo -n "Adding $flavor rootfs extra files..."
+					_n 'Adding %s rootfs extra files...' "$flavor"
 					zcat < $flavor.rootfs | ( cd ${ROOTFS}0$n ; cpio -idmu )
 				fi
 
 				action 'Moving %s to %s' "list-packages0$n" "rootfs0$n"
-				mv $DISTRO/list-packages0$n ${ROOTFS}0$n/etc/tazlito/distro-packages.list
+				mv "$DISTRO/list-packages0$n" "${ROOTFS}0$n/etc/tazlito/distro-packages.list"
 				status
 
 				rm -f $flavor.flavor install-list
@@ -2483,15 +2363,14 @@ EOT
 			i=$(($n+1))
 			while [ $n -gt 0 ]; do
 				mv ${ROOTFS}0$n ${ROOTFS}$i
-				echo "Compressing ${ROOTFS}0$n ($(du -hs ${ROOTFS}$i | awk '{ print $1 }'))..."
+				_ 'Compressing %s (%s)...' "${ROOTFS}0$n" "$(du -hs ${ROOTFS}$i | awk '{ print $1 }')"
 				gen_initramfs ${ROOTFS}$i
 				n=$(($n-1))
 				i=$(($i-1))
 			done
 			mv $ROOTFS ${ROOTFS}$i
 			gen_initramfs ${ROOTFS}$i
-			update_bootconfig $ROOTCD/boot/isolinux \
-				"$(cat /etc/tazlito/rootfs.list)"
+			update_bootconfig "$ROOTCD/boot/isolinux" "$(cat /etc/tazlito/rootfs.list)"
 		else
 			# Initramfs and ISO image stuff.
 			gen_initramfs $ROOTFS
@@ -2537,16 +2416,16 @@ EOT
 		check_rootfs
 		title 'Checking distro: %s' "$ROOTFS"
 		# SliTaz release info.
-		if [ ! -f "$ROOTFS/etc/slitaz-release" ]; then
-			echo "Missing release info : /etc/slitaz-release"
+		rel='/etc/slitaz-release'
+		if [ ! -f "$ROOTFS$rel" ]; then
+			_ 'Missing release info: %s' "$rel"
 		else
-			release=$(cat $ROOTFS/etc/slitaz-release)
-			echo -n "Release      : $release"
+			action 'Release      : %s' "$(cat $ROOTFS$rel)"
 			status
 		fi
 		# Tazpkg mirror.
 		if [ ! -f "$ROOTFS$LOCALSTATE/mirror" ]; then
-			echo -n "Mirror URL   : Missing $LOCALSTATE/mirror"
+			action 'Mirror URL   : Missing %s' "$LOCALSTATE/mirror"
 			todomsg
 		else
 			action 'Mirror configuration exists...'
@@ -2554,7 +2433,7 @@ EOT
 		fi
 		# Isolinux msg
 		if grep -q "cooking-XXXXXXXX" /$ROOTCD/boot/isolinux/isolinux.*g; then
-			echo -n "Isolinux msg : Missing cooking date XXXXXXXX (ex $(date +%Y%m%d))"
+			action 'Isolinux msg : Missing cooking date XXXXXXXX (ex %s)' "$(date +%Y%m%d)"
 			todomsg
 		else
 			action 'Isolinux message seems good...'
@@ -2589,36 +2468,28 @@ suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)
 
 		# Optionally remove sound card selection and screen resolution.
 		if [ -z $LaunchedByTazpanel ]; then
-		echo "Do you wish to remove the sound card and screen configs ? "
-		echo -n "Press ENTER to keep or answer (No|yes|exit): "
-		read anser
+		anser=$(yesorno 'Do you wish to remove the sound card and screen configs?' 'n')
 		case $anser in
-			e|E|"exit"|Exit)
-				exit 0 ;;
-			y|Y|yes|Yes)
-				echo -n "Removing current sound card and screen configurations..."
+			y)
+				action 'Removing current sound card and screen configurations...'
 				rm -f /var/lib/sound-card-driver
 				rm -f /var/lib/alsa/asound.state
 				rm -f /etc/X11/xorg.conf ;;
 			*)
-				echo -n "Keeping current sound card and screen configurations..." ;;
+				action 'Keeping current sound card and screen configurations...' ;;
 		esac
 		status
 		newline
 
 		# Optionally remove i18n settings
-		echo "Do you wish to remove local/keymap settings ? "
-		echo -n "Press ENTER to keep or answer (No|yes|exit): "
-		read anser
+		anser=$(yesorno 'Do you wish to remove locale/keymap settings?' 'n')
 		case $anser in
-			e|E|"exit"|Exit)
-				exit 0 ;;
-			y|Y|yes|Yes)
-				echo "Removing current locale/keymap settings..."
+			y)
+				action 'Removing current locale/keymap settings...'
 				newline > /etc/locale.conf
 				newline > /etc/keymap.conf ;;
 			*)
-				echo "Keeping current locale/keymap settings..." ;;
+				action 'Keeping current locale/keymap settings...' ;;
 		esac
 		status
 		fi
@@ -2670,7 +2541,7 @@ suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)
 		# Move freshly generated rootfs to the cdrom.
 		mkdir -p $ROOTCD/boot
 		mv -f /$INITRAMFS $ROOTCD/boot
-		echo "Located in: $ROOTCD/boot/$INITRAMFS"
+		_ 'Located in: %s' "$ROOTCD/boot/$INITRAMFS"
 
 		# Now we need the kernel and isolinux files.
 		copy_from_cd() {
@@ -2680,7 +2551,7 @@ suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)
 			umount /media/cdrom
 		}
 
-		bootloader='/var/lib/tazpkg/installed/syslinux/volatile.cpio.gz'
+		bootloader="$LOCALSTATE/installed/syslinux/volatile.cpio.gz"
 		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
 			copy_from_cd;
 		elif  mount | grep /media/cdrom; then
@@ -2709,7 +2580,7 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files."
 		touch /tmp/.write-iso
 		newline
 		cd $DISTRO
-		echo "Generating ISO image..."
+		_ 'Generating ISO image...'
 		genisoimage -R   -o $ISO_NAME.iso   -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
 		-V "SliTaz"   -p "$(id -un)"   -input-charset utf-8 \
@@ -2728,14 +2599,13 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files."
 		md5sum $ISO_NAME.iso > $ISO_NAME.md5
 		status
 
-		separator
-		echo "ISO image: $(du -sh $DISTRO/$ISO_NAME.iso)"
+		footer "ISO image: $(du -sh $DISTRO/$ISO_NAME.iso)"
 		rm -f /tmp/.write-iso
-		newline
+
 		if [ -z $LaunchedByTazpanel ]; then
-		echo -n "Exit or burn ISO to CD-ROM (Exit|burn)? "; read anser
+		anser=$(yesorno 'Burn ISO to CD-ROM?' 'n')
 		case $anser in
-			burn)
+			y)
 				umount /dev/cdrom 2>/dev/null
 				eject
 				echo -n "Please insert a blank CD-ROM and press ENTER..."
@@ -2817,7 +2687,7 @@ EOT
 		make_bzImage_hardlink $TMP_DIR/iso/boot
 		umount -d $TMP_DIR/mnt
 		if [ -f $TMP_DIR/iso/boot/rootfs1.gz ]; then
-			echo "$1 is already a merged iso. Aborting."
+			_ '%s is already a merged iso. Aborting.' "$1"
 			cleanup_merge
 		fi
 		if [ ! -f $TMP_DIR/iso/boot/isolinux/ifmem.c32 -a
@@ -2835,7 +2705,7 @@ EOT
 			cp /boot/isolinux/ifmem.c32 $TMP_DIR/iso/boot/isolinux
 		fi
 
-		action 'Extracting iso/rootfs.gz'
+		action 'Extracting %s' 'iso/rootfs.gz'
 		extract_rootfs $TMP_DIR/iso/boot/rootfs.gz $TMP_DIR/rootfs1 &&
 			[ -d $TMP_DIR/rootfs1/etc ]
 		status || cleanup_merge
@@ -2855,11 +2725,11 @@ EOT
 			status || cleanup_merge
 
 			mergefs $TMP_DIR/rootfs$n $TMP_DIR/rootfs$p
-			action 'Creating rootfs%s.gz' "$p"
+			action 'Creating %s' "rootfs$p.gz"
 			pack_rootfs "$TMP_DIR/rootfs$p" "$TMP_DIR/iso/boot/rootfs$p.gz"
 			status
 		done
-		action 'Creating rootfs%s.gz' "$n"
+		action 'Creating %s' "rootfs$n.gz"
 		pack_rootfs "$TMP_DIR/rootfs$n" "$TMP_DIR/iso/boot/rootfs$n.gz"
 		status
 		rm -f $TMP_DIR/iso/boot/rootfs.gz
