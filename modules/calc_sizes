@@ -11,6 +11,8 @@
 # File $1/warn output: warnings about missing packages
 # TODO: use 'equivalent packages' rules
 
+#tokens dir flavor outfile lsdir rootfs_p rootfs_u rootcd_u errfile warnfile root pkgdb loop undigest repos arr pi h2b h i b2h b p mark_deps pkg localdepend localdepends pkgs sizes depends size_u size_p boot_u boot_p num_pkgs size_packed size_unpacked size_iso s
+
 BEGIN {
 	FS = "\t";
 	K = 1024; M = K * 1024; G = M * 1024;
@@ -53,7 +55,7 @@ BEGIN {
 				pi = pkgdb "/packages.info";
 			else
 				pi = pkgdb "/undigest/" repos[i] "/packages.info";
-			if (!system("test -e "pi)) {
+			if (!system("test -e " pi)) {
 				ARGV[ARGC] = pi;
 				ARGC ++;
 			}
@@ -134,9 +136,9 @@ END {
 
 	# Check critical packages: "syslinux" and one of the packages containing "vmlinuz*"
 	if (! pkgs["syslinux"]) printf "  * Syslinux\n" >> warnfile;
-	if (! pkgs["linux"]       && ! pkgs["linux-without-modules"] && \
-		! pkgs["linux64"]     && ! pkgs["linux64-without-modules"] && \
-		! pkgs["linux-libre"] && ! pkgs["linux-libre-without-modules"] && \
+	if (! pkgs["linux"]       && ! pkgs["linux-without-modules"] &&
+		! pkgs["linux64"]     && ! pkgs["linux64-without-modules"] &&
+		! pkgs["linux-libre"] && ! pkgs["linux-libre-without-modules"] &&
 		! pkgs["linux-uml"]) printf "  * Linux kernel\n" >> warnfile;
 
 	# Calculate unpacked and packed sizes of /boot

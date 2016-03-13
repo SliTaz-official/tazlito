@@ -1356,10 +1356,9 @@ setup_mirrors() {
 
 	# Show list of mirrors
 	[ -f "$priority" ] && awk -vdb="$root$LOCALSTATE" '
-	function show(num, name, url,   pad, len) {
-		pad = "................................";
-		len = (32 - length(name));
-		printf " %-1.1d. %s%*.*s %-44.44s\n", num, name, len, len, pad, url;
+	function show(num, name, url,   pad) {
+		pad = substr("................................", 1, 32 - length(name));
+		printf " %-1.1d. %s%s %-44.44s\n", num, name, pad, url;
 	}
 	{
 		num++;
@@ -1372,7 +1371,7 @@ setup_mirrors() {
 		show(num, "main", url);
 	}' "$priority"
 
-	tazpkg recharge --quiet
+	tazpkg recharge --quiet >/dev/null
 }
 
 
@@ -2176,6 +2175,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		# Misc checks
 		mkdir -p "$PACKAGES_REPOSITORY"
 		REPACK=$(yesorno 'Repack packages from rootfs?' 'n')
+		newline
 
 		# Mount CD-ROM to be able to repack boot-loader packages
 		if [ ! -e /boot -a -n "$CDROM" ]; then
