@@ -31,7 +31,7 @@ LOCALSTATE='/var/lib/tazpkg'
 INSTALLED="$LOCALSTATE/installed"
 CACHE_DIR='/var/cache/tazpkg'
 MIRROR="$LOCALSTATE/mirror"
-DEFAULT_MIRROR="http://mirror.slitaz.org/packages/$(cat /etc/slitaz-release)/"
+DEFAULT_MIRROR="http://mirror1.slitaz.org/packages/$(cat /etc/slitaz-release)/"
 
 log='/var/log/tazlito.log'
 if [ $(id -u) -eq 0 ]; then
@@ -1284,11 +1284,6 @@ restore_mirrors() {
 
 setup_mirrors() {
 	# Setup mirrors in plain system or in chroot (with variable root=)
-	#
-	# Note, difficulties exists in using local-filesystem-mirrors (when content
-	# of the 'mirror' file is point to folder somewhere in the FS) inside chroot,
-	# because mirror should be in the chroot too. We make local mirrors to be
-	# accessible via http://localhost/... using built-in SliTaz web server.
 	local mirrorlist="$1" fresh repacked
 	local undigest="$root$LOCALSTATE/undigest" priority="$root$LOCALSTATE/priority"
 
@@ -1305,11 +1300,9 @@ setup_mirrors() {
 	# Packages produced by CookUtils: on Tank or local, or repacked packages: highest priority
 	fresh='/home/slitaz/packages'
 	if [ -d "$fresh" ]; then
-		# Make this mirror accessible using http://localhost/tazlito/fresh
-		ln -s "$fresh" '/var/www/tazlito/fresh'
 		# Setup first undigest mirror
 		mkdir -p "$undigest/fresh"
-		echo 'http://localhost/tazlito/fresh/' > "$undigest/fresh/mirror"
+		echo "$fresh" > "$undigest/fresh/mirror"
 		echo 'fresh' >> "$priority"
 		# Rebuild mirror DB if needed
 		[ ! -e "$fresh/IDs" ] && tazpkg mkdb "$fresh" --forced --root=''
@@ -1329,11 +1322,9 @@ setup_mirrors() {
 		# PACKAGES_REPOSITORY="$WORK_DIR/packages"
 		# It MAY or MAY NOT match /home/slitaz/packages, so here we setup second repository
 
-		# Make this mirror accessible using http://localhost/tazlito/repacked
-		ln -s "$repacked" '/var/www/tazlito/repacked'
 		# Setup second undigest mirror
 		mkdir -p "$undigest/repacked"
-		echo 'http://localhost/tazlito/repacked/' > "$undigest/repacked/mirror"
+		echo "$repacked" > "$undigest/repacked/mirror"
 		echo 'repacked' >> "$priority"
 		# Rebuild mirror DB if needed
 		[ ! -e "$repacked/IDs" ] && tazpkg mkdb "$repacked" --forced --root=''
@@ -1356,9 +1347,8 @@ setup_mirrors() {
 
 	# Show list of mirrors
 	[ -f "$priority" ] && awk -vdb="$root$LOCALSTATE" '
-	function show(num, name, url,   pad) {
-		pad = substr("................................", 1, 32 - length(name));
-		printf " %-1.1d. %s%s %-44.44s\n", num, name, pad, url;
+	function show(num, name, url) {
+		printf " %-1.1d. %32.32s %-44.44s\n", num, name " ...............................", url;
 	}
 	{
 		num++;
