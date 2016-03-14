@@ -2305,6 +2305,11 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			last=$ROOTFS
 			while read flavor; do
 				n=$(($n+1))
+				mkdir ${ROOTFS}0$n
+				export root="${ROOTFS}0$n"
+				# initial tazpkg setup in empty rootfs
+				tazpkg --root=$root >/dev/null 2>&1
+
 				newline
 				boldify "Building $flavor rootfs..."
 
@@ -2322,11 +2327,9 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 
 				action 'Extracting %s and %s...' "$flavor.pkglist" "$flavor.rootfs"
 				zcat $flavor.flavor | cpio -i --quiet $flavor.pkglist $flavor.rootfs
-				sed 's/.*/&.tazpkg/' < $flavor.pkglist > $DISTRO/list-packages0$n
+				cp $flavor.pkglist $DISTRO/list-packages0$n
 				status
 
-				mkdir ${ROOTFS}0$n
-				export root="${ROOTFS}0$n"
 				strip_versions "$DISTRO/list-packages0$n"
 
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
