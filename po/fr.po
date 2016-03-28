@@ -23,27 +23,27 @@ msgstr ""
 
 #: live.cgi:38
 msgid "Create a live USB key"
-msgstr ""
+msgstr "Créer une clé USB live"
 
 #: live.cgi:39
 msgid "Create a live CD-ROM"
-msgstr ""
+msgstr "Créer un CD-ROM live"
 
 #: live.cgi:40 live.cgi:110
 msgid "Create a hybrid ISO"
-msgstr ""
+msgstr "Créer une ISO hybride"
 
 #: live.cgi:41 live.cgi:90 live.cgi:300 live.cgi:343
 msgid "Convert ISO to loram"
-msgstr ""
+msgstr "Convertir une ISO en loram"
 
 #: live.cgi:42 live.cgi:100 live.cgi:372 live.cgi:426
 msgid "Build a meta ISO"
-msgstr ""
+msgstr "Construire une meta ISO"
 
 #: live.cgi:128
 msgid "TODO"
-msgstr ""
+msgstr "A Faire"
 
 #: live.cgi:132 live.cgi:136
 msgid "SliTaz LiveUSB"
@@ -51,39 +51,39 @@ msgstr ""
 
 #: live.cgi:133
 msgid "Create Live USB SliTaz systems"
-msgstr ""
+msgstr "Créer des systèmes SliTaz USB live"
 
 #: live.cgi:140
 msgid ""
 "Generate SliTaz LiveUSB media and boot in RAM! Insert a Live CD into the CD-"
 "ROM drive, select the correct device and press Generate."
 msgstr ""
+"Construit un media SliTaz LiveUSB et démarre en RAM ! Placez un CD Live "
+"dans le lecteur, choisissez le bon périphérique et appuyez sur Générer."
 
 #: live.cgi:146
 msgid "USB Media to use:"
-msgstr ""
+msgstr "Media USB à utiliser :"
 
 #: live.cgi:167
 msgid "Not found"
-msgstr ""
+msgstr "Introuvable"
 
 #: live.cgi:172
-#, fuzzy
 msgid "Generate"
-msgstr "ISO Générée "
+msgstr "Générer"
 
 #: live.cgi:253
-#, fuzzy
 msgid "SliTaz Live Systems"
-msgstr "Créateur de système Live SliTaz"
+msgstr "Systèmes Live SliTaz"
 
 #: live.cgi:254
 msgid "Create and manage Live CD or USB SliTaz systems"
-msgstr ""
+msgstr "Créer et gérer les systemes SliTaz CD live ou USB"
 
 #: live.cgi:259
 msgid "Write a Live CD"
-msgstr ""
+msgstr "Ecrire un CD Live"
 
 #: live.cgi:263
 msgid ""
@@ -91,85 +91,92 @@ msgid ""
 "is, including all files in the /home directory. It is an easy way to "
 "remaster a SliTaz Live system, you just have to: boot, modify, writeiso."
 msgstr ""
+"La commande writeiso va créer une image ISO de votre système de fichier tel "
+"quel, avec tous les fichiers de /home. C'est une façon simple pour "
+"remasteriser un système SliTaz Live, juste : démarrer, modifier, writeiso."
 
 #: live.cgi:271
 msgid "Compression type:"
-msgstr ""
+msgstr "Type de compression :"
 
 #: live.cgi:275
 msgid "none"
-msgstr ""
+msgstr "aucune"
 
 #: live.cgi:282
 msgid ""
 "Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs."
 "gz)"
 msgstr ""
+"Pas de ISO/CD SliTaz monté dans /media/cdrom (vous n'aurez que rootfs.gz)"
 
 #: live.cgi:290 tazlito-wiz:61
-#, fuzzy
 msgid "Write ISO"
-msgstr "ISO Générée "
+msgstr "Ecrire l'ISO"
 
 #: live.cgi:296
 msgid "Live CD tools"
-msgstr ""
+msgstr "Outils CD Live"
 
 #: live.cgi:304
 msgid ""
 "This command will convert an ISO image of a SliTaz Live CD to a new ISO "
 "image requiring less RAM to run."
 msgstr ""
+"Cette commande va convertir une image ISO du Live CD SliTaz en une nouvelle "
+"image ISO nécéssitant moins de RAM."
 
 #: live.cgi:310 live.cgi:359
 msgid "ISO to convert"
-msgstr ""
+msgstr "ISO à convertir"
 
 #: live.cgi:315
 msgid "The filesystem is always in RAM"
-msgstr ""
+msgstr "Le système de fichier est toujours en RAM"
 
 #: live.cgi:319
 msgid "The filesystem may be on a small CD-ROM"
-msgstr ""
+msgstr "Le système de fichier peut être sur un petit CD-ROM"
 
 #: live.cgi:323
 msgid "The filesystem may be on a large CD-ROM"
-msgstr ""
+msgstr "Le système de fichier peut être sur un grand CD-ROM"
 
 #: live.cgi:326 live.cgi:417
 msgid "ISO to create"
-msgstr ""
+msgstr "ISO à créer"
 
 #: live.cgi:350 live.cgi:365
 msgid "Build a hybrid ISO"
-msgstr ""
+msgstr "Construit une ISO hybride"
 
 #: live.cgi:354
 msgid "Add a master boot sector and an EXE header to the ISO image."
-msgstr ""
+msgstr "Ajoute un MBR et une entête EXE à l'image ISO."
 
 #: live.cgi:376
 msgid ""
 "Combines several ISO flavors like nested Russian dolls. The amount of RAM "
 "available at startup will be used to select the utmost one."
 msgstr ""
+"Empile différentes saveurs ISO comme des poupées russes. Le volume de RAM "
+"détecté au démarrage permettra de choisir la saveur adéquate."
 
 #: live.cgi:389
 msgid "ISO number %s:"
-msgstr ""
+msgstr "ISO numéro %s :"
 
 #: live.cgi:393 live.cgi:410
 msgid "Minimum RAM:"
-msgstr ""
+msgstr "RAM minimum :"
 
 #: live.cgi:406
 msgid "ISO to add"
-msgstr ""
+msgstr "ISO à ajouter"
 
 #: live.cgi:412
 msgid "Add to the list"
-msgstr ""
+msgstr "Ajoute à la liste"
 
 #: tazlito-wiz:46
 msgid "Edit the distro packages list"
@@ -205,14 +212,12 @@ msgid "Packages - The \"$skel\" has $pkgs packages"
 msgstr "Paquets - La saveur $skel a $pkgs paquets"
 
 #: tazlito-wiz:116
-#, fuzzy
 msgid "Additional packages separated by space or by line:"
-msgstr "Paquets additionnels sépararés par un espace ou ligne par ligne:"
+msgstr "Paquets supplémentaires sépararés par un espace ou ligne par ligne :"
 
 #: tazlito-wiz:116
-#, fuzzy
 msgid "(will be auto added to \"Edit packages list\")"
-msgstr "Editer la liste des paquets de la distro"
+msgstr "(sera automatiquement ajouté à \"Editer la liste des paquets\")"
 
 #: tazlito-wiz:117
 msgid "Edit packages list"
@@ -227,7 +232,6 @@ msgid "Wallpaper JPG image:"
 msgstr "Image au format JPG:"
 
 #: tazlito-wiz:179
-#, fuzzy
 msgid ""
 "\n"
 "Now it's time to generate the distro. Last chance to start over or stop. "
@@ -272,4 +276,4 @@ msgstr ""
 
 #: tazlito-wiz:223
 msgid "Value"
-msgstr ""
+msgstr "Valeur"
