@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="es">
 <head>
-	<meta charset="utf-8" />
+	<meta charset="UTF-8">
 	<meta name="author" content="Patryk Augustyn">
 	<title>Manual de Tazlito - Herramienta de SliTaz Live</title>
-	<link rel="shortcut icon" href="favicon.ico" />
-	<link rel="stylesheet" type="text/css" href="../slitaz-doc.css" />
+	<link rel="shortcut icon" href="favicon.ico">
+	<link rel="stylesheet" type="text/css" href="../slitaz-doc.css">
 	<script type="text/javascript" src="../slitaz-doc.js"></script>
 </head>
 <body>
@@ -41,7 +41,7 @@ los paquetes a distribuir y de la ISO generada.
 A Tazlito también se le puede indicar un directorio que contenga archivos adicionales 
 que serán copiados al LiveCD cuando se genere la distribución.</p>
 <p>Tazlito se distribuye bajo la licencia libre GNU GPL V3, instalado por defecto 
-en Slitaz e instalado/probado con éxito en Debian GNU/Linux.Encontrarás 
+en SliTaz e instalado/probado con éxito en Debian GNU/Linux.Encontrarás 
 información adicional de como crear un LiveCD en el manual.</p>
 
 
@@ -119,7 +119,7 @@ contiene el sistema de archivos raíz y tiene que ser reconstruido si es modific
 <h3 id="list-flavors">list-flavors</h3>
 
 <p>El comando <code>list-flavors</code> descarga (si es necesario) y muestra una lista de las 
-diferentes versiones personalizadas (flavors) de Slitaz disponibles. Puedes forzar
+diferentes versiones personalizadas (flavors) de SliTaz disponibles. Puedes forzar
 la descarga con la opción <code>--recharge</code>:</p>
 
 <pre>
@@ -234,7 +234,7 @@ las opciones <code>--cdrom</code> y <code>--iso=</code> permiten la regeneració
 que tienen archivos en <tt>/boot</tt> sin que sea necesario descargarlos y recuperar los 
 archivos adicionales del LiveCD. La ruta para los distintos directorios esta 
 configurada en el archivo de configuración y los paquetes pueden ser descargados 
-desde los espejos de Slitaz o generados con Cookutils. Para generar una 
+desde los espejos de SliTaz o generados con Cookutils. Para generar una 
 distribución:</p>
 
 <pre>
@@ -313,7 +313,7 @@ inicio conforme a la cantidad de RAM disponible:</p>
 <h3 id="build-loram">build-loram</h3>
 
 <p>Crea una imagen ISO personalizada (flavor) para sistemas con poca RAM desde
-una imagen ISO de Slitaz. Puedes construir un flavor con <tt>/</tt> siempre en RAM
+una imagen ISO de SliTaz. Puedes construir un flavor con <tt>/</tt> siempre en RAM
 o donde <tt>/</tt> esté en el CD-ROM:</p>
 
 <pre>
@@ -325,7 +325,7 @@ o donde <tt>/</tt> esté en el CD-ROM:</p>
 <h3 id="emu-iso">emu-iso</h3>
 
 <p>El comando <code>emu-iso</code> usa el emulador Qemu para iniciar y ejecutar
-Slitaz. Qemu se usa para probar la recién construida imagen ISO sin ser quemada
+SliTaz. Qemu se usa para probar la recién construida imagen ISO sin ser quemada
 en un CD-ROM o ejecutada en modo frugal:</p>
 
 <pre>
@@ -350,7 +350,7 @@ especificar otra imagen ISO mediante la linea de comandos:</p>
 <h2>FLAVORS</h2>
 
 <p>Un archivo <tt>.flavor</tt> contiene solo unos cuantos KB de información para 
-(re)construir un LiveCD personalizado de Slitaz.</p>
+(re)construir un LiveCD personalizado de SliTaz.</p>
 
 
 <h3 id="rebuild-flavor">Reconstruir una versión flavor</h3>
@@ -365,10 +365,10 @@ List of flavors
 Nombre              ISO   Rootfs  Descripción
 ================================================================================
 base               6.9M  13.1M  Conjunto mínimo de paquetes para ejecutar
-core-3in1         31.5M 105.6M  Sistema central de Slitaz con justX y alternativas de base
-core              31.5M 104.6M  Sistema central de Slitaz
-eeepc             31.2M 105.4M  Sistema eeepc de Slitaz
-justX             16.1M  51.2M  Slitaz con un entorno X mínimo
+core-3in1         31.5M 105.6M  Sistema central de SliTaz con justX y alternativas de base
+core              31.5M 104.6M  Sistema central de SliTaz
+eeepc             31.2M 105.4M  Sistema eeepc de SliTaz
+justX             16.1M  51.2M  SliTaz con un entorno X mínimo
 </pre>
 
 <p>Empezaremos fabricando el flavor <i>eeepc</i> que usa 105.4M de RAM y tiene 
@@ -401,7 +401,7 @@ un tamaño en CD-ROM de 31.2M:</p>
 
 <p>Como un archivo <tt>.flavor</tt> ocupa solamente unos cuantos KB, es fácil enviarlo a 
 través de la <a href="http://www.slitaz.org/en/mailing-list.php">lista de correo</a>
-de Slitaz.</p>
+de SliTaz.</p>
 
 <p>El resultado de <a href="#extract-flavor"><code>tazlito
 extract-flavor</code></a> se puede subir a
@@ -482,7 +482,7 @@ ROOTFS_SELECTION="160M core 96M justX 32M base"
 </pre>
 
 <p>Un meta flavor no contiene una lista de paquetes (<tt>packages.list</tt>).
-El kernel de Slitaz anterior a 2.6.30 no soporta meta flavors.</p>
+El kernel de SliTaz anterior a 2.6.30 no soporta meta flavors.</p>
 
 
 <h2>MAINTAINER</h2>

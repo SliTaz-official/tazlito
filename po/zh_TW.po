@@ -1,5 +1,5 @@
 # Traditional Chinese translations for SliTaz tazlito-wiz package.
-# Copyright (C) 2014 Slitaz Association
+# Copyright (C) 2014 SliTaz Association
 # This file is distributed under the same license as the SliTaz tazlito-wiz package.
 # lunglungyu <lunglungyu2004@gmail.com>, 2014.
 #

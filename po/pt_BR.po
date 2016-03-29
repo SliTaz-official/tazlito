@@ -52,7 +52,7 @@ msgstr "SliTaz LiveUSB"
 
 #: live.cgi:133
 msgid "Create Live USB SliTaz systems"
-msgstr "Criar Live USB do sistema Slitaz"
+msgstr "Criar Live USB do sistema SliTaz"
 
 #: live.cgi:140
 msgid ""
@@ -80,7 +80,7 @@ msgstr "Sistema Live do SliTaz"
 
 #: live.cgi:254
 msgid "Create and manage Live CD or USB SliTaz systems"
-msgstr "Criar e gerenciar Live CD ou Sistema Slitaz USB"
+msgstr "Criar e gerenciar Live CD ou Sistema SliTaz USB"
 
 #: live.cgi:259
 msgid "Write a Live CD"
@@ -109,7 +109,7 @@ msgid ""
 "Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs."
 "gz)"
 msgstr ""
-"Não posso localizar o CD do Slitaz montado em /media/cdrom (Você terá "
+"Não posso localizar o CD do SliTaz montado em /media/cdrom (Você terá "
 "somente: rootfs.gz)"
 
 #: live.cgi:290 tazlito-wiz:61

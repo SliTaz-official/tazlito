@@ -75,7 +75,7 @@ msgstr "Generar ISO "
 #: live.cgi:253
 #, fuzzy
 msgid "SliTaz Live Systems"
-msgstr "Asistente creador de Slitaz Live"
+msgstr "Asistente creador de SliTaz Live"
 
 #: live.cgi:254
 msgid "Create and manage Live CD or USB SliTaz systems"
@@ -177,7 +177,7 @@ msgstr "Edita lista de paquetes de la distro"
 
 #: tazlito-wiz:57
 msgid "SliTaz Live system creator wizard"
-msgstr "Asistente creador de Slitaz Live"
+msgstr "Asistente creador de SliTaz Live"
 
 #: tazlito-wiz:58
 msgid "Distro name:"
@@ -219,7 +219,7 @@ msgstr "Editar lista de paquetes"
 
 #: tazlito-wiz:152
 msgid "SliTaz desktop wallpaper"
-msgstr "Fondo de escritorio Slitaz"
+msgstr "Fondo de escritorio SliTaz"
 
 #: tazlito-wiz:153
 msgid "Wallpaper JPG image:"
@@ -238,7 +238,7 @@ msgstr ""
 "detenerse. Crear un sistema Live, demanda recursos de la maquina y puede "
 "llevar cierto tiempo.\n"
 "Tenga en cuenta que todavía puede agregar algún archivo a la raíz del "
-"sistema Slitaz o al CD-ROM."
+"sistema SliTaz o al CD-ROM."
 
 #: tazlito-wiz:186
 msgid "Generate the distribution"
