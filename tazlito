@@ -2577,7 +2577,7 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files."
 		genisoimage -R   -o $ISO_NAME.iso   -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
 		-V "SliTaz"   -p "$(id -un)"   -input-charset utf-8 \
-		-P "$(hostname)"   -boot-info-table $ROOTCD
+		-A "tazlito/genisoimage" -P "$(hostname)"   -boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
 			action 'Creating hybrid ISO/disk...'
 			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2>/dev/null
