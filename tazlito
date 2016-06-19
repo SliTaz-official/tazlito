@@ -868,7 +868,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 	ln -s bin $TMP_DIR/initfs/sbin
 	ln -s .   $TMP_DIR/initfs/usr
 	for aufs in aufs overlayfs; do
-		[ ! -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] &&
+		[ -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] && break
 		install_package $aufs $version && break
 	done || return 1
 	cp /init $TMP_DIR/initfs/
@@ -1167,6 +1167,7 @@ update_metaiso_sizes() {
 			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
 		sed -i 's|\(initrd=\)\(/boot/rootfs.\.gz\)|\1/boot/rootfs.gz,\2|' $cfg
 		sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
+		sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|root=|screen=text &|;s|,[^ ]*||}' $cfg
 	done
 }
 
