@@ -280,11 +280,11 @@ create_iso() {
 
 	_ 'Generating %s' "$1"
 	make_bzImage_hardlink $2/boot
-	genisoimage -R   -o $1   -b boot/isolinux/isolinux.bin \
+	genisoimage -R  -o $1  -hide-rr-moved  -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
 		-V "$VOLUM_NAME"   -p "$PREPARED"   -input-charset utf-8 \
+		-A "tazlito $VERSION/$(genisoimage --version)" \
 		-copyright README   -P "www.slitaz.org"   -boot-info-table $2
-
 	if [ -x '/usr/bin/isohybrid' ]; then
 		action 'Creating hybrid ISO...'
 		/usr/bin/isohybrid $1 -entry 2 2>/dev/null
@@ -823,6 +823,13 @@ EOT
 }
 
 
+# Uncompress rootfs or module to stdout
+
+uncompress() {
+	zcat $1 2> /dev/null || xzcat $1 2> /dev/null || unlzma < $1 || cat $i
+}
+
+
 # Install a missing package
 
 install_package() {
@@ -854,8 +861,9 @@ check_iso_for_loram() {
 # Build initial rootfs for loram ISO ram/cdrom/http
 
 build_initfs() {
-	urliso="mirror.slitaz.org mirror.switch.ch/ftp/mirror/slitaz \
-download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
+	urliso="mirror.switch.ch/ftp/mirror/slitaz \
+download.tuxfamily.org/slitaz mirror1.slitaz.org mirror2.slitaz.org \
+mirror3.slitaz.org mirror.slitaz.org"
 	version=$(ls $TMP_DIR/iso/boot/vmlinuz-* | sed 's/.*vmlinuz-//')
 	[ -z "$version" ] && die "Can't find the kernel version." \
 		'No file /boot/vmlinuz-<version> in ISO image. Abort.'
@@ -894,15 +902,14 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 		cp -a $i $TMP_DIR/initfs/dev
 	done
 	if [ "$1" == 'http' ]; then
-		mkdir $TMP_DIR/initfs/etc
+		mkdir $TMP_DIR/initfs/etc $TMP_DIR/fs
 		ln -s /proc/mounts $TMP_DIR/initfs/etc/mtab
 		cp /usr/share/udhcpc/default.script $TMP_DIR/initfs/lib/udhcpc
-		sed -i 's|/sbin/||' $TMP_DIR/initfs/lib/udhcpc
+		sed -i 's|/sbin/||;s/^logger/#&/' $TMP_DIR/initfs/lib/udhcpc
 		cp -a /dev/fuse $TMP_DIR/initfs/dev
 		if ! $need_lib && [ -x /usr/share/boot/fusermount-static ]; then
-			cp /usr/share/boot/fusermount-static $TMP_DIR/initfs/bin/httpfs
+			cp /usr/share/boot/fusermount-static $TMP_DIR/initfs/bin/fusermount
 		else
-			cp /usr/bin/fusermount $TMP_DIR/initfs/bin
 			need_lib=true
 		fi
 		if ! $need_lib && [ -x /usr/share/boot/httpfs-static ]; then
@@ -910,6 +917,7 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 		else
 			[ ! -f /usr/bin/httpfs ] && ! install_package httpfs-fuse && return 1
 			cp /usr/bin/httpfs      $TMP_DIR/initfs/bin
+			cp /usr/bin/fusermount  $TMP_DIR/initfs/bin
 			cp -a /lib/librt*       $TMP_DIR/initfs/lib
 			cp -a /lib/libdl*       $TMP_DIR/initfs/lib
 			cp -a /lib/libpthread*  $TMP_DIR/initfs/lib
@@ -918,12 +926,29 @@ download.tuxfamily.org/slitaz slitaz.c3sl.ufpr.br"
 			cp -a /lib/libnss_dns*  $TMP_DIR/initfs/lib
 			need_lib=true
 		fi
-		cd $TMP_DIR/initfs
-		echo 'Getting slitaz-release...'
-		for i in $TMP_DIR/iso/boot/rootfs*.gz; do
-			(zcat $i 2>/dev/null || unlzma < $i) | cpio -idmu etc/slitaz-release >/dev/null
+		cd $TMP_DIR/fs
+		echo 'Getting slitaz-release & ethernet modules...'
+		for i in $(ls -r $TMP_DIR/iso/boot/rootfs*z); do
+			uncompress $i | cpio -idmu etc/slitaz-release lib/modules* >/dev/null
 		done
 		cd - > /dev/null
+		cp $TMP_DIR/fs/etc/slitaz-release $TMP_DIR/initfs/etc/
+		find $TMP_DIR/fs/lib/modules/*/kernel/drivers/net/ethernet \
+				-type f -name '*.ko*' | while read mod; do
+			f=$TMP_DIR/initfs/lib/modules/$(basename $mod | sed s/..z$//)
+			uncompress $mod > $f
+			grep -q alias=pci: $f || rm -f $f
+		done
+		for i in $TMP_DIR/initfs/lib/modules/*.ko ; do
+			f=$(basename $i)..z
+			grep -q $f:$ $TMP_DIR/fs/lib/modules/*/modules.dep && continue
+			deps="$(grep $f: $TMP_DIR/fs/lib/modules/*/modules.dep | sed 's/.*: //')"
+			echo "$deps" | sed 's|kernel/[^ ]*/||g;s/.ko..z//g' > $TMP_DIR/initfs/lib/modules/$(basename $i .ko).dep
+			for j in $deps; do
+				mod=$(ls $TMP_DIR/fs/lib/modules/*/$j)
+				uncompress $mod > $TMP_DIR/initfs/lib/modules/$(basename $j | sed s/..z$//)
+			done
+		done
 		longline "Default URLs for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-$(cat $TMP_DIR/initfs/etc/slitaz-release)-loram-cdrom.iso: $urliso"
 		_n 'List of URLs to insert: '
 		read -t 30 urliso2
@@ -975,6 +1000,18 @@ size="\$(grep rootfssize= < /proc/cmdline | \\
 	sed 's/.*rootfssize=\\([0-9]*[kmg%]\\).*/-o size=\\1/')"
 [ -n "\$size" ] || size="-o size=90%"
 
+mount -t sysfs sysfs /sys
+for i in /lib/modules/*.ko ; do
+	for j in \$(grep alias=pci: \$i | sed 's/alias//;s/\*/.*/g'); do
+		grep -q "\$j" /sys/bus/pci/devices/*/uevent || continue
+		for k in \$(cat \${i/ko/dep} 2> /dev/null); do
+			insmod /lib/modules/\$k.ko 2> /dev/null
+		done
+		insmod \$i 2> /dev/null
+		break
+	done
+done
+umount /sys
 while read var default; do
 	eval \$var=\$default
 	getarg \$var \$var
@@ -1024,18 +1061,19 @@ for i in \${path}rootfs* ; do
 	fs=\${i#*root}
 	branch=\$branch:/mnt/.\$fs
 	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs /mnt/.rw/mnt/.cdrom
-	insmod /lib/squashfs.ko.gz 2> /dev/null
+	insmod /lib/modules/squashfs.ko 2> /dev/null
 	mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
 done
 else
 mkdir -p /mnt/.rw/mnt/.httpfs
 fi
 while read type opt; do
-	insmod /lib/\$type.ko.gz && mount -t \$type -o \$opt none /mnt && break
+	insmod /lib/modules/\$type.ko && mount -t \$type -o \$opt none /mnt && break
 done <<EOT
 aufs		br=/mnt/.rw\$branch
 overlayfs	workdir=/mnt/.wd\${branch/:/,lowerdir=},upperdir=/mnt/.rw
 EOT
+rm -rf /lib/modules
 [ -x /bin/httpfs ] && sed -i 's/DHCP="yes"/DHCP="no"/' /mnt/etc/network.conf
 [ \$memfree -lt 30000 ] && sed -i 's/ slim//' /mnt/etc/rcS.conf
 [ -x /mnt/sbin/init ] && exec /bin/switch_root mnt /sbin/init || sh
@@ -1059,10 +1097,10 @@ EOTEOT
 
 build_loram_rootfs() {
 	rootfs_sizes=""
-	for i in $TMP_DIR/iso/boot/rootfs*.gz; do
+	for i in $TMP_DIR/iso/boot/rootfs*; do
 		mkdir -p $TMP_DIR/fs
 		cd $TMP_DIR/fs
-		(zcat $i 2>/dev/null || unlzma < $i) | cpio -idm
+		uncompress $i | cpio -idm
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i)
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
@@ -1109,7 +1147,7 @@ build_loram_cdrom() {
 	mkdir $TMP_DIR/loramiso/fs
 	cd $TMP_DIR/loramiso/fs
 	for i in $( ls ../boot/root* | sort -r ) ; do
-		(zcat $i 2>/dev/null || unlzma < $i) | cpio -idmu
+		uncompress $i | cpio -idmu
 		rm -f $i
 	done
 	mkdir -p $TMP_DIR/loramiso/fs/mnt/.cdrom
@@ -1118,6 +1156,8 @@ build_loram_cdrom() {
 	unmeta_boot
 	VOLUM_NAME="SliTaz_LoRAM_CDROM"
 	sed -i "s|root=|isofs= rodev=/dev/cdrom/fs &|;s/.ive/cdrom/" \
+		$TMP_DIR/loramiso/boot/isolinux/*.cfg
+	sed -i '/LABEL slitaz/{NNNNp;s|z cdrom|& text|;s|L slitaz|&text|;s|root=|screen=text &|;s|,[^ ]*||}' \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
@@ -2057,8 +2097,8 @@ EOT
 			_ 'No %s in ISO image. Needs a SliTaz ISO.' '/boot/rootfs.gz'
 			umount -d $TMP_DIR/iso
 		else
-			for i in $(ls -r $TMP_DIR/iso/boot/rootfs*gz); do
-				( zcat < $i || unlzma < $i ) | \
+			for i in $(ls -r $TMP_DIR/iso/boot/rootfs*z); do
+				uncompress $i | \
 				( cd $TMP_DIR/rootfs ; cpio -idmu > /dev/null 2>&1 )
 			done
 			if [ ! -s $TMP_DIR/rootfs/etc/slitaz-release ]; then
@@ -2577,8 +2617,9 @@ or # (tazpkg -gi linux --forced) to let Tazlito copy the files."
 		_ 'Generating ISO image...'
 		genisoimage -R   -o $ISO_NAME.iso   -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
-		-V "SliTaz"   -p "$(id -un)"   -input-charset utf-8 \
-		-A "tazlito/genisoimage" -P "$(hostname)"   -boot-info-table $ROOTCD
+		-V "SliTaz"   -p "$(id -un)"   -input-charset utf-8   -hide-rr-moved \
+		-A "tazlito $VERSION/$(genisoimage --version)" -P "$(hostname)" \
+		-boot-info-table $ROOTCD
 		if [ -x /usr/bin/isohybrid ]; then
 			action 'Creating hybrid ISO/disk...'
 			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2>/dev/null
@@ -2749,7 +2790,7 @@ EOT
 
 		for i in $TMP_DIR/iso/boot/rootfs* ; do
 			action 'Repacking %s' "$(basename $i)"
-			(zcat $i 2>/dev/null || unlzma < $i || cat $i) 2>/dev/null > $TMP_DIR/rootfs
+			uncompress $i 2>/dev/null > $TMP_DIR/rootfs
 			lzma e $TMP_DIR/rootfs $i $(lzma_switches $TMP_DIR/rootfs)
 			align_to_32bits $i
 			status
@@ -2769,7 +2810,7 @@ EOT
 			die "Usage: tazlito build-loram <input>.iso <output>.iso [cdrom|smallcdrom|http|ram]"
 		mkdir -p "$TMP_DIR/iso"
 		mount -o loop,ro -t iso9660 "$ISO" "$TMP_DIR/iso"
-		loopdev=$( (losetup -a 2>/dev/null || losetup) | sed "/$ISO$/!d;s/:.*//;q")
+		loopdev=$( (losetup -a 2>/dev/null || losetup) | sed "/$(echo $ISO | sed 's|/|\\/|g')$/!d;s/:.*//;q")
 		if ! check_iso_for_loram ; then
 			umount -d "$TMP_DIR/iso"
 			die "$ISO is not a valid SliTaz live CD. Abort."
