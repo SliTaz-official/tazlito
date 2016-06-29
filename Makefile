@@ -35,7 +35,7 @@ msgfmt:
 install: msgfmt
 	install -m 0755 -d $(DESTDIR)$(PREFIX)/bin
 	install -m 0777 tazlito $(DESTDIR)$(PREFIX)/bin
-	-[ "$(VERSION)" ] && sed -i 's/^VERSION=[0-9].*/VERSION=$(VERSION)/' $(DESTDIR)$(PREFIX)/bin/tazlito
+	-[ "$(VERSION)" ] && sed -i 's/^VERSION=.*/VERSION=$(VERSION)/' $(DESTDIR)$(PREFIX)/bin/tazlito
 	ln -sf tazlito $(DESTDIR)$(PREFIX)/bin/deduplicate
 	ln -sf tazlito $(DESTDIR)$(PREFIX)/bin/reduplicate
 	install -m 0777 tazlito-wiz $(DESTDIR)$(PREFIX)/bin
