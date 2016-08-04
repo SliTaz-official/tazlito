@@ -2585,20 +2585,13 @@ suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)
 			umount /media/cdrom
 		}
 
-		bootloader="$LOCALSTATE/installed/syslinux/volatile.cpio.gz"
 		if  mount /dev/cdrom /media/cdrom 2>/dev/null; then
 			copy_from_cd;
 		elif  mount | grep /media/cdrom; then
 			copy_from_cd;
-		elif [ -f "$bootloader" -a -f /boot/vmlinuz*slitaz* ]; then
-			cp $bootloader $ROOTCD
-			cd $ROOTCD
-			zcat	volatile.cpio.gz | cpio -id
-			rm -f	volatile.cpio.gz
-			[ -f /boot/*slitaz ] && \
-				cp /boot/vmlinuz*slitaz $ROOTCD/boot/bzImage
-			[ -f /boot/*slitaz64 ] && \
-				cp /boot/vmlinuz*slitaz64 $ROOTCD/boot/bzImage64
+		#elif [ -f "$bootloader" -a -f /boot/vmlinuz*slitaz* ]; then
+		#	[ -f /boot/*slitaz ] && cp /boot/vmlinuz*slitaz $ROOTCD/boot/bzImage
+		#	[ -f /boot/*slitaz64 ] && cp /boot/vmlinuz*slitaz64 $ROOTCD/boot/bzImage64
 		else
 			touch /tmp/.write-iso-error
 			longline "When SliTaz is running in RAM the kernel and bootloader \

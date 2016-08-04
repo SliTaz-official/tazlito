@@ -278,7 +278,7 @@ writeiso.")
 		</table>
 EOT
 
-		if [ $(id -u) -eq 0 -a ! -d /media/cdrom/boot/isolinux -a ! -f /boot/*slitaz* ]; then
+		if [ $(id -u) -eq 0 -a ! -d /media/cdrom/boot/isolinux ]; then
 			msg warn "$(_ 'Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs.gz)')"
 		fi
 
