@@ -2595,9 +2595,8 @@ suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)
 		else
 			touch /tmp/.write-iso-error
 			longline "When SliTaz is running in RAM the kernel and bootloader \
-files are kept on the CD-ROM. Please insert a Live CD or loop mount the \
-slitaz.iso to /media/cdrom (run # mount -o loop slitaz-rolling.iso /media/cdrom ) \
-or # (tazpkg -gi linux --forced) to let Tazlito copy the files."
+files are kept on the CD-ROM. `boldify ' Please insert a Live CD or run:
+# mount -o loop slitaz.iso /media/cdrom ' `  to let Tazlito copy the files."
 			echo -en "----\nENTER to continue..."; read i
 			[ ! -d /media/cdrom/boot/isolinux ] && exit 1
 			copy_from_cd
