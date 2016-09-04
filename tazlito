@@ -348,7 +348,8 @@ lzma_history_bits() {
 #		sz=$(( $sz / 2 ))
 #	done
 #	echo $n
-	echo 24
+	[ ${LZMA_HISTORY_BITS:=23} -lt 26 ] &&
+	echo $((++LZMA_HISTORY_BITS)) || echo $LZMA_HISTORY_BITS
 }
 
 
