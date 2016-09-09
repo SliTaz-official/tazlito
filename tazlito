@@ -270,7 +270,7 @@ create_iso() {
 	deduplicate
 
 	action 'Computing md5...'
-	find * -type f ! -name md5sum ! -name 'vmlinuz*' -exec md5sum {} \; > md5sum
+	find * -type f ! -name md5sum ! -name 'vmlinuz-*' -exec md5sum {} \; > md5sum
 	sed -i -e '/  boot\/isolinux\/isolinux.bin$/d' \
 		   -e '/  boot\/isolinux\/boot.cat$/d' md5sum
 	status
@@ -282,7 +282,8 @@ create_iso() {
 	make_bzImage_hardlink $2/boot
 	genisoimage -R  -o $1  -hide-rr-moved  -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
-		-V "$VOLUM_NAME"   -p "$PREPARED"   -input-charset utf-8 \
+		-V "{$VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
+		-input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
 		-copyright README   -P "www.slitaz.org"   -boot-info-table $2
 	if [ -x '/usr/bin/isohybrid' ]; then
@@ -348,14 +349,13 @@ lzma_history_bits() {
 #		sz=$(( $sz / 2 ))
 #	done
 #	echo $n
-	[ ${LZMA_HISTORY_BITS:=23} -lt 26 ] &&
-	echo $((++LZMA_HISTORY_BITS)) || echo $LZMA_HISTORY_BITS
+	echo ${LZMA_HISTORY_BITS:=24}
 }
 
 
 lzma_switches() {
 	local proc_num=$(grep -sc '^processor' /proc/cpuinfo)
-	echo "-d$(lzma_history_bits $1) -mt${proc_num:-1}"
+	echo "-d$(lzma_history_bits $1) -mt${proc_num:-1} -mc1000"
 }
 
 
@@ -2402,6 +2402,7 @@ EOT
 				gen_initramfs ${ROOTFS}$i
 				n=$(($n-1))
 				i=$(($i-1))
+				export LZMA_HISTORY_BITS=26
 			done
 			mv $ROOTFS ${ROOTFS}$i
 			gen_initramfs ${ROOTFS}$i
@@ -2607,22 +2608,7 @@ files are kept on the CD-ROM. `boldify ' Please insert a Live CD or run:
 		touch /tmp/.write-iso
 		newline
 		cd $DISTRO
-		_ 'Generating ISO image...'
-		genisoimage -R   -o $ISO_NAME.iso   -b boot/isolinux/isolinux.bin \
-		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
-		-V "SliTaz"   -p "$(id -un)"   -input-charset utf-8   -hide-rr-moved \
-		-A "tazlito $VERSION/$(genisoimage --version)" -P "$(hostname)" \
-		-boot-info-table $ROOTCD
-		if [ -x /usr/bin/isohybrid ]; then
-			action 'Creating hybrid ISO/disk...'
-			/usr/bin/isohybrid $ISO_NAME.iso -entry 2 2>/dev/null
-			status
-		fi
-		if [ -x /usr/bin/iso2exe ]; then
-			action 'Creating hybrid ISO/EXE...'
-			/usr/bin/iso2exe $ISO_NAME.iso 2>/dev/null
-			status
-		fi
+		create_iso $ISO_NAME.iso $ROOTCD
 		action 'Creating the ISO md5sum...'
 		md5sum $ISO_NAME.iso > $ISO_NAME.md5
 		status
