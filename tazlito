@@ -280,8 +280,10 @@ create_iso() {
 
 	_ 'Generating %s' "$1"
 	make_bzImage_hardlink $2/boot
+	uefi="$(cd $2 ; ls boot/isolinux/*efi*img 2> /dev/null)"
 	genisoimage -R  -o $1  -hide-rr-moved  -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
+		${uefi:+-eltorito-alt-boot  -e $uefi  -no-emul-boot} \
 		-V "{$VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
 		-input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
@@ -349,7 +351,7 @@ lzma_history_bits() {
 #		sz=$(( $sz / 2 ))
 #	done
 #	echo $n
-	echo ${LZMA_HISTORY_BITS:=24}
+	echo ${LZMA_HISTORY_BITS:-24}
 }
 
 
