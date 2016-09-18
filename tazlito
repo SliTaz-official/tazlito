@@ -285,7 +285,7 @@ create_iso() {
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
 		${uefi:+-eltorito-alt-boot  -e $uefi  -no-emul-boot} \
 		-V "${VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
-		-input-charset utf-8 \
+		-volset "SliTaz $SLITAZ_VERSION" -input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
 		-copyright README   -P "www.slitaz.org"   -boot-info-table $2
 	if [ -x '/usr/bin/isohybrid' ]; then
@@ -1104,6 +1104,7 @@ build_loram_rootfs() {
 		mkdir -p $TMP_DIR/fs
 		cd $TMP_DIR/fs
 		uncompress $i | cpio -idm
+		deduplicate
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i)
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
