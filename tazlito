@@ -284,7 +284,7 @@ create_iso() {
 	genisoimage -R  -o $1  -hide-rr-moved  -b boot/isolinux/isolinux.bin \
 		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
 		${uefi:+-eltorito-alt-boot  -e $uefi  -no-emul-boot} \
-		-V "{$VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
+		-V "${VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
 		-input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
 		-copyright README   -P "www.slitaz.org"   -boot-info-table $2
