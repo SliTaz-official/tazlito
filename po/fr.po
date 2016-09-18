@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: TazLito Wiz\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-11-20 16:43+0200\n"
-"PO-Revision-Date: 2012-12-20 10:10+0100\n"
-"Last-Translator: Stanislas Leduc <shann@slitaz.org>\n"
+"PO-Revision-Date: 2016-09-18 10:10+0100\n"
+"Last-Translator: Pascal Bellard <pascal.bellard@slitaz.org>\n"
 "Language-Team: French\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: live.cgi:36 live.cgi:52
 msgid "Live"
-msgstr ""
+msgstr "Live"
 
 #: live.cgi:38
 msgid "Create a live USB key"
@@ -47,7 +47,7 @@ msgstr "A Faire"
 
 #: live.cgi:132 live.cgi:136
 msgid "SliTaz LiveUSB"
-msgstr ""
+msgstr "SliTaz LiveUSB"
 
 #: live.cgi:133
 msgid "Create Live USB SliTaz systems"
@@ -196,7 +196,7 @@ msgstr "Basée sur:"
 
 #: tazlito-wiz:62
 msgid "TazPanel Live"
-msgstr ""
+msgstr "TazPanel Live"
 
 #: tazlito-wiz:102
 msgid "Getting flavor file and packages list..."
@@ -204,10 +204,10 @@ msgstr "Récupération des fichiers et de la liste des paquets..."
 
 #: tazlito-wiz:103
 msgid "Log"
-msgstr ""
+msgstr "Journal"
 
 #: tazlito-wiz:113
-#, fuzzy, sh-format
+#, sh-format
 msgid "Packages - The \"$skel\" has $pkgs packages"
 msgstr "Paquets - La saveur $skel a $pkgs paquets"
 
@@ -272,7 +272,7 @@ msgstr "Taille non compressée"
 
 #: tazlito-wiz:223
 msgid "Information"
-msgstr ""
+msgstr "Information"
 
 #: tazlito-wiz:223
 msgid "Value"
