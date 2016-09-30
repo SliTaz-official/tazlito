@@ -281,25 +281,26 @@ create_iso() {
 	_ 'Generating %s' "$1"
 	make_bzImage_hardlink $2/boot
 	uefi="$(cd $2 ; ls boot/isolinux/*efi*img 2> /dev/null)"
-	genisoimage -R  -o $1  -hide-rr-moved  -b boot/isolinux/isolinux.bin \
-		-c boot/isolinux/boot.cat   -no-emul-boot   -boot-load-size 4 \
-		${uefi:+-eltorito-alt-boot  -e $uefi  -no-emul-boot} \
+	genisoimage -R  -o $1  -hide-rr-moved \
+		-b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
+		-no-emul-boot   -boot-load-size 4   -boot-info-table \
+		${uefi:+-eltorito-alt-boot -efi-boot $uefi -no-emul-boot} \
 		-V "${VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
 		-volset "SliTaz $SLITAZ_VERSION" -input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
-		-copyright README   -P "www.slitaz.org"   -boot-info-table $2
-	if [ -x '/usr/bin/isohybrid' ]; then
-		action 'Creating hybrid ISO...'
-		/usr/bin/isohybrid $1 -entry 2 2>/dev/null
-		status
-	fi
-
+		-copyright README   -P "www.slitaz.org"  $2
 	if [ -s '/etc/tazlito/info' ]; then
 		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
 			action 'Storing ISO info...'
 			dd if=/etc/tazlito/info bs=1k seek=1 of=$1 conv=notrunc 2>/dev/null
 			status
 		fi
+	fi
+
+	if [ -x '/usr/bin/isohybrid' ]; then
+		action 'Creating hybrid ISO...'
+		/usr/bin/isohybrid $1 -entry 2 2>/dev/null
+		status
 	fi
 
 	if [ -x '/usr/bin/iso2exe' ]; then
