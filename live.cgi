@@ -37,7 +37,7 @@ case "$1" in
 	<menu>
 		<li><a data-icon="" href="live.cgi?liveusb" data-root>$(_ 'Create a live USB key')</a></li>
 		<li><a data-icon="" href="live.cgi#liveiso" data-root>$(_ 'Create a live CD-ROM')</a></li>
-		<li><a data-icon="" href="live.cgi#hybrid">$(_ 'Create a hybrid ISO')</a></li>
+		<li><a data-icon="" href="live.cgi#hybrid" data-root>$(_ 'Create a hybrid ISO')</a></li>
 		<li><a data-icon="" href="live.cgi#loram" data-root>$(_ 'Convert ISO to loram')</a></li>
 		<li><a data-icon="" href="live.cgi#meta" data-root>$(_ 'Build a meta ISO')</a></li>
 	</menu>
@@ -104,11 +104,16 @@ case " $(GET) " in
 		;;
 
 	*\ hybrid\ *)
+		custom=""
+		[ -n "$(GET extracmdline)" ] &&
+		custom="$custom -a \\\"$(GET extracmdline)\\\" "
+		[ -n "$(GET extrainitrd)" ] &&
+		custom="$custom -i \\\"$(GET extrainitrd)\\\" "
 		export output='raw'
 		DISPLAY=':0.0' XAUTHORITY='/var/run/slim.auth' \
 		$TERMINAL $TERM_OPTS \
 			-T "$(_ 'Create a hybrid ISO')" \
-			-e "iso2exe $(GET input)" &
+			-e iso2exe $custom$(GET input) -f &
 		;;
 esac
 
@@ -368,6 +373,18 @@ $(_ "Add a master boot sector and an EXE header to the ISO image.")
 				$(file_chooser 'input' '' 'cd' 'application/x-cd-image')
 			</td></tr>
 		</table>
+		<div>
+$(_ "By the way, you can customize the ISO image to your needs.")
+		<ul>
+<li>$(_ "Append the kernel command line.")<span data-img="info"
+title="$(_ "Examples: add your locales")
+(lang=fr_FR kmap=fr-latin1 tz=Europe/Paris) $(_ "or modify the init script")
+(rdinit=/myowninit.sh)"></span><input type="text" name="extracmdline" /></li>
+<li>$(_ "Load an extra initrd with your settings.")<span data-img="info" 
+title="$(_ "Examples: add your wifi/ssh/vpn keys or your applications")">
+</span>$(file_chooser extrainitrd)</li>
+		</ul>
+		</div>
 
 		<footer>
 			<button type="submit" name="hybrid" data-icon="cd">$(_ 'Build a hybrid ISO')</button>
