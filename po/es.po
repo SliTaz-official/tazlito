@@ -247,9 +247,10 @@ msgid "Log"
 msgstr ""
 
 #: tazlito-wiz:119
-#, sh-format
-msgid "Packages - The \"$skel\" has $pkgs packages"
-msgstr "Paquetes - Los $skel disponibles $pkgs paquetes"
+msgid "Packages - The \"%s\" has %d package"
+msgid_plural "Packages - The \"%s\" has %d packages"
+msgstr[0] "Paquetes - Los %s disponibles %d paquetes"
+msgstr[1] "Paquetes - Los %s disponibles %d paquetes"
 
 #: tazlito-wiz:122
 msgid "Additional packages separated by space or by line:"

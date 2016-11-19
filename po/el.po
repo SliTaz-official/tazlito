@@ -15,6 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: live.cgi:36 live.cgi:52
 msgid "Live"
@@ -243,9 +244,10 @@ msgid "Log"
 msgstr ""
 
 #: tazlito-wiz:119
-#, sh-format
-msgid "Packages - The \"$skel\" has $pkgs packages"
-msgstr "Πακέτα - Το $skel έχει πακέτα $pkgs"
+msgid "Packages - The \"%s\" has %d package"
+msgid_plural "Packages - The \"%s\" has %d packages"
+msgstr[0] "Πακέτα - Το %s έχει πακέτα %d"
+msgstr[1] "Πακέτα - Το %s έχει πακέτα %d"
 
 #: tazlito-wiz:122
 msgid "Additional packages separated by space or by line:"

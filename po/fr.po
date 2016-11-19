@@ -176,7 +176,7 @@ msgstr ""
 
 #: live.cgi:366
 msgid "Does not alter the ISO filesystem or the ISO image size."
-msgstr "Ne modifie pas le syst�ème de fichier ISO ou la taille de l'image ISO."
+msgstr "Ne modifie pas le système de fichier ISO ou la taille de l'image ISO."
 
 #: live.cgi:377
 msgid "By the way, you can customize the ISO image to your needs."
@@ -259,9 +259,10 @@ msgid "Log"
 msgstr "Journal"
 
 #: tazlito-wiz:119
-#, sh-format
-msgid "Packages - The \"$skel\" has $pkgs packages"
-msgstr "Paquets - La saveur $skel a $pkgs paquets"
+msgid "Packages - The \"%s\" has %d package"
+msgid_plural "Packages - The \"%s\" has %d packages"
+msgstr[0] "Paquets - La saveur %s a %d paquets"
+msgstr[1] "Paquets - La saveur %s a %d paquets"
 
 #: tazlito-wiz:122
 msgid "Additional packages separated by space or by line:"

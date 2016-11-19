@@ -116,7 +116,7 @@ start() {
 pkgs_main() {
 	pkgs=$(cat $list | wc -l)
 	skel=$(cat $live/skel)
-	text=$(_ 'Packages - The "$skel" has $pkgs packages')
+	text=$(_p 'Packages - The "%s" has %d package' 'Packages - The "%s" has %d packages' "$pkgs"   "$skel" "$pkgs")
 	yad --form $opts --image='application-x-tazpkg' \
 		--text="<b>$text</b>" --separator=' ' \
 		--field="$(_ 'Additional packages separated by space or by line:')\\n$(_ '(will be auto added to "Edit packages list")')":TXT \

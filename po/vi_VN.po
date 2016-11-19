@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TazLito\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-11-20 16:43+0200\n"
+"POT-Creation-Date: 2016-11-19 14:57+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 #: live.cgi:36 live.cgi:52
 msgid "Live"
@@ -29,31 +30,31 @@ msgstr "Tạo một bản chạy Trực tiếp trên USB"
 msgid "Create a live CD-ROM"
 msgstr "Tạo một đĩa CD"
 
-#: live.cgi:40 live.cgi:110
+#: live.cgi:40 live.cgi:115
 msgid "Create a hybrid ISO"
 msgstr "Tạo một bản kết hợp ISO"
 
-#: live.cgi:41 live.cgi:90 live.cgi:300 live.cgi:343
+#: live.cgi:41 live.cgi:90 live.cgi:305 live.cgi:348
 msgid "Convert ISO to loram"
 msgstr "Chuyển ISO sang bản ít ram"
 
-#: live.cgi:42 live.cgi:100 live.cgi:372 live.cgi:426
+#: live.cgi:42 live.cgi:100 live.cgi:399 live.cgi:453
 msgid "Build a meta ISO"
 msgstr "Tạo một meta ISO"
 
-#: live.cgi:128
+#: live.cgi:133
 msgid "TODO"
 msgstr "CẦNLÀM"
 
-#: live.cgi:132 live.cgi:136
+#: live.cgi:137 live.cgi:141
 msgid "SliTaz LiveUSB"
 msgstr "SliTaz Trực tiếp trên USB"
 
-#: live.cgi:133
+#: live.cgi:138
 msgid "Create Live USB SliTaz systems"
 msgstr "Tạo hệ thống SliTaz Trực tiếp trên USB"
 
-#: live.cgi:140
+#: live.cgi:145
 msgid ""
 "Generate SliTaz LiveUSB media and boot in RAM! Insert a Live CD into the CD-"
 "ROM drive, select the correct device and press Generate."
@@ -61,119 +62,162 @@ msgstr ""
 "Tạo SliTaz Trực tiếp trên USB và khởi động trên RAM! Đưa một bản vào ổ CD-"
 "ROM, Chọn đúng thiết bị rồi ấn Tạo."
 
-#: live.cgi:146
+#: live.cgi:151
 msgid "USB Media to use:"
 msgstr "Thiết bị USB sử dụng:"
 
-#: live.cgi:167
+#: live.cgi:172
 msgid "Not found"
 msgstr "Không tìm thấy"
 
-#: live.cgi:172
+#: live.cgi:177
 msgid "Generate"
 msgstr "Tạo"
 
-#: live.cgi:253
+#: live.cgi:258
 msgid "SliTaz Live Systems"
 msgstr "Hệ thống SliTaz Trực tiếp"
 
-#: live.cgi:254
+#: live.cgi:259
 msgid "Create and manage Live CD or USB SliTaz systems"
 msgstr "Tạo và quản lý bản SliTaz trên CD hoặc USB"
 
-#: live.cgi:259
+#: live.cgi:264
 msgid "Write a Live CD"
 msgstr "Ghi một đĩa CD"
 
-#: live.cgi:263
+#: live.cgi:268
 msgid ""
 "The command writeiso will generate an ISO image of the current filesystem as "
 "is, including all files in the /home directory. It is an easy way to "
 "remaster a SliTaz Live system, you just have to: boot, modify, writeiso."
 msgstr ""
-"Lệnh writeiso sẽ tạo một tệp ISO của hệ thống hiện tại"
-", gồm tất cả trong thư mục /home. Đây là cách dễ nhất để "
-"làm lại một bản SliTaz, bạn chỉ việc: khởi động, sửa, writeiso."
+"Lệnh writeiso sẽ tạo một tệp ISO của hệ thống hiện tại, gồm tất cả trong thư "
+"mục /home. Đây là cách dễ nhất để làm lại một bản SliTaz, bạn chỉ việc: khởi "
+"động, sửa, writeiso."
 
-#: live.cgi:271
-msgid "Nén kiểu:"
+#: live.cgi:276
+msgid "Compression type:"
 msgstr ""
 
-#: live.cgi:275
-msgid "không"
+#: live.cgi:280
+msgid "none"
 msgstr ""
 
-#: live.cgi:282
+#: live.cgi:287
 msgid ""
 "Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs."
 "gz)"
 msgstr ""
-"Không tìm thấy ISO/CD chứa SliTaz đã kết nối trong /media/cdrom (Bạn sẽ chỉ nhận rootfs."
-"gz)"
+"Không tìm thấy ISO/CD chứa SliTaz đã kết nối trong /media/cdrom (Bạn sẽ chỉ "
+"nhận rootfs.gz)"
 
-#: live.cgi:290 tazlito-wiz:61
+#: live.cgi:295 tazlito-wiz:63
 msgid "Write ISO"
 msgstr "Viết ISO"
 
-#: live.cgi:296
+#: live.cgi:301
 msgid "Live CD tools"
 msgstr "Công cụ đĩa CD"
 
-#: live.cgi:304
+#: live.cgi:309
 msgid ""
 "This command will convert an ISO image of a SliTaz Live CD to a new ISO "
 "image requiring less RAM to run."
 msgstr ""
-"Lệnh này sẽ chuyển tệp ISO của Bản SliTaz sang tệp ISO mới"
-" cần ít ram nhất để chạy."
+"Lệnh này sẽ chuyển tệp ISO của Bản SliTaz sang tệp ISO mới cần ít ram nhất "
+"để chạy."
 
-#: live.cgi:310 live.cgi:359
+#: live.cgi:315 live.cgi:372
 msgid "ISO to convert"
 msgstr "ISO để chuyển"
 
-#: live.cgi:315
+#: live.cgi:320
 msgid "The filesystem is always in RAM"
 msgstr "Tệp hệ thống luôn ở trên RAM"
 
-#: live.cgi:319
+#: live.cgi:324
 msgid "The filesystem may be on a small CD-ROM"
 msgstr "Tệp hệ thống có thể ở trên một đĩa CD nhỏ"
 
-#: live.cgi:323
+#: live.cgi:328
 msgid "The filesystem may be on a large CD-ROM"
 msgstr "Tệp hệ thống có thể ở trên một đĩa CD lớn"
 
-#: live.cgi:326 live.cgi:417
+#: live.cgi:331 live.cgi:444
 msgid "ISO to create"
 msgstr "ISO để tạo"
 
-#: live.cgi:350 live.cgi:365
+#: live.cgi:357 live.cgi:390
 msgid "Build a hybrid ISO"
 msgstr "Tạo một bản ISO lai"
 
-#: live.cgi:354
+#: live.cgi:361
 msgid "Add a master boot sector and an EXE header to the ISO image."
 msgstr "Thêm phần mồi khởi động và một đoạn EXE trong tệp ISO"
 
-#: live.cgi:376
+#: live.cgi:363
+msgid ""
+"Create a bootable image for a USB key, a memory card, a harddisk or a SSD."
+msgstr ""
+
+#: live.cgi:364
+msgid ""
+"With the .EXE suffix, it will run under DOS (16 bits) or Windows (32 bits)."
+msgstr ""
+
+#: live.cgi:365
+msgid ""
+"Add the ISO filesystem md5 digest and the boot CRC in the ISO boot area."
+msgstr ""
+
+#: live.cgi:366
+msgid "Does not alter the ISO filesystem or the ISO image size."
+msgstr ""
+
+#: live.cgi:377
+msgid "By the way, you can customize the ISO image to your needs."
+msgstr ""
+
+#: live.cgi:379
+msgid "Append the kernel command line."
+msgstr ""
+
+#: live.cgi:380
+msgid "Examples: add your locales"
+msgstr ""
+
+#: live.cgi:381
+msgid "or modify the init script"
+msgstr ""
+
+#: live.cgi:383
+msgid "Load an extra initrd with your settings."
+msgstr ""
+
+#: live.cgi:384
+msgid "Examples: add your wifi/ssh/vpn keys or your applications"
+msgstr ""
+
+#: live.cgi:403
 msgid ""
 "Combines several ISO flavors like nested Russian dolls. The amount of RAM "
 "available at startup will be used to select the utmost one."
 msgstr ""
 
-#: live.cgi:389
+#: live.cgi:416
 msgid "ISO number %s:"
 msgstr "ISO số %s:"
 
-#: live.cgi:393 live.cgi:410
+#: live.cgi:420 live.cgi:437
 msgid "Minimum RAM:"
 msgstr "RAM ít nhất:"
 
-#: live.cgi:406
+#: live.cgi:433
 msgid "ISO to add"
 msgstr "ISO để thêm"
 
-#: live.cgi:412
+#: live.cgi:439
 msgid "Add to the list"
 msgstr "Thêm vào mục"
 
@@ -193,44 +237,48 @@ msgstr "Tên bản:"
 msgid "Based on:"
 msgstr "Cơ bản từ:"
 
-#: tazlito-wiz:62
+#: tazlito-wiz:61
+msgid "*.flavor file (optional):"
+msgstr ""
+
+#: tazlito-wiz:64
 msgid "TazPanel Live"
 msgstr ""
 
-#: tazlito-wiz:102
+#: tazlito-wiz:108
 msgid "Getting flavor file and packages list..."
 msgstr "Tạo tệp flavor và danh sách gói..."
 
-#: tazlito-wiz:103
+#: tazlito-wiz:109
 msgid "Log"
 msgstr "Bản ghi"
 
-#: tazlito-wiz:113
-#, sh-format
-msgid "Packages - The \"$skel\" has $pkgs packages"
-msgstr "Gói - \"$skel\" có $pkgs gói"
+#: tazlito-wiz:119
+msgid "Packages - The \"%s\" has %d package"
+msgid_plural "Packages - The \"%s\" has %d packages"
+msgstr[0] "Gói - \"%s\" có %d gói"
 
-#: tazlito-wiz:116
+#: tazlito-wiz:122
 msgid "Additional packages separated by space or by line:"
 msgstr "Các gói phân cách bởi khoảng trống hoặc dòng:"
 
-#: tazlito-wiz:116
+#: tazlito-wiz:122
 msgid "(will be auto added to \"Edit packages list\")"
 msgstr "(Sẽ tự được thêm vào \"Sửa danh sách gói\")"
 
-#: tazlito-wiz:117
+#: tazlito-wiz:123
 msgid "Edit packages list"
 msgstr "Sửa danh sách gói"
 
-#: tazlito-wiz:152
+#: tazlito-wiz:158
 msgid "SliTaz desktop wallpaper"
 msgstr "Hình nền Slitaz"
 
-#: tazlito-wiz:153
+#: tazlito-wiz:159
 msgid "Wallpaper JPG image:"
 msgstr "Ảnh nền JPG:"
 
-#: tazlito-wiz:179
+#: tazlito-wiz:185
 msgid ""
 "\n"
 "Now it's time to generate the distro. Last chance to start over or stop. "
@@ -239,40 +287,38 @@ msgid ""
 "ROM."
 msgstr ""
 "\n"
-"Bây giờ là lúc tạo một bản. Cơ hội cuối cùng để bắt đầu lại hoặc dừng. "
-"Tạo ra một Bản mới sử dụng khá nhiều tài nguyên và mất thời gian.\n"
-"Bạn có thể thêm tệp vào hệ thống SliTaz hoặc trong CD-"
-"ROM."
+"Bây giờ là lúc tạo một bản. Cơ hội cuối cùng để bắt đầu lại hoặc dừng. Tạo "
+"ra một Bản mới sử dụng khá nhiều tài nguyên và mất thời gian.\n"
+"Bạn có thể thêm tệp vào hệ thống SliTaz hoặc trong CD-ROM."
 
-#: tazlito-wiz:186
+#: tazlito-wiz:192
 msgid "Generate the distribution"
 msgstr "Tạo phân phối"
 
-#: tazlito-wiz:204
+#: tazlito-wiz:210
 msgid "Building the Live system..."
 msgstr "Đang xây dựng hệ thống"
 
-#: tazlito-wiz:217
+#: tazlito-wiz:223
 msgid "Live system summary"
 msgstr "Tóm lược hệ thống"
 
-#: tazlito-wiz:219
+#: tazlito-wiz:225
 msgid "Generated ISO"
 msgstr "Đã tạo ISO"
 
-#: tazlito-wiz:220
+#: tazlito-wiz:226
 msgid "Image size"
 msgstr "Kích cỡ tệp"
 
-#: tazlito-wiz:221
+#: tazlito-wiz:227
 msgid "Uncompressed size"
 msgstr "Kích cớ không nén"
 
-#: tazlito-wiz:223
+#: tazlito-wiz:229
 msgid "Information"
 msgstr "Thông tin"
 
-#: tazlito-wiz:223
+#: tazlito-wiz:229
 msgid "Value"
 msgstr "Giá trị"
-
