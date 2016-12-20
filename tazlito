@@ -269,6 +269,15 @@ create_iso() {
 	cd $2
 	deduplicate
 
+	cat > /tmp/cdsort$$ <<EOT
+$PWD/boot 100
+$PWD/boot/bzImage 200
+$(n=199; ls -r $PWD/boot/rootfs* | while read f; do echo "$f $((n--))"; done)
+$PWD/boot/isolinux 300
+$PWD/boot/isolinux/boot.cat 400
+$PWD/boot/isolinux/isolinux.bin 399
+EOT
+
 	action 'Computing md5...'
 	find * -type f ! -name md5sum ! -name 'vmlinuz-*' -exec md5sum {} \; > md5sum
 	sed -i -e '/  boot\/isolinux\/isolinux.bin$/d' \
@@ -281,7 +290,7 @@ create_iso() {
 	_ 'Generating %s' "$1"
 	make_bzImage_hardlink $2/boot
 	uefi="$(cd $2 ; ls boot/isolinux/*efi*img 2> /dev/null)"
-	genisoimage -R  -o $1  -hide-rr-moved \
+	genisoimage -R  -o $1  -hide-rr-moved -sort /tmp/cdsort$$ \
 		-b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
 		-no-emul-boot   -boot-load-size 4   -boot-info-table \
 		${uefi:+-eltorito-alt-boot -efi-boot $uefi -no-emul-boot} \
@@ -289,6 +298,7 @@ create_iso() {
 		-volset "SliTaz $SLITAZ_VERSION" -input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
 		-copyright README   -P "www.slitaz.org"  $2
+	rm -f /tmp/cdsort$$
 	if [ -s '/etc/tazlito/info' ]; then
 		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
 			action 'Storing ISO info...'
