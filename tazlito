@@ -508,7 +508,7 @@ gen_initramfs() {
 	cd $1
 
 	# Normalize file time
-	find $1 -newer $1 -exec touch -r $1 {} \;
+	find $1 -newer $1 -exec touch -hr $1 {} \;
 
 	# Link duplicate files
 	deduplicate
