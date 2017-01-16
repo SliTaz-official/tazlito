@@ -1,21 +1,22 @@
 # Vietnamese translations for the TazLito.
-# Copyright (C) 2016 SliTaz
+# Copyright (C) 2017 SliTaz
 # This file is distributed under the same license as the TazLito package.
-# tuananh88c25 <tuananh88c25@gmail.com>, 2016.
+# Anh Bình <tuananh88c25@gmail.com>, 2017.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: TazLito\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-11-19 14:57+0200\n"
-"PO-Revision-Date: 2016-10-04 17:51+0200\n"
-"Last-Translator: tuananh88c25 <tuananh88c25@gmail.com>\n"
+"PO-Revision-Date: 2017-01-16 11:56+0700\n"
+"Last-Translator: Anh Bình <tuananh88c25@gmail.com>\n"
 "Language-Team: \n"
-"Language: Vietnamese\n"
+"Language: vi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 1.8.11\n"
 
 #: live.cgi:36 live.cgi:52
 msgid "Live"
@@ -97,11 +98,11 @@ msgstr ""
 
 #: live.cgi:276
 msgid "Compression type:"
-msgstr ""
+msgstr "Kiểu nén:"
 
 #: live.cgi:280
 msgid "none"
-msgstr ""
+msgstr "không"
 
 #: live.cgi:287
 msgid ""
@@ -159,50 +160,57 @@ msgstr "Thêm phần mồi khởi động và một đoạn EXE trong tệp ISO"
 msgid ""
 "Create a bootable image for a USB key, a memory card, a harddisk or a SSD."
 msgstr ""
+"Tạo một tệp có khả năng khởi động cho USB, thẻ nhớ, đĩa cứng hoặc ổ SSD."
 
 #: live.cgi:364
 msgid ""
 "With the .EXE suffix, it will run under DOS (16 bits) or Windows (32 bits)."
 msgstr ""
+"Với sự hậu tố .EXE, nó sẽ chạy dưới hệ điều hành DOS (16 bit) hoặc Windows "
+"(32 bit)."
 
 #: live.cgi:365
 msgid ""
 "Add the ISO filesystem md5 digest and the boot CRC in the ISO boot area."
 msgstr ""
+"Thêm hệ thống tập tin ISO mã md5 và CRC khởi động trong khu vực khởi động "
+"ISO."
 
 #: live.cgi:366
 msgid "Does not alter the ISO filesystem or the ISO image size."
-msgstr ""
+msgstr "Không làm thay đổi hệ thống tập tin ISO hoặc kích thước tệp ISO."
 
 #: live.cgi:377
 msgid "By the way, you can customize the ISO image to your needs."
-msgstr ""
+msgstr "Bằng cách này, bạn có thể tùy chỉnh các tệp ISO theo nhu cầu của bạn."
 
 #: live.cgi:379
 msgid "Append the kernel command line."
-msgstr ""
+msgstr "Nối dòng lệnh nhân."
 
 #: live.cgi:380
 msgid "Examples: add your locales"
-msgstr ""
+msgstr "Ví dụ: thêm miền địa phương của bạn"
 
 #: live.cgi:381
 msgid "or modify the init script"
-msgstr ""
+msgstr "hoặc sửa đổi các init script"
 
 #: live.cgi:383
 msgid "Load an extra initrd with your settings."
-msgstr ""
+msgstr "Tải một initrd thêm với các thiết lập của bạn."
 
 #: live.cgi:384
 msgid "Examples: add your wifi/ssh/vpn keys or your applications"
-msgstr ""
+msgstr "Ví dụ: thêm mã wifi/ssh/VPN của bạn hoặc các ứng dụng của bạn"
 
 #: live.cgi:403
 msgid ""
 "Combines several ISO flavors like nested Russian dolls. The amount of RAM "
 "available at startup will be used to select the utmost one."
 msgstr ""
+"Kết hợp nhiều bản ISO như búp bê lồng nhau của Nga. Số lượng RAM có sẵn lúc "
+"khởi động sẽ được sử dụng để chọn tối đa."
 
 #: live.cgi:416
 msgid "ISO number %s:"
@@ -238,11 +246,11 @@ msgstr "Cơ bản từ:"
 
 #: tazlito-wiz:61
 msgid "*.flavor file (optional):"
-msgstr ""
+msgstr "tệp *.flavor (tùy chọn):"
 
 #: tazlito-wiz:64
 msgid "TazPanel Live"
-msgstr ""
+msgstr "TazPanel trực tiếp"
 
 #: tazlito-wiz:108
 msgid "Getting flavor file and packages list..."

@@ -5,7 +5,7 @@ SBINDIR?=/sbin
 PREFIX?=/usr
 DOCDIR?=/usr/share/doc
 MANDIR?=/usr/share/man
-LINGUAS?=el es fr pl pt_BR ru vi_VN zh_CN zh_TW
+LINGUAS?=el es fr pl pt_BR ru vi zh_CN zh_TW
 MODULES:=$(shell ls modules)
 
 all:
