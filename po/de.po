@@ -1,0 +1,337 @@
+# German translations for Tazlito package.
+# Copyright (C) 2017 SliTaz
+# This file is distributed under the same license as the Tazlito package.
+# Hans-Günter Theisgen, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TazLito\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-19 23:47+0200\n"
+"PO-Revision-Date: 2017-02-07 16:36+0100\n"
+"Last-Translator: Hans-Günter Theisgen\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: live.cgi:36 live.cgi:52
+msgid "Live"
+msgstr "Direktstart"
+
+#: live.cgi:38
+msgid "Create a live USB key"
+msgstr "USB-Speichermedium für Direkstart erstellen"
+
+#: live.cgi:39
+msgid "Create a live CD-ROM"
+msgstr "Optischen Datenträger für Direkstart erstellen"
+
+#: live.cgi:40 live.cgi:115
+msgid "Create a hybrid ISO"
+msgstr "Ein Hybrid-ISO-Abbild erstellen"
+
+#: live.cgi:41 live.cgi:90 live.cgi:305 live.cgi:348
+msgid "Convert ISO to loram"
+msgstr "ISO-Abbild für kleine Arbeitsspeicher erstellen"
+
+#: live.cgi:42 live.cgi:100 live.cgi:399 live.cgi:453
+msgid "Build a meta ISO"
+msgstr "Meta-Variante erstellen"
+
+#: live.cgi:133
+msgid "TODO"
+msgstr "Agenda"
+
+#: live.cgi:137 live.cgi:141
+msgid "SliTaz LiveUSB"
+msgstr "USB-Speichermedium für SliTaz-Direkstart"
+
+#: live.cgi:138
+msgid "Create Live USB SliTaz systems"
+msgstr "SliTaz-Direktstart-System für USB-Datenträger erstellen"
+
+#: live.cgi:145
+msgid ""
+"Generate SliTaz LiveUSB media and boot in RAM! Insert a Live CD into the CD-"
+"ROM drive, select the correct device and press Generate."
+msgstr ""
+"SliTaz-Direktstart-System für USB-Datenträger erstellen zum Laden in den "
+"Arbeitsspeicher. Einen Direktstart-Datenträger in das optische Laufwerk "
+"einlegen, das richtige Gerät auswählen und die Schaltfläche 'Erstellen' "
+"betätigen."
+
+#: live.cgi:151
+msgid "USB Media to use:"
+msgstr "Zu verwendendes USB-Speichermedium:"
+
+#: live.cgi:172
+msgid "Not found"
+msgstr "Nicht gefunden"
+
+#: live.cgi:177
+msgid "Generate"
+msgstr "Erstellen"
+
+#: live.cgi:258
+msgid "SliTaz Live Systems"
+msgstr "SliTaz-System für Direktstart"
+
+#: live.cgi:259
+msgid "Create and manage Live CD or USB SliTaz systems"
+msgstr ""
+"Direktstart-SliTaz-Systeme für optische oder USB-Datenträger "
+"erstellen und verwalten"
+
+#: live.cgi:264
+msgid "Write a Live CD"
+msgstr "Direktstart-ISO-Abbild erstellen"
+
+#: live.cgi:268
+msgid ""
+"The command writeiso will generate an ISO image of the current filesystem as "
+"is, including all files in the /home directory. It is an easy way to "
+"remaster a SliTaz Live system, you just have to: boot, modify, writeiso."
+msgstr ""
+"Mit dem Kommando writeiso wird ein ISO-Abbild aus dem aktuellen Dateisystem "
+"erstellt, einschließlich aller Dateien im Verzeichnis /home. Dadurch kann auf "
+"einfache Weise ein SliTaz-Direktstartsystem neu erstellt werden: Ein System "
+"laden, Dateien modifizieren und writeiso anwenden."
+
+#: live.cgi:276
+msgid "Compression type:"
+msgstr "Art der Komprimierung:"
+
+#: live.cgi:280
+msgid "none"
+msgstr "keine"
+
+#: live.cgi:287
+msgid ""
+"Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs."
+"gz)"
+msgstr ""
+"Kein ISO-Abbild oder optischer Datenträger eingehängt in /media/cdrom gefunden "
+"(Es wird nur rootfs.gz erstellt)."
+
+#: live.cgi:295 tazlito-wiz:63
+msgid "Write ISO"
+msgstr "ISO-Abbild schreiben"
+
+#: live.cgi:301
+msgid "Live CD tools"
+msgstr "Bearbeitung von Direktstart ISO-Abbildern"
+
+#: live.cgi:309
+msgid ""
+"This command will convert an ISO image of a SliTaz Live CD to a new ISO "
+"image requiring less RAM to run."
+msgstr ""
+"Mit diesem Kommando wird ein Direktstart-ISO-Abbild in ein neues "
+"Direktstart-ISO-Abbild umgesetzt, das mit weniger Arbeitsspeicher geladen werden kann."
+
+#: live.cgi:315 live.cgi:372
+msgid "ISO to convert"
+msgstr "Zu konvertierendes ISO-Abbild"
+
+#: live.cgi:320
+msgid "The filesystem is always in RAM"
+msgstr "Das Dateisystem befindet sich stets im Arbeitsspeicher"
+
+#: live.cgi:324
+msgid "The filesystem may be on a small CD-ROM"
+msgstr "Das Dateisystem kann sich auf einem kleinen optischen Datenträger befinden"
+
+#: live.cgi:328
+msgid "The filesystem may be on a large CD-ROM"
+msgstr "Das Dateisystem kann sich auf einem großen optischen Datenträger befinden"
+
+#: live.cgi:331 live.cgi:444
+msgid "ISO to create"
+msgstr "Zu erstellendes ISO-Abbild"
+
+#: live.cgi:357 live.cgi:390
+msgid "Build a hybrid ISO"
+msgstr "Ein Hybrid-ISO-Abbild erzeugen"
+
+#: live.cgi:361
+msgid "Add a master boot sector and an EXE header to the ISO image."
+msgstr "Dem ISO-Abbild einen Urladeblock und 'EXE header' hinzufügen."
+
+#: live.cgi:363
+msgid ""
+"Create a bootable image for a USB key, a memory card, a harddisk or a SSD."
+msgstr ""
+"Ein urladefähiges ISO-Abbild für einen USB-Datenträger, eine "
+"Speicherkarte, eine Magnetplatte oder SSD erzeugen."
+
+#: live.cgi:364
+msgid ""
+"With the .EXE suffix, it will run under DOS (16 bits) or Windows (32 bits)."
+msgstr ""
+"Mit dem Suffix .EXE ist es unter DOS (16 bit) oder Windows (32 bit) ablauffähig."
+
+#: live.cgi:365
+#, fuzzy
+msgid ""
+"Add the ISO filesystem md5 digest and the boot CRC in the ISO boot area."
+msgstr ""
+
+#: live.cgi:366
+msgid "Does not alter the ISO filesystem or the ISO image size."
+msgstr "Das Dateisystem des ISO-Abbildes und seine Größe bleiben unverändert."
+
+#: live.cgi:377
+msgid "By the way, you can customize the ISO image to your needs."
+msgstr "Das ISO-Abbild kann im übrigen Ihren Bedürfnissen angepasst werden."
+
+#: live.cgi:379
+msgid "Append the kernel command line."
+msgstr "Parameter für den Linux-Kern anhängen."
+
+#: live.cgi:380
+msgid "Examples: add your locales"
+msgstr "Beispiele: eigene Lokalisierungen hinzufügen"
+
+#: live.cgi:381
+msgid "or modify the init script"
+msgstr "oder eine Startprozedur modifizieren"
+
+#: live.cgi:383
+msgid "Load an extra initrd with your settings."
+msgstr "Ein zusätzliches 'initrd' mit eigenen Einstellungen laden."
+
+#: live.cgi:384
+msgid "Examples: add your wifi/ssh/vpn keys or your applications"
+msgstr "Beispiele: Kennwörter, Schlüssel oder eigene Anwendungen hinzufügen"
+
+#: live.cgi:403
+msgid ""
+"Combines several ISO flavors like nested Russian dolls. The amount of RAM "
+"available at startup will be used to select the utmost one."
+msgstr ""
+"Verschachtelt mehrere Varianten wie russische Puppen. Geladen wird die "
+"Variante, für die der Arbeitsspeicher ausreicht."
+
+#: live.cgi:416
+msgid "ISO number %s:"
+msgstr "ISO-Abbild Nummer %s:"
+
+#: live.cgi:420 live.cgi:437
+msgid "Minimum RAM:"
+msgstr "Minimale Arbeitsspeichergröße:"
+
+#: live.cgi:433
+msgid "ISO to add"
+msgstr "weiteres ISO-Abbild"
+
+#: live.cgi:439
+msgid "Add to the list"
+msgstr "Zur Liste hinzufügen"
+
+#: tazlito-wiz:46
+msgid "Edit the distro packages list"
+msgstr "Die Paketliste der Distribution bearbeiten"
+
+#: tazlito-wiz:57
+msgid "SliTaz Live system creator wizard"
+msgstr "Assistent zum Erzeugen von SliTaz-Direktstartsystemen"
+
+#: tazlito-wiz:58
+msgid "Distro name:"
+msgstr "Name der Distribution:"
+
+#: tazlito-wiz:59
+msgid "Based on:"
+msgstr "Auf Basis von:"
+
+#: tazlito-wiz:61
+msgid "*.flavor file (optional):"
+msgstr "*.flavor-Datei (optional):"
+
+#: tazlito-wiz:64
+msgid "TazPanel Live"
+msgstr "TazPanel Direktstart"
+
+#: tazlito-wiz:108
+msgid "Getting flavor file and packages list..."
+msgstr "Variantenbeschreibung (.flavor) und Paketliste wird geholt..."
+
+#: tazlito-wiz:109
+msgid "Log"
+msgstr "Protokoll"
+
+#: tazlito-wiz:119
+msgid "Packages - The \"%s\" has %d package"
+msgid_plural "Packages - The \"%s\" has %d packages"
+msgstr[0] "Pakete - Die \"%s\" hat %d Paket"
+msgstr[1] "Pakete - Die \"%s\" hat %d Pakete"
+
+#: tazlito-wiz:122
+msgid "Additional packages separated by space or by line:"
+msgstr "Zusätzliche Pakete, durch Leerzeichen oder Zeilenumbruch getrennt:"
+
+#: tazlito-wiz:122
+msgid "(will be auto added to \"Edit packages list\")"
+msgstr "(werden automatisch zu \"Paketliste bearbeiten\" hinzugefügt)"
+
+#: tazlito-wiz:123
+msgid "Edit packages list"
+msgstr "Paketliste bearbeiten"
+
+#: tazlito-wiz:158
+msgid "SliTaz desktop wallpaper"
+msgstr "SliTaz-Hintergrundbild"
+
+#: tazlito-wiz:159
+msgid "Wallpaper JPG image:"
+msgstr "Hintergrundbild (jpg):"
+
+#: tazlito-wiz:185
+msgid ""
+"\n"
+"Now it's time to generate the distro. Last chance to start over or stop. "
+"Creating a Live system uses quite a lot of resources and takes some time.\n"
+"Note you can still add some files to the SliTaz root filesystem or on the CD-"
+"ROM."
+msgstr ""
+"\n"
+"Jetzt kann die Distribution erzeugt werden. Dies ist die letzte Möglichkeit, "
+"abzubrechen oder von vorne zu beginnen. Ein Direktstartsystem zu erstellen "
+"benötigt eine Menge an Betriebsmitteln und dauert einige Zeit.\n"
+"Es ist immer noch möglich, Dateien für das SliTaz-Wurzeldateisystem oder das "
+"Wurzeldateisystem des optischen Datenträgers hinzuzufügen."
+
+#: tazlito-wiz:192
+msgid "Generate the distribution"
+msgstr "Distribution erzeugen"
+
+#: tazlito-wiz:210
+msgid "Building the Live system..."
+msgstr "Direkstartsystem wird erzeugt..."
+
+#: tazlito-wiz:223
+msgid "Live system summary"
+msgstr "Direkstartsystem Zusammenfassung"
+
+#: tazlito-wiz:225
+msgid "Generated ISO"
+msgstr "Erzeugtes ISO-Abbild"
+
+#: tazlito-wiz:226
+msgid "Image size"
+msgstr "Größe des ISO-Abbildes"
+
+#: tazlito-wiz:227
+msgid "Uncompressed size"
+msgstr "Unkomprimierte Größe"
+
+#: tazlito-wiz:229
+msgid "Information"
+msgstr "Information"
+
+#: tazlito-wiz:229
+msgid "Value"
+msgstr "Wert"
