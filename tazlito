@@ -1857,7 +1857,7 @@ EOT
 		for i in rootcd rootfs; do
 			if [ -d "$ADDFILES/$i" ] ; then
 				FILES="$FILES\n$FLAVOR.$i"
-				(cd "$ADDFILES/$i"; find . | cpio -o -H newc 2>/dev/null | gzip -9) > $FLAVOR.$i
+				( cd "$ADDFILES/$i"; find . ) | cpio -o -H newc 2>/dev/null | dogzip $FLAVOR.$i
 			fi
 		done
 		status
