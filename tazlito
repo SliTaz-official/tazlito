@@ -1857,6 +1857,7 @@ EOT
 		for i in rootcd rootfs; do
 			if [ -d "$ADDFILES/$i" ] ; then
 				FILES="$FILES\n$FLAVOR.$i"
+				find "$ADDFILES/$i" -print0 | xargs -0 touch -t 197001010100.00
 				( cd "$ADDFILES/$i"; find . ) | cpio -o -H newc 2>/dev/null | dogzip $FLAVOR.$i
 			fi
 		done
