@@ -627,6 +627,7 @@ extract_flavor() {
 			zcat "$1.$i" | cpio -tv 2>/dev/null > "$1.list$i"; infos="$infos\n$1.list$i"
 			rm "$1.$i"
 		done
+		touch -t 197001010100.00 "$1.*"
 		# Info to be stored inside ISO
 		[ "$2" == info ] && echo -e $infos | cpio -o -H newc | dogzip info
 		rm $1.list*
