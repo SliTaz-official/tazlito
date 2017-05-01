@@ -1857,7 +1857,6 @@ EOT
 		for i in rootcd rootfs; do
 			if [ -d "$ADDFILES/$i" ] ; then
 				FILES="$FILES\n$FLAVOR.$i"
-				find "$ADDFILES/$i" -print0 | xargs -0 touch -t 197001010100.00
 				( cd "$ADDFILES/$i"; find . ) | cpio -o -H newc 2>/dev/null | dogzip $FLAVOR.$i
 			fi
 		done
@@ -1891,6 +1890,7 @@ EOT
 			[ -s $i ] && cat $i >> $FLAVOR.mirrors
 		done
 		[ -s $FLAVOR.mirrors ] && $FILES="$FILES\n$FLAVOR.mirrors"
+		touch -t 197001010100.00 $FLAVOR.*
 		echo -e "$FLAVOR.desc\n$FILES" | cpio -o -H newc 2>/dev/null | dogzip $FLAVOR.flavor
 		rm $(echo -e $FILES)
 		status
