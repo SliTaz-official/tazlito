@@ -217,7 +217,7 @@ gen_distro() {
 # Summary
 
 summary() {
-	. tazlito.conf
+	. ./tazlito.conf
 	iso_size=$(du -sh $distro/$ISO_NAME.iso | awk '{print $1}')
 	distro_size=$(du -sh $distro/rootfs | awk '{print $1}')
 	text="$(_ 'Live system summary')"
