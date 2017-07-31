@@ -1758,7 +1758,7 @@ Additional files	: $ADDFILES
 
 	list-flavors)
 		# Show available flavors.
-		local list='/etc/tazlito/flavors.list'
+		list='/etc/tazlito/flavors.list'
 		[ ! -s $list -o -n "$recharge" ] && download flavors.list -O - > $list
 		title 'List of flavors'
 		cat $list
