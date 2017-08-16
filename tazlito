@@ -902,6 +902,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 		[ -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] && break
 		install_package $aufs $version && break
 	done || return 1
+	[ -s /init ] || install_package slitaz-boot-files
 	cp /init $TMP_DIR/initfs/
 	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
 	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
