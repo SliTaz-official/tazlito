@@ -983,6 +983,12 @@ mirror3.slitaz.org mirror.slitaz.org"
 		sed -i 's/LD_T.*ot/newline/;s/".*ld-.*) /"/' $TMP_DIR/initfs/init
 	else
 		cp /bin/busybox $TMP_DIR/initfs/bin
+		if ! cmp /bin/busybox /sbin/insmod > /dev/null ; then
+			cp /sbin/insmod $TMP_DIR/initfs/bin
+			cp -a /lib/libkmod.so.* $TMP_DIR/initfs/lib
+			cp -a /usr/lib/liblzma.so.* $TMP_DIR/initfs/lib
+			cp -a /usr/lib/libz.so.* $TMP_DIR/initfs/lib
+		fi
 		need_lib=true
 	fi
 	for i in $($TMP_DIR/initfs/bin/busybox | awk \
@@ -1026,11 +1032,13 @@ size="\$(grep rootfssize= < /proc/cmdline | \\
 
 mount -t sysfs sysfs /sys
 for i in /lib/modules/*.ko ; do
+	echo -en "Probe \$i           \\r"
 	for j in \$(grep alias=pci: \$i | sed 's/alias//;s/\*/.*/g'); do
 		grep -q "\$j" /sys/bus/pci/devices/*/uevent || continue
 		for k in \$(cat \${i/ko/dep} 2> /dev/null); do
 			insmod /lib/modules/\$k.ko 2> /dev/null
 		done
+		echo "Loading \$i"
 		insmod \$i 2> /dev/null
 		break
 	done
@@ -1058,6 +1066,7 @@ fi
 for i in $urliso ; do
 	[ -n "\$URLISO" ] && URLISO="\$URLISO,"
 	URLISO="\${URLISO}http://\$i/iso/\$(cat /etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso,http://\$i/iso/\$(cat /etc/slitaz-release)/flavors/slitaz-\$(cat /etc/slitaz-release)-loram-cdrom.iso"
+	URLISO="\$URLISO,http://\$i/iso/rolling/slitaz-rolling-loram-cdrom.iso,http://\$i/iso/rolling/slitaz-rolling-loram.iso"
 done
 getarg urliso URLISO
 DIR=fs
@@ -1071,7 +1080,7 @@ path=/mnt/.cdrom/
 mkdir -p /mnt/.rw /mnt/.wd \$path \$path2
 while [ ! -d \$path/boot ]; do
 	for i in \$(echo \$URLISO | sed 's/,/ /g'); do
-		httpfs \$i \$path2 && break
+		httpfs \$i \$path2 && echo \$i && break
 	done
 	mount -o loop,ro -t iso9660 \$path2/*.iso \$path
 done
@@ -1081,12 +1090,15 @@ umount /proc
 branch=:/mnt/.cdrom/\$DIR
 if [ ! -d /mnt/.cdrom/\$DIR/etc ]; then
 branch=
-for i in \${path}rootfs* ; do
+lp=1
+insmod /lib/modules/squashfs.ko 2> /dev/null
+for i in \${path}boot/rootfs?.* ; do
 	fs=\${i#*root}
 	branch=\$branch:/mnt/.\$fs
 	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs /mnt/.rw/mnt/.cdrom
-	insmod /lib/modules/squashfs.ko 2> /dev/null
-	mount -o loop,ro -t squashfs \${path}root\$fs /mnt/.\$fs
+	losetup -o 124 /dev/loop\$lp \$i
+	mount -o loop,ro -t squashfs /dev/loop\$lp /mnt/.\$fs
+	lp=\$((\$lp+1))
 done
 else
 mkdir -p /mnt/.rw/mnt/.httpfs
