@@ -849,7 +849,8 @@ EOT
 # Uncompress rootfs or module to stdout
 
 uncompress() {
-	zcat $1 2> /dev/null || xzcat $1 2> /dev/null || unlzma < $1 || cat $i
+	zcat $1 2> /dev/null || xzcat $1 2> /dev/null ||
+	{ [ $(od -N 1 -An $1) -eq 135 ] && unlzma < $1; } || cat $1
 }
 
 
@@ -953,8 +954,11 @@ mirror3.slitaz.org mirror.slitaz.org"
 		cd $TMP_DIR/fs
 		echo 'Getting slitaz-release & ethernet modules...'
 		for i in $(ls -r $TMP_DIR/iso/boot/rootfs*z); do
-			uncompress $i | cpio -idmu etc/slitaz-release lib/modules* >/dev/null
-		done
+			uncompress $i | cpio -idmu etc/slitaz-release lib/modules rootfs*
+			[ -s rootfs* ] || continue
+			unsquashfs -f -d . rootfs* rootfs* etc/slitaz-release lib/modules &&
+			rm -f rootfs*
+		done 2>&1 > /dev/null
 		cd - > /dev/null
 		cp $TMP_DIR/fs/etc/slitaz-release $TMP_DIR/initfs/etc/
 		find $TMP_DIR/fs/lib/modules/*/kernel/drivers/net/ethernet \
@@ -1054,6 +1058,7 @@ netmask	255.255.255.0
 gw
 ip
 EOT
+grep -q \$eth /proc/net/dev || sh
 if [ -n "\$ip" ]; then
 	ifconfig \$eth \$ip netmask \$netmask up
 	route add default gateway \$gw
@@ -1082,7 +1087,7 @@ while [ ! -d \$path/boot ]; do
 	for i in \$(echo \$URLISO | sed 's/,/ /g'); do
 		httpfs \$i \$path2 && echo \$i && break
 	done
-	mount -o loop,ro -t iso9660 \$path2/*.iso \$path
+	mount -o loop,ro -t iso9660 \$path2/*.iso \$path || sh
 done
 
 memfree=\$(grep MemFree /proc/meminfo | sed 's/[^0-9]//g')
