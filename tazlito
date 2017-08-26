@@ -1529,6 +1529,8 @@ install_list_to_rootfs() {
 
 	# initial tazpkg setup in empty rootfs
 	tazpkg --root=$rootfs >/dev/null 2>&1
+	# pass current 'mirror' to the rootfs
+	cp -f /var/lib/tazpkg/mirror $rootfs/var/lib/tazpkg/mirror
 	# link rootfs packages cache to the regular packages cache
 	rm -r "$rootfs/var/cache/tazpkg"
 	ln -s /var/cache/tazpkg "$rootfs/var/cache/tazpkg"
@@ -2272,6 +2274,9 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		echo 'Preparing the rootfs directory...'
 		mkdir -p "$ROOTFS"
 		export root="$ROOTFS"
+		# pass current 'mirror' to the root
+		mkdir -p $root/var/lib/tazpkg
+		cp -f /var/lib/tazpkg/mirror $root/var/lib/tazpkg/mirror
 		strip_versions "$LIST_NAME"
 
 		if [ "$REPACK" == 'y' ]; then
