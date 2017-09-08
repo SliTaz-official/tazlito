@@ -1476,6 +1476,11 @@ pi_lists() {
 # Strip versions from packages list
 
 strip_versions() {
+	if [ -n "$stripped" ]; then
+		action 'Consider list %s already stripped' "$(basename "$1")"
+		status
+		return 0
+	fi
 	action 'Strip versions from list %s...' "$(basename "$1")"
 	local in_list="$1" tmp_list="$(mktemp)" namever pkg
 	[ -f "$in_list" ] || die "List '$in_list' not found."
@@ -1531,6 +1536,7 @@ install_list_to_rootfs() {
 	tazpkg --root=$rootfs >/dev/null 2>&1
 	# pass current 'mirror' to the rootfs
 	cp -f /var/lib/tazpkg/mirror $rootfs/var/lib/tazpkg/mirror
+	cp -f /etc/slitaz-release    $rootfs/etc/slitaz-release
 	# link rootfs packages cache to the regular packages cache
 	rm -r "$rootfs/var/cache/tazpkg"
 	ln -s /var/cache/tazpkg "$rootfs/var/cache/tazpkg"
@@ -2277,6 +2283,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		# pass current 'mirror' to the root
 		mkdir -p $root/var/lib/tazpkg
 		cp -f /var/lib/tazpkg/mirror $root/var/lib/tazpkg/mirror
+		cp -f /etc/slitaz-release    $root/etc/slitaz-release
 		strip_versions "$LIST_NAME"
 
 		if [ "$REPACK" == 'y' ]; then
