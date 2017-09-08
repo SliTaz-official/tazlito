@@ -1548,11 +1548,22 @@ install_list_to_rootfs() {
 	mkdir -p "$rootfs/etc/tazlito"
 
 	newline
-	for pkg in $(cat $list); do
-		action 'Installing package: %s' "$pkg"
-		yes y | tazpkg -gi $pkg --root=$rootfs --quiet >> $log || exit 1
-		status
-	done
+
+	# Choose detailed log with --detailed
+	if [ -n "$detailed" ]; then
+		while read pkg; do
+			separator '-'
+			echo $pkg
+			tazpkg -gi $pkg --root=$rootfs --local --quiet --cookmode | tee -a $log
+		done < $list
+		separator '='
+	else
+		while read pkg; do
+			action 'Installing package: %s' "$pkg"
+			yes y | tazpkg -gi $pkg --root=$rootfs --quiet >> $log || exit 1
+			status
+		done < $list
+	fi
 	newline
 
 	restore_mirrors
