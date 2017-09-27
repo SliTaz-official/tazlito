@@ -1105,9 +1105,8 @@ for i in \${path}boot/rootfs?.* ; do
 	mount -o loop,ro -t squashfs /dev/loop\$lp /mnt/.\$fs
 	lp=\$((\$lp+1))
 done
-else
-mkdir -p /mnt/.rw/mnt/.httpfs
 fi
+mkdir -p /mnt/.rw/mnt/.httpfs
 while read type opt; do
 	insmod /lib/modules/\$type.ko && mount -t \$type -o \$opt none /mnt && break
 done <<EOT
@@ -1172,7 +1171,7 @@ unmeta_boot() {
 		sed -i '/ifmem/{NNNNNNNNd};/^LABEL/{N;/LABEL SliTaz [^L]/{NNNd}}' \
 			$root/boot/isolinux/isolinux.cfg
 		[ -n "$3" ] || set -- $(grep 'append [0-9]' $root/boot/isolinux/common.cfg)
-		sed -i "s/label $3\$/label slitaz/;s|=/boot/rootfs\(.*\).gz |=/boot/rootfs.gz |" \
+		sed -i "s/label $3\$/label slitaz/;s|=\(.*\)/rootfs\(.*\).gz |=\1/rootfs.gz |" \
 			$root/boot/isolinux/*.cfg
 	fi
 }
@@ -1247,7 +1246,7 @@ update_metaiso_sizes() {
 		done
 		sed -i -e "/append [0-9]/s/append .*/append$new $1/" -e \
 			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
-		sed -i 's|\(initrd=\)\(/boot/rootfs.\.gz\)|\1/boot/rootfs.gz,\2|' $cfg
+		sed -i 's|\(initrd=\)\(.[^/]*\)\(/rootfs.\.gz\)|\1\2/rootfs.gz,\3|' $cfg
 		sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
 		sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|root=|screen=text &|;s|,[^ ]*||}' $cfg
 	done
@@ -2365,6 +2364,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			action 'Moving the boot directory...'
 			mv $ROOTFS/boot $ROOTCD
 			cd $ROOTCD/boot
+			rm -rf grub*
 			make_bzImage_hardlink
 			status
 		fi
