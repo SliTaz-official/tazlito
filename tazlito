@@ -2397,7 +2397,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 
 			FLAVOR_LIST="$(awk '{
 				for (i = 2; i <= NF; i+=2)
-					printf "%s ", i;
+					printf "%s ", $i;
 			}' /etc/tazlito/rootfs.list)"
 
 			[ -s "$ROOTCD/boot/isolinux/isolinux.msg" ] &&
