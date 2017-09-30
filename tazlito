@@ -297,7 +297,7 @@ EOT
 		-V "${VOLUM_NAME:-SliTaz}"   -p "${PREPARED:-$(id -un)}" \
 		-volset "SliTaz $SLITAZ_VERSION" -input-charset utf-8 \
 		-A "tazlito $VERSION/$(genisoimage --version)" \
-		-copyright README   -P "www.slitaz.org"  $2
+		-copyright README   -P "www.slitaz.org"  -no-pad  $2
 	rm -f /tmp/cdsort$$
 	if [ -s '/etc/tazlito/info' ]; then
 		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
