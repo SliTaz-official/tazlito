@@ -279,9 +279,8 @@ $PWD/boot/isolinux/isolinux.bin 399
 EOT
 
 	action 'Computing md5...'
+	touch boot/isolinux/boot.cat
 	find * -type f ! -name md5sum ! -name 'vmlinuz-*' -exec md5sum {} \; > md5sum
-	sed -i -e '/  boot\/isolinux\/isolinux.bin$/d' \
-		   -e '/  boot\/isolinux\/boot.cat$/d' md5sum
 	status
 
 	cd - >/dev/null
@@ -299,6 +298,18 @@ EOT
 		-A "tazlito $VERSION/$(genisoimage --version)" \
 		-copyright README   -P "www.slitaz.org"  -no-pad  $2
 	rm -f /tmp/cdsort$$
+	dd if=/dev/zero bs=2k count=16 >> $1 2> /dev/null
+
+	mkdir /tmp/mnt$$
+	mount -o loop,ro $1 /tmp/mnt$$
+	for i in boot/isolinux/isolinux.bin boot/isolinux/boot.cat ; do
+		sed -i "s|.* $i|$( cd /tmp/mnt$$ ; md5sum $i)|" $2/md5sum
+	done
+	dd if=$2/md5sum of=$1 conv=notrunc bs=2k \
+	   seek=$(stat -m /tmp/mnt$$/md5sum | sed q) 2> /dev/null
+	umount -d //tmp/mnt$$
+	rmdir /tmp/mnt$$
+
 	if [ -s '/etc/tazlito/info' ]; then
 		if [ $(stat -c %s /etc/tazlito/info) -lt $(( 31*1024 )) ]; then
 			action 'Storing ISO info...'
