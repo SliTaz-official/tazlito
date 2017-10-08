@@ -7,7 +7,7 @@
 # and/or a new ISO. Most commands must be run by root, except the stats
 # and the configuration file manipulation.
 #
-# (C) 2007-2016 SliTaz - GNU General Public License.
+# (C) 2007-2017 SliTaz - GNU General Public License.
 #
 # Authors: see the AUTHORS file
 #
@@ -307,7 +307,7 @@ EOT
 	done
 	dd if=$2/md5sum of=$1 conv=notrunc bs=2k \
 	   seek=$(stat -m /tmp/mnt$$/md5sum | sed q) 2> /dev/null
-	umount -d //tmp/mnt$$
+	umount -d /tmp/mnt$$
 	rmdir /tmp/mnt$$
 
 	if [ -s '/etc/tazlito/info' ]; then
@@ -670,6 +670,36 @@ pack_flavor() {
 
 # Remove duplicate files
 
+files_match() {
+	if [ -d "$1" ]; then
+		return 1
+
+	elif [ -L "$1" ] && [ -L "$2" ]; then
+		[ "$(readlink "$1")" == "$(readlink "$2")" ] && return 0
+
+	elif [ -f "$1" ] && [ -f "$2" ]; then
+		cmp -s "$1" "$2" && return 0
+
+		[ "$(basename "$3")" == 'volatile.cpio.gz' ] &&
+		[ "$(dirname $(dirname "$3"))" == ".$INSTALLED" ] &&
+			return 0
+
+	elif [ "$(ls -l "$1"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$1")" == \
+	       "$(ls -l "$2"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$2")" ] &&
+			return 0
+
+	fi
+	return 1
+}
+
+remove_with_path() {
+	dir="$(dirname $1)"	
+	rm -f "$1"
+	while rmdir "$dir" 2> /dev/null; do
+		dir="$(dirname $dir)"
+	done
+}
+
 mergefs() {
 	# Note, many packages have files with spaces in the name
 	IFS=$'\n'
@@ -681,37 +711,8 @@ mergefs() {
 	# merge symlinks files and devices
 	( cd "$1"; find ) | \
 	while read file; do
-		if  [ -L "$1/$file" ]; then
-			[ -L "$2/$file"  -a  "$(readlink "$1/$file")" == "$(readlink "$2/$file")" ] &&
-				rm -f "$2/$file"
-
-		elif [ -f "$1/$file" ]; then
-			 [ -f "$2/$file" ] && cmp -s "$1/$file" "$2/$file" &&
-				rm -f "$2/$file"
-
-			[ -f "$2/$file" ] &&
-			[ "$(basename "$file")" == 'volatile.cpio.gz' ] &&
-			[ "$(dirname $(dirname "$file"))" == ".$INSTALLED" ] &&
-				rm -f "$2/$file"
-
-		elif [ -b "$1/$file" ]; then
-			 [ -b "$2/$file" ] &&
-			[ "$(stat -c '%a:%u:%g:%t:%T' "$1/$file")" == \
-			  "$(stat -c '%a:%u:%g:%t:%T' "$2/$file")" ] &&
-				rm -f "$2/$file"
-
-		elif [ -c "$1/$file" ]; then
-			 [ -c "$2/$file" ] &&
-			[ "$(stat -c '%a:%u:%g:%t:%T' "$1/$file")" == \
-			  "$(stat -c '%a:%u:%g:%t:%T' "$2/$file")" ] &&
-				rm -f "$2/$file"
-		fi
-	done
-
-	# cleanup directories; TODO: simplify
-	( cd "$1"; find . -type d ) | sed '1!G;h;$!d' | \
-	while read file; do
-		[ -d "$2/$file" ] && rmdir "$2/$file" 2>/dev/null
+		files_match "$1/$file" "$2/$file" "$file" &&
+		remove_with_path "$2/$file"
 	done
 
 	unset IFS
@@ -2136,9 +2137,8 @@ EOT
 			fi
 		done
 
-		rm -f /etc/tazlito/rootfs.list
-		grep -q  '^Rootfs list' description &&
-			grep '^Rootfs list' description | sed 's/.*: \(.*\)$/\1/' > /etc/tazlito/rootfs.list
+		sed '/^Rootfs list/!d;s/.*: //' description > /etc/tazlito/rootfs.list
+		[ -s /etc/tazlito/rootfs.list ] || rm -f /etc/tazlito/rootfs.list
 
 		action 'Updating %s...' 'tazlito.conf'
 		[ -f tazlito.conf ] || cp /etc/tazlito/tazlito.conf .
