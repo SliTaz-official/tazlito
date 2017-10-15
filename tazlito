@@ -685,7 +685,7 @@ files_match() {
 			return 0
 
 	elif [ "$(ls -l "$1"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$1")" == \
-	       "$(ls -l "$2"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$2")" ] &&
+	       "$(ls -l "$2"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$2")" ]; then 
 			return 0
 
 	fi
