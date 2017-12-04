@@ -1183,7 +1183,7 @@ unmeta_boot() {
 		sed -i '/ifmem/{NNNNNNNNd};/^LABEL/{N;/LABEL SliTaz [^L]/{NNNd}}' \
 			$root/boot/isolinux/isolinux.cfg
 		[ -n "$3" ] || set -- $(grep 'append [0-9]' $root/boot/isolinux/common.cfg)
-		sed -i "s/label $3\$/label slitaz/;s|=\(.*\)/rootfs\(.*\).gz |=\1/rootfs.gz |" \
+		sed -i "s/label $3\$/label slitaz/;s|=\(.*rootfs\)\(.*\)\.gz |=\1.gz |" \
 			$root/boot/isolinux/*.cfg
 	fi
 }
@@ -1258,7 +1258,7 @@ update_metaiso_sizes() {
 		done
 		sed -i -e "/append [0-9]/s/append .*/append$new $1/" -e \
 			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
-		sed -i 's|\(initrd=\)\(.[^/]*/\)\(rootfs\)|\1\2rootfs.gz,\2\3|' $cfg
+		sed -i 's|\(initrd=\)\([^r]*\)\(rootfs\)|\1\2rootfs.gz,\2\3|' $cfg
 		sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
 		sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|root=|screen=text &|;s|,[^ ]*||}' $cfg
 	done
