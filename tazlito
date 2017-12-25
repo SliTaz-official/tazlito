@@ -915,7 +915,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 		[ -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] && break
 		install_package $aufs $version && break
 	done || return 1
-	[ -s /init ] || install_package slitaz-boot-files
+	[ -s /init ] || install_package slitaz-boot-scripts
 	cp /init $TMP_DIR/initfs/
 	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
 	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
@@ -1156,7 +1156,7 @@ build_loram_rootfs() {
 		deduplicate
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i)
-		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp xz -Xbcj x86
+		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp ${1:-xz -Xbcj x86}
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
 		( cd $(dirname $rootfs); echo $(basename $rootfs) | cpio -o -H newc ) > $rootfs.cpio
@@ -1270,7 +1270,7 @@ update_metaiso_sizes() {
 
 build_loram_ram() {
 	build_initfs ram || return 1
-	build_loram_rootfs
+	build_loram_rootfs    "$1"
 	cp -a $TMP_DIR/iso    $TMP_DIR/loramiso
 	make_bzImage_hardlink $TMP_DIR/loramiso/boot
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
@@ -2874,7 +2874,7 @@ EOT
 		case "$4" in
 			cdrom)		build_loram_cdrom ;;
 			http)		build_loram_http ;;
-			*)			build_loram_ram ;;
+			*)		build_loram_ram "$5" ;;
 		esac
 		umount $TMP_DIR/iso	# no -d: needs /proc
 		losetup -d $loopdev
