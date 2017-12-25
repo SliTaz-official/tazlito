@@ -989,7 +989,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 	fi
 	if ! $need_lib && [ -x /usr/share/boot/busybox-static ]; then
 		cp /usr/share/boot/busybox-static $TMP_DIR/initfs/bin/busybox
-		sed -i 's/LD_T.*ot/newline/;s/".*ld-.*) /"/' $TMP_DIR/initfs/init
+		sed -i 's/LD_T.*ot/echo/;s/".*ld-.*) /"/' $TMP_DIR/initfs/init
 	else
 		cp /bin/busybox $TMP_DIR/initfs/bin
 		if ! cmp /bin/busybox /sbin/insmod > /dev/null ; then
