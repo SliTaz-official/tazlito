@@ -917,10 +917,6 @@ mirror3.slitaz.org mirror.slitaz.org"
 	done || return 1
 	[ -s /init ] || install_package slitaz-boot-scripts
 	cp /init $TMP_DIR/initfs/
-	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
-	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
-		$TMP_DIR/initfs/lib/modules 2>/dev/null
-	cp -a /dev/tty0 /dev/fd0 $TMP_DIR/initfs/dev 2>/dev/null
 	cp /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z \
 		$TMP_DIR/initfs/lib/modules
 	if [ "$1" == 'cdrom' ]; then
@@ -932,12 +928,9 @@ mirror3.slitaz.org mirror.slitaz.org"
 		done
 		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
 			$TMP_DIR/initfs/lib/modules
-		ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
-		cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
+		#ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
+		#cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	fi
-	for i in $(ls /dev/[hs]d[a-f]*); do
-		cp -a $i $TMP_DIR/initfs/dev
-	done
 	if [ "$1" == 'http' ]; then
 		mkdir $TMP_DIR/initfs/etc $TMP_DIR/fs
 		ln -s /proc/mounts $TMP_DIR/initfs/etc/mtab
@@ -1011,11 +1004,18 @@ mirror3.slitaz.org mirror.slitaz.org"
 	  '{ if (s) printf "%s",$0 } /Currently/ { s=1 }' | sed 's/,//g'); do
 		ln $TMP_DIR/initfs/bin/busybox $TMP_DIR/initfs/bin/$i
 	done
-	for i in /dev/console /dev/loop* /dev/null /dev/tty /dev/zero \
+	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
+	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
+		$TMP_DIR/initfs/lib/modules 2>/dev/null
+	for i in /dev/console /dev/null /dev/tty /dev/tty0 /dev/zero \
 		 /dev/kmem /dev/mem /dev/random /dev/urandom; do
 		cp -a $i $TMP_DIR/initfs/dev
 	done
-	$need_lib && for i in /lib/ld-* /lib/lib[cm].so* /lib/lib[cm]-* ; do
+	grep -q '/sys/block/./dev' $TMP_DIR/initfs/init ||
+	for i in /dev/fd0 /dev/[hs]d[a-f]* /dev/loop* ; do
+		cp -a $i $TMP_DIR/initfs/dev
+	done
+	$need_lib && for i in /lib/ld-* /lib/lib[cm][-\.]* ; do
 		cp -a $i $TMP_DIR/initfs/lib
 	done
 	[ "$1" == 'http' ] && cat > $TMP_DIR/initfs/init <<EOTEOT
@@ -1134,7 +1134,6 @@ EOTEOT
 	for i in $TMP_DIR/initfs/lib/modules/*z ; do
 		unxz $i || gunzip $i || lzma d $i ${i%.gz}
 		rm -f $i
-		dogzip ${i%.gz}
 	done 2>/dev/null
 	(cd $TMP_DIR/initfs; find | busybox cpio -o -H newc 2>/dev/null) | \
 	lzma e $TMP_DIR/initfs.gz -si
