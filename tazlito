@@ -343,9 +343,9 @@ fixup_uefi_part() {
 		}' | hexdump -R > /tmp/fatbin-16-$$
 	fi
 
-	# align fat to 2k
-	dd of=$(ls /tmp/fatbin-*-$$) count=0 bs=2048 \
-		seek=$((($(stat -c %s /tmp/fatbin-*-$$)-1)/2048+1)) 2>/dev/null
+	# align fat to 512 bytes
+	dd of=$(ls /tmp/fatbin-*-$$) count=0 bs=512 \
+		seek=$((($(stat -c %s /tmp/fatbin-*-$$)-1)/512+1)) 2>/dev/null
 
 	# build directory records
 
@@ -472,10 +472,10 @@ alloc_uefi_part() {
 	clusters=$(($clusters+$dclust))
 	if [ $clusters -lt 4000 ]; then
 		#     reserved   +    fat*2      +      root dir  +   dirs
-		count=$(( 1 + (($clusters*3+4095)/4096)*2 + 1     + $dclust ))
+		count=$(((1 + (($clusters*3+1023)/1024)*2+3)/4+1  +  $dclust ))
 	else
 		#     reserved   +    fat*2      +      root dir  +   dirs
-		count=$(( 1 + (($clusters+1023)/1024)*2  +  1     + $dclust ))
+		count=$(((1 + (($clusters+255)/256)*2+3)/4 +  1  + $dclust ))
 	fi
 	dd if=/dev/zero bs=2k of=$basedir/boot/isolinux/efi.img count=$count
 }
