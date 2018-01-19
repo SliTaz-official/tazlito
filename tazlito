@@ -248,17 +248,249 @@ verify_rootcd() {
 	[ -d "$ROOTCD/boot" ] || die 'Unable to find the rootcd boot directory...'
 }
 
+get() {
+	od -v -j $1 -N ${3:-4} -t u${3:-4} -w${3:-4} -An "$2" 2>/dev/null | sed 's/ *//'
+}
+
+set64() {
+	for i in $(seq 0 8 24 ; seq 24 -8 0); do
+		printf '\\\\x%02X' $((($2 >> $i) & 255))
+	done | xargs echo -en | dd bs=1 conv=notrunc of=$3 seek=$1 2>/dev/null
+}
+
+
+# Force the size for the /boot/isolinux/efi.img file
+
+fix_efi_img_size() {
+	local e=$((0x809C))
+	for i in BOOT ISOLINUX EFI.IMG ; do
+		local sz=$(get $(($e+10)) "$2")
+		e=$(($(get $(($e+2)) "$2") * 2048))
+		while [ $sz -gt 0 ]; do
+			local len=$(get $e "$2" 2)
+			[ "$(dd if="$2" bs=1 skip=$(($e+33)) count=${#i} \
+				2>/dev/null)" == "$i" ] && continue 2
+			[ $len -eq 0 ] && break
+			sz=$(($sz-$len))
+			e=$(($e+$len))
+		done
+		return	# not found
+	done
+	set64 $(($e+10)) $1 "$2"
+}
+
+
+# create /boot/isolinux/efi.img to share EFI files with the iso image
+
+fixup_uefi_part() {
+	local n
+	[ -s $2/boot/isolinux/efi.img ] || return
+
+	# Build file list tree
+
+	( cd $2 ; find efi -type f -exec echo \
+	  'stat -c "$(stat -m {} | sed q) %s f %n" {}' \; | sh | sort -n ) \
+		>/tmp/fatfiles$$
+	n=$(sed 's/ .*//;q' /tmp/fatfiles$$)
+	( cd $2; find efi ) | awk -v n=$n 'BEGIN { FS="/" }
+		NF > 1 {
+			d[NF $NF]+=2
+			p[NF $NF]=$0
+			b[a++]=NF $NF
+			if (NF>2) d[NF-1 $(NF-1)]++
+		}
+		END {
+			while (a-- > 0) if (d[i=b[a]] > 2) {
+				n-= j =int((d[i]+63)/64)
+				print n " " j*2048 " d " p[i]
+			}
+			print n-1 " 2048 d efi"
+		}' >>/tmp/fatfiles$$
+	sort -n /tmp/fatfiles$$ | awk '{ if (s == 0) s=$1;
+		print ($1-s)+2 " " $2 " " $3 " " $4 }' > /tmp/fatfiles$$.tmp
+	mv -f /tmp/fatfiles$$.tmp /tmp/fatfiles$$
+
+	# Build fat12 or fat16
+
+	if [ $(awk '{n+=int(($2+2047)/2048)}END{print n}' /tmp/fatfiles$$) \
+			-lt 4000 ]; then
+		sed '1s/.*/4087 2049 x\n1 1 x/' /tmp/fatfiles$$ | while read c s x; do
+			seq $(($c+1)) $((($s-1)/2048+$c)) 
+			echo 4095
+		done | awk 'BEGIN { printf "0  "}
+		{
+			if (n == 0) n=$1
+			else {
+				printf "%02X %02X %02X ",n%256,
+					($1%16)*16+(n/256),$1/16
+				n=0
+			}
+		}
+		END {
+			if (n != 0) printf "FF 0F 00 "
+			print "  |"
+		}' | hexdump -R > /tmp/fatbin-12-$$
+	else
+		sed '1s/.*/65527 2049 x\n1 1 x/' /tmp/fatfiles$$ | while read c s x; do
+			seq $(($c+1)) $((($s-1)/2048+$c)) 
+			echo 65535
+		done | awk 'BEGIN { printf "0  "}
+		{
+			printf "%02X %02X ",$1%256,$1/256
+		}
+		END {
+			print "  |"
+		}' | hexdump -R > /tmp/fatbin-16-$$
+	fi
+
+	# align fat to 2k
+	dd of=$(ls /tmp/fatbin-*-$$) count=0 bs=2048 \
+		seek=$((($(stat -c %s /tmp/fatbin-*-$$)-1)/2048+1)) 2>/dev/null
+
+	# build directory records
+
+	awk '
+	BEGIN {
+		c=2
+		b16="/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0"
+		b14="/0/0/0/0/0/0/0/0/0/0/0/0/0/0"
+		print "EFI        /x10" b14 "/x0" c "/0/0/x08/0/0"
+		for (n=i=0; i<63; i++) print b16 b16
+	}
+	{
+		clu[n]=$1
+		size[n]=$2
+		type[n]=$3
+		name[n]=$4
+		n++
+	}
+	END {
+		path="efi"
+		d21="/x10" b14 "/x%02X/x%02X/0/x08/0/0\n"
+		up[0]=0
+		s=1
+		do {
+			l=split(path,x,"/")
+			up[l]=c
+			printf ".          " d21,c%256,c/256
+			printf "..         " d21,up[l-1]%256,up[l-1]/256
+			for (i=s,e=2; i<n; i++) {
+				if (substr(name[i],1,length(path)) != path ||
+				    split(substr(name[i],length(path)+2),x,"/") > 1)
+					continue
+				split(toupper(x[1]),x,".")
+				if (length(x[1]) >= 8) printf substr(x[1],1,8)
+				else printf x[1] substr("       ",1,8-length(x[1]))
+				if (length(x[2]) >= 3) printf substr(x[2],1,3)
+				else printf x[2] substr("   ",1,3-length(x[2]))
+				if (type[i] == "d") printf "/x10"; else printf "/0"
+				printf b14 "/x%02X/x%02X",clu[i]%256,clu[i]/256
+				printf "/x%02X/x%02X/x%02X/x%02X\n",size[i]%256,
+					(size[i]/256)%256,(size[i]/256/256)%256,
+					size[i]/256/256/256
+				e++
+			}
+			while (e++ < 64) print b16 b16
+			path=name[s]
+			c=clu[s]
+		} while (type[s++] == "d")
+	}' < /tmp/fatfiles$$ | while read line; do
+		echo "$line" | sed 's| |/x20|g;s|/|\\\\|g' | xargs echo -en
+	done > /tmp/fatdir$$
+
+	# build boot record
+
+	fat=$(($(stat -c %s /tmp/fatbin-*-$$)/512))
+	r=$((4-($fat+$fat+$(stat -c %s /tmp/fatdir$$)/512)%4))
+	dd if=/dev/zero bs=512 count=$r of=/tmp/fatbr$$ 2> /dev/null
+	echo -en '\x55\xAA' | \
+		dd of=/tmp/fatbr$$ seek=510 bs=1 conv=notrunc 2> /dev/null
+	n=$(stat -m $2/boot/isolinux/efi.img | sed q)
+	fat="$(printf "%02X %02X" $(($fat%256)) $((($fat>>8)%256)))"
+	s=$((($(stat -m $(ls -r $2/boot/rootfs* | sed q) | sed q) - $n)*4))
+	if [ $s -gt 65535 ]; then
+		size="00 00"
+		size32="$(printf "%02X %02X %02X %02X" $(($s%256)) \
+			$((($s>>8)%256)) $((($s>>16)%256)) $((($s>>24)%256)) )"
+	else
+		size="$(printf "%02X %02X" $(($s%256)) $((($s>>8)%256)) )"
+		size32="00 00 00 00"
+	fi
+	t=32; [ -s /tmp/fatbin-16-$$ ] && t=36
+	hexdump -R <<EOT | dd conv=notrunc of=/tmp/fatbr$$ 2> /dev/null
+0  eb 3c 90 53 6c 69 54 61  7a 00 00 00 02 04 $r 00  |
+0  02 40 00 $size f8 $fat   20 00 40 00 00 00 00 00  |
+0  $size32     80 00 29 00  00 00 00 4e 4f 20 4e 41  |
+0  4d 45 20 20 20 20 46 41  54 31 $t 20 20 20 cd 18  |
+0  cd 19 eb fa  |
+EOT
+
+	# patch efi.img stub
+
+	cat /tmp/fatbr$$ /tmp/fatbin-*-$$ /tmp/fatbin-*-$$ /tmp/fatdir$$ | \
+	dd of=$1 conv=notrunc bs=2k seek=$n 2>/dev/null
+	fix_efi_img_size $(($s*512)) $1
+	rm -f /tmp/fat*$$
+}
+
+
+# allocate efi.img stub to share EFI files in the EFI boot partition
+
+alloc_uefi_part() {
+	local basedir=$(dirname "$1")/..
+	local clusters=$({
+	[ -d $basedir/efi ] &&
+		find $basedir/efi -type f -exec stat -c "%s" {} \;
+	while [ -s "$1" ]; do
+		local efifile
+		case "$1" in
+		*taz)	efifile=bootia32.efi ;;
+		*taz64) efifile=bootx64.efi ;;
+		esac
+		if [ ! -s $basedir/efi/boot/$efifile ] &&
+		   [ $(get $((0x82)) "$1") == $((0x4550)) ]; then
+			stat -c "%s" "$1"
+			mkdir -p $basedir/efi/boot 2> /dev/null
+			ln "$1" $basedir/efi/boot/$efifile
+		fi
+		shift
+	done; } | awk '{ n+=int(($1+2047)/2048) } END { print n }')
+	[ $clusters -eq 0 ] && return
+	local dclust=$( (cd $basedir; find efi -type d 2>/dev/null) | awk '
+		BEGIN {
+			FS="/"
+		}
+		NF > 1 {
+			d[NF $NF]+=2
+			d[NF-1 $(NF-1)]++
+		}
+		END {
+			for (i in d)
+				n+=int((d[i]+63)/64)
+			print n
+		}')
+	clusters=$(($clusters+$dclust))
+	if [ $clusters -lt 4000 ]; then
+		#     reserved   +    fat*2      +      root dir  +   dirs
+		count=$(( 1 + (($clusters*3+4095)/4096)*2 + 1     + $dclust ))
+	else
+		#     reserved   +    fat*2      +      root dir  +   dirs
+		count=$(( 1 + (($clusters+1023)/1024)*2  +  1     + $dclust ))
+	fi
+	dd if=/dev/zero bs=2k of=$basedir/boot/isolinux/efi.img count=$count
+}
+
 
 # isolinux.conf doesn't know the kernel version.
 # We name the kernel image 'bzImage'.
 # isolinux/syslinux first tries the '64' suffix with a 64bits cpu.
 
 make_bzImage_hardlink() {
-	if [   -s ${1:-.}/vmlinuz*slitaz ]; then
+	if [   -e ${1:-.}/vmlinuz*slitaz ]; then
 		rm -f ${1:-.}/bzImage 2>/dev/null
 		ln    ${1:-.}/vmlinuz*slitaz ${1:-.}/bzImage
 	fi
-	if [   -s ${1:-.}/vmlinuz*slitaz64 ]; then
+	if [   -e ${1:-.}/vmlinuz*slitaz64 ]; then
 		rm -f ${1:-.}/bzImage64 2> /dev/null
 		ln    ${1:-.}/vmlinuz*slitaz64 ${1:-.}/bzImage64
 	fi
@@ -269,13 +501,17 @@ create_iso() {
 	cd $2
 	deduplicate
 
+	make_bzImage_hardlink $2/boot
+	alloc_uefi_part $(ls -r $2/boot/vmlinuz*slitaz*)
+
 	cat > /tmp/cdsort$$ <<EOT
-$PWD/boot 100
-$PWD/boot/bzImage 200
-$(n=199; ls -r $PWD/boot/rootfs* | while read f; do echo "$f $((n--))"; done)
-$PWD/boot/isolinux 300
-$PWD/boot/isolinux/boot.cat 400
+$PWD/boot/isolinux 100
+$(ls -r $PWD/boot/rootfs* | awk 'BEGIN{n=149} { print $1 " " n-- }')
+$(ls $PWD/boot/bzImage* | awk 'BEGIN{n=200} { print $1 " " n-- }')
+$(find $PWD/efi -type f 2>/dev/null | awk 'BEGIN{n=299} { print $1 " " n-- }')
+$PWD/boot/isolinux/efi.img 300
 $PWD/boot/isolinux/isolinux.bin 399
+$PWD/boot/isolinux/boot.cat 400
 EOT
 
 	action 'Computing md5...'
@@ -287,8 +523,7 @@ EOT
 	title 'Generating ISO image'
 
 	_ 'Generating %s' "$1"
-	make_bzImage_hardlink $2/boot
-	uefi="$(cd $2 ; ls boot/isolinux/*efi*img 2> /dev/null)"
+	uefi="$(cd $2 ; ls boot/isolinux/efi.img 2> /dev/null)"
 	genisoimage -R  -o $1  -hide-rr-moved -sort /tmp/cdsort$$ \
 		-b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
 		-no-emul-boot   -boot-load-size 4   -boot-info-table \
@@ -302,7 +537,9 @@ EOT
 
 	mkdir /tmp/mnt$$
 	mount -o loop,ro $1 /tmp/mnt$$
-	for i in boot/isolinux/isolinux.bin boot/isolinux/boot.cat ; do
+	fixup_uefi_part $1 /tmp/mnt$$
+	for i in boot/isolinux/isolinux.bin boot/isolinux/boot.cat \
+		 ${uefi:+boot/isolinux/efi.img} ; do
 		sed -i "s|.* $i|$( cd /tmp/mnt$$ ; md5sum $i)|" $2/md5sum
 	done
 	dd if=$2/md5sum of=$1 conv=notrunc bs=2k \
@@ -320,7 +557,7 @@ EOT
 
 	if [ -x '/usr/bin/isohybrid' ]; then
 		action 'Creating hybrid ISO...'
-		/usr/bin/isohybrid $1 -entry 2 2>/dev/null
+		isohybrid $1 $([ -n "$uefi" ] || echo -entry 2) 2>/dev/null
 		status
 	fi
 
@@ -1014,7 +1251,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 	grep -q '/sys/block/./dev' $TMP_DIR/initfs/init ||
 	for i in /dev/fd0 /dev/[hs]d[a-f]* /dev/loop* ; do
 		cp -a $i $TMP_DIR/initfs/dev
-	done
+	done 2>/dev/null
 	$need_lib && for i in /lib/ld-* /lib/lib[cm][-\.]* ; do
 		cp -a $i $TMP_DIR/initfs/lib
 	done
@@ -1778,7 +2015,7 @@ Additional files	: $ADDFILES
 		done
 
 		action 'Copying the rootfs...'
-		cp $TMP_DIR/boot/rootfs.?z "$TARGET/rootcd/boot"
+		cp $TMP_DIR/boot/rootfs*.?z "$TARGET/rootcd/boot"
 		status
 
 		# Extract initramfs.
@@ -2187,6 +2424,7 @@ EOT
 				INITRAMFS_SIZE=$(du -chs $TMP_DIR/rootcd/boot/rootfs*.gz | awk 'END { print $1 }')
 				rm -f $TMP_DIR/rootcd/boot/rootfs.gz $TMP_DIR/rootcd/md5sum
 				mv $TMP_DIR/rootcd/boot $TMP_DIR/rootfs
+				[ -d $TMP_DIR/rootcd/efi ] && mv $TMP_DIR/rootcd/efi $TMP_DIR/rootfs
 				sed 's/.*  \(.*\).tazpkg*/\1/' > $TMP_DIR/$FLAVOR.pkglist \
 					< $TMP_DIR/rootfs$INSTALLED.md5
 				PKGCNT=$(grep -v ^# $TMP_DIR/$FLAVOR.pkglist | wc -l | awk '{ print $1 }')
@@ -2202,6 +2440,7 @@ EOT
 				else
 					find_flavor_rootfs $TMP_DIR/rootfs
 					[ -d $TMP_DIR/rootfs/boot ] && mv $TMP_DIR/rootfs/boot $TMP_DIR/rootcd
+					[ -d $TMP_DIR/rootfs/efi ] && mv $TMP_DIR/rootfs/efi $TMP_DIR/rootcd
 					for i in rootfs rootcd ; do
 						[ "$(ls $TMP_DIR/$i)" ] &&
 						( cd "$TMP_DIR/$i"; find * | cpio -o -H newc ) | dogzip "$TMP_DIR/$FLAVOR.$i"
@@ -2369,7 +2608,12 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		status
 
 		# Move the boot dir with the Linux kernel from rootfs.
-		# The boot dir goes directly on the CD.
+		# The efi & boot dirs go directly on the CD.
+		if [ -d "$ROOTFS/efi" ] ; then
+			action 'Moving the efi directory...'
+			mv $ROOTFS/efi $ROOTCD
+			status
+		fi
 		if [ -d "$ROOTFS/boot" ] ; then
 			action 'Moving the boot directory...'
 			mv $ROOTFS/boot $ROOTCD
