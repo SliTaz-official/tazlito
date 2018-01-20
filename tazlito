@@ -259,6 +259,17 @@ set64() {
 }
 
 
+# Force the size in the 2nd eltorito boot file (/boot/isolinux/efi.img)
+
+fix_efi_boot_img_size() {
+	i=$(stat -m $2/boot/isolinux/boot.cat | sed q)
+	set -- $1 $((102+2048*$i)) $3
+	for i in $(seq 0 8 24); do
+		printf '\\\\x%02X' $((($3 >> $i) & 255))
+	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
+}
+
+
 # Force the size for the /boot/isolinux/efi.img file
 
 fix_efi_img_size() {
@@ -430,6 +441,7 @@ EOT
 	cat /tmp/fatbr$$ /tmp/fatbin-*-$$ /tmp/fatbin-*-$$ /tmp/fatdir$$ | \
 	dd of=$1 conv=notrunc bs=2k seek=$n 2>/dev/null
 	fix_efi_img_size $(($s*512)) $1
+	fix_efi_boot_img_size $1 $2 $s
 	rm -f /tmp/fat*$$
 }
 
@@ -455,7 +467,7 @@ alloc_uefi_part() {
 		fi
 		shift
 	done; } | awk '{ n+=int(($1+2047)/2048) } END { print n }')
-	[ $clusters -eq 0 ] && return
+	[ ${clusters:-0} -eq 0 ] && return
 	local dclust=$( (cd $basedir; find efi -type d 2>/dev/null) | awk '
 		BEGIN {
 			FS="/"
@@ -477,7 +489,8 @@ alloc_uefi_part() {
 		#     reserved   +    fat*2      +      root dir  +   dirs
 		count=$(((1 + (($clusters+255)/256)*2+3)/4 +  1  + $dclust ))
 	fi
-	dd if=/dev/zero bs=2k of=$basedir/boot/isolinux/efi.img count=$count
+	dd if=/dev/zero bs=2k of=$basedir/boot/isolinux/efi.img \
+		count=$count 2> /dev/null
 }
 
 
