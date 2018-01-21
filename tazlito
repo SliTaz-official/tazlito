@@ -856,7 +856,7 @@ EOF
 
 extract_rootfs() {
 	# Detect compression format: *.lzma.cpio, *.gzip.cpio, or *.cpio
-	# First part (lzcat or zcat) may not fail, but cpio will fail on uncorrect format
+	# First part (lzcat or zcat) may not fail, but cpio will fail on incorrect format
 	(cd "$2"; lzcat "$1" | cpio -idm --quiet 2>/dev/null) && return
 	(cd "$2";  zcat "$1" | cpio -idm --quiet 2>/dev/null) && return
 	(cd "$2";   cat "$1" | cpio -idm --quiet 2>/dev/null)
@@ -1804,7 +1804,7 @@ install_list_to_rootfs() {
 
 	setup_mirrors mirrors
 
-	# Just in case if flavor not contains "tazlito" package
+	# Just in case if flavor doesn't contain "tazlito" package
 	mkdir -p "$rootfs/etc/tazlito"
 
 	newline
@@ -2065,7 +2065,7 @@ Additional files	: $ADDFILES
 
 
 	show-flavor)
-		# Show flavor description.
+		# Show flavor descriptions.
 		set -e
 		flavor=${2%.flavor}
 		flv_dir="$(extract_flavor "$flavor")"
