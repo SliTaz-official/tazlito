@@ -31,7 +31,7 @@ BEGIN {
 
 	errfile  = dir "/err";
 	warnfile = dir "/warn";
-	system("rm " errfile " " warnfile " " outfile " 2>/dev/null");
+	system("rm " errfile " " warnfile " 2>/dev/null");
 
 	root = ENVIRON["root"];
 
