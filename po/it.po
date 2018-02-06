@@ -1,89 +1,91 @@
 # Italian translations for Tazlito package.
 # Copyright (C) 2018 SliTaz
 # This file is distributed under the same license as the Tazlito package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Christian Michelini <christian@alklibri.com>, 2018
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: TazLito\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-01-30 11:52+0200\n"
-"PO-Revision-Date: 2018-01-30 11:51+0200\n"
-"Last-Translator: \n"
+"POT-Creation-Date: 2018-01-31 20:18+0100\n"
+"PO-Revision-Date: 2018-02-05 17:29+0100\n"
 "Language-Team: \n"
-"Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.8.6\n"
-"X-Poedit-SourceCharset: UTF-8\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"Last-Translator: Christian Michelini <christian@alklibri.com>\n"
+"Language: it\n"
 
 #: live.cgi:36 live.cgi:52
 msgid "Live"
-msgstr ""
+msgstr "Live"
 
 #: live.cgi:38
 msgid "Create a live USB key"
-msgstr ""
+msgstr "Crea una penna live-USB"
 
 #: live.cgi:39
 msgid "Create a live CD-ROM"
-msgstr ""
+msgstr "Crea un Live-CD"
 
 #: live.cgi:40 live.cgi:115
 msgid "Create a hybrid ISO"
-msgstr ""
+msgstr "Crea una immagine ISO ibrida"
 
 #: live.cgi:41 live.cgi:90 live.cgi:305 live.cgi:348
 msgid "Convert ISO to loram"
-msgstr ""
+msgstr "Converti l'immagine ISO a una versione loram"
 
 #: live.cgi:42 live.cgi:100 live.cgi:399 live.cgi:453
 msgid "Build a meta ISO"
-msgstr ""
+msgstr "Costruisci un'immagine ISO intermedia"
 
 #: live.cgi:133
 msgid "TODO"
-msgstr ""
+msgstr "Da fare"
 
 #: live.cgi:137 live.cgi:141
 msgid "SliTaz LiveUSB"
-msgstr ""
+msgstr "SliTaz LiveUSB"
 
 #: live.cgi:138
 msgid "Create Live USB SliTaz systems"
-msgstr ""
+msgstr "Crea un sistemi Live USB di SliTaz"
 
 #: live.cgi:145
 msgid ""
 "Generate SliTaz LiveUSB media and boot in RAM! Insert a Live CD into the CD-"
 "ROM drive, select the correct device and press Generate."
 msgstr ""
+"Crea un supporto LiveUSB di SliTaz e caricalo nella memoria RAM! Inserisci "
+"un CD Live nel lettore CD-ROM, seleziona il dispositivo corretto e premi "
+"Crea."
 
 #: live.cgi:151
 msgid "USB Media to use:"
-msgstr ""
+msgstr "Supporto USB da utilizzare:"
 
 #: live.cgi:172
 msgid "Not found"
-msgstr ""
+msgstr "Non trovato"
 
 #: live.cgi:177
 msgid "Generate"
-msgstr ""
+msgstr "Crea"
 
 #: live.cgi:258
 msgid "SliTaz Live Systems"
-msgstr ""
+msgstr "Sistemi SliTaz Live"
 
 #: live.cgi:259
 msgid "Create and manage Live CD or USB SliTaz systems"
-msgstr ""
+msgstr "Crea e gestisci sistemi Live CD o USB di SliTaz"
 
 #: live.cgi:264
 msgid "Write a Live CD"
-msgstr ""
+msgstr "Scrivi un Live CD"
 
 #: live.cgi:268
 msgid ""
@@ -91,185 +93,205 @@ msgid ""
 "is, including all files in the /home directory. It is an easy way to "
 "remaster a SliTaz Live system, you just have to: boot, modify, writeiso."
 msgstr ""
+"Il comando writeiso genererà una immagine ISO dell'attuale filesystem, così "
+"com'è, includendo tutti i file nella cartella /home. Questo è un modo "
+"semplice per ridistribuire un sistema SliTaz Lve, è sufficiente: avviare, "
+"modificare, eseguire il comando writeiso."
 
 #: live.cgi:276
 msgid "Compression type:"
-msgstr ""
+msgstr "Tipo di compressione:"
 
 #: live.cgi:280
 msgid "none"
-msgstr ""
+msgstr "Nessuno"
 
 #: live.cgi:287
 msgid ""
 "Cannot find SliTaz ISO/CD mounted in /media/cdrom (You will get only rootfs."
 "gz)"
 msgstr ""
+"Non riesco a trovare l'immagine ISO o il CD di SliTaz montato in /media/"
+"cdrom (è sufficiente il file rootfs.gz)"
 
 #: live.cgi:295 tazlito-wiz:63
 msgid "Write ISO"
-msgstr ""
+msgstr "Scrivi immagine ISO"
 
 #: live.cgi:301
 msgid "Live CD tools"
-msgstr ""
+msgstr "Strumenti del CD Live"
 
 #: live.cgi:309
 msgid ""
 "This command will convert an ISO image of a SliTaz Live CD to a new ISO "
 "image requiring less RAM to run."
 msgstr ""
+"Questo comando convertirà un'immagine ISO di un CD Live di SliTaz in una "
+"nuova immagine ISO che richiede meno memoria RAM per essere eseguita."
 
 #: live.cgi:315 live.cgi:372
 msgid "ISO to convert"
-msgstr ""
+msgstr "Immagine ISO da convertire"
 
 #: live.cgi:320
 msgid "The filesystem is always in RAM"
-msgstr ""
+msgstr "Il filesystem è sempre contenuto nella RAM"
 
 #: live.cgi:324
 msgid "The filesystem may be on a small CD-ROM"
-msgstr ""
+msgstr "Il filesystem può stare su un piccolo CD-ROM"
 
 #: live.cgi:328
 msgid "The filesystem may be on a large CD-ROM"
-msgstr ""
+msgstr "Il filesystem può stare su un ampio CD-ROM"
 
 #: live.cgi:331 live.cgi:444
 msgid "ISO to create"
-msgstr ""
+msgstr "Immagine ISO da creare"
 
 #: live.cgi:357 live.cgi:390
 msgid "Build a hybrid ISO"
-msgstr ""
+msgstr "Costruisci una immagine ISO ibrida"
 
 #: live.cgi:361
 msgid "Add a master boot sector and an EXE header to the ISO image."
 msgstr ""
+"Aggiungi un settore di avvio principale e una intestazione EXE all'immagine "
+"ISO."
 
 #: live.cgi:363
 msgid ""
 "Create a bootable image for a USB key, a memory card, a harddisk or a SSD."
 msgstr ""
+"Crea una immagine avviabile per una penna USB, una scheda di memoria, un "
+"disco fisso oppure un disco SSD."
 
 #: live.cgi:364
 msgid ""
 "With the .EXE suffix, it will run under DOS (16 bits) or Windows (32 bits)."
 msgstr ""
+"Con il suffisso .EXE, sarà eseguibile su DOS (16 bit) o Windows (32 bit)."
 
 #: live.cgi:365
 msgid ""
 "Add the ISO filesystem md5 digest and the boot CRC in the ISO boot area."
 msgstr ""
+"Aggiungi al filesystem ISO l'impronta digest md5  e il CRC (controllo a "
+"ridondanza ciclica) nell'area di avvio dell'ISO."
 
 #: live.cgi:366
 msgid "Does not alter the ISO filesystem or the ISO image size."
-msgstr ""
+msgstr "Non modificare il filesystem ISO o la dimensione dell'immagine ISO"
 
 #: live.cgi:377
 msgid "By the way, you can customize the ISO image to your needs."
 msgstr ""
+"Comunque, puoi personalizzare l'immagine ISO per adattarla ai tuoi bisogni."
 
 #: live.cgi:379
 msgid "Append the kernel command line."
-msgstr ""
+msgstr "Aggiungi alla fine la riga di comando del kernel"
 
 #: live.cgi:380
 msgid "Examples: add your locales"
-msgstr ""
+msgstr "Esempi: aggiungi le tue localizzazioni"
 
 #: live.cgi:381
 msgid "or modify the init script"
-msgstr ""
+msgstr "oppure modifica lo script di avvio (init)."
 
 #: live.cgi:383
 msgid "Load an extra initrd with your settings."
-msgstr ""
+msgstr "Carica un ulteriore initrd con le tue impostazioni."
 
 #: live.cgi:384
 msgid "Examples: add your wifi/ssh/vpn keys or your applications"
-msgstr ""
+msgstr "Esempi: aggiungi le tue chiavi wifi/ssh/vpn oppure le tue applicazioni"
 
 #: live.cgi:403
 msgid ""
 "Combines several ISO flavors like nested Russian dolls. The amount of RAM "
 "available at startup will be used to select the utmost one."
 msgstr ""
+"Combina tra loro molte fragranze di immagini ISO come se fossero bambole "
+"matrioska. La quantità di memoria RAM disponibile determinerà l'avvio di "
+"quella più grande."
 
 #: live.cgi:416
 msgid "ISO number %s:"
-msgstr ""
+msgstr "Numero ISO %s:"
 
 #: live.cgi:420 live.cgi:437
 msgid "Minimum RAM:"
-msgstr ""
+msgstr "RAM minima:"
 
 #: live.cgi:433
 msgid "ISO to add"
-msgstr ""
+msgstr "Immagine ISO da aggiungere"
 
 #: live.cgi:439
 msgid "Add to the list"
-msgstr ""
+msgstr "Aggiungi alla lista"
 
 #: tazlito-wiz:46
 msgid "Edit the distro packages list"
-msgstr ""
+msgstr "Modifica la lista dei pacchetti della distribuzione"
 
 #: tazlito-wiz:57
 msgid "SliTaz Live system creator wizard"
-msgstr ""
+msgstr "Creazione guidata del sistema SliTaz Live"
 
 #: tazlito-wiz:58
 msgid "Distro name:"
-msgstr ""
+msgstr "Nome della distribuzione:"
 
 #: tazlito-wiz:59
 msgid "Based on:"
-msgstr ""
+msgstr "Basata su:"
 
 #: tazlito-wiz:61
 msgid "*.flavor file (optional):"
-msgstr ""
+msgstr "file *.flavor (opzionale):"
 
 #: tazlito-wiz:64
 msgid "TazPanel Live"
-msgstr ""
+msgstr "TazPanel Live"
 
 #: tazlito-wiz:108
 msgid "Getting flavor file and packages list..."
 msgstr ""
+"Sto recuperando il file di fragranza (flavor) e la lista dei pacchetti..."
 
 #: tazlito-wiz:109
 msgid "Log"
-msgstr ""
+msgstr "Registro"
 
 #: tazlito-wiz:119
 msgid "Packages - The \"%s\" has %d package"
 msgid_plural "Packages - The \"%s\" has %d packages"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Pacchetti - \"%s\" contiene %d pacchetto"
+msgstr[1] "Pacchetti - \"%s\" contiene %d pacchetti"
 
 #: tazlito-wiz:122
 msgid "Additional packages separated by space or by line:"
-msgstr ""
+msgstr "Pacchetti aggiuntivi, separati da spazio oppure da una linea:"
 
 #: tazlito-wiz:122
 msgid "(will be auto added to \"Edit packages list\")"
-msgstr ""
+msgstr "(sarà aggiunta automaticamente a \"Modifica la lista de pacchetti\")"
 
 #: tazlito-wiz:123
 msgid "Edit packages list"
-msgstr ""
+msgstr "Modifica la lista dei pacchetti"
 
 #: tazlito-wiz:158
 msgid "SliTaz desktop wallpaper"
-msgstr ""
+msgstr "Immagine di sfondo della scrivania di SliTaz"
 
 #: tazlito-wiz:159
 msgid "Wallpaper JPG image:"
-msgstr ""
+msgstr "Immagine JPG di sfondo:"
 
 #: tazlito-wiz:185
 msgid ""
@@ -279,35 +301,41 @@ msgid ""
 "Note you can still add some files to the SliTaz root filesystem or on the CD-"
 "ROM."
 msgstr ""
+"\n"
+"Ora è il momento di generare la distribuzione. È l'ultima occasione per "
+"tornare indietro o fermarsi. Creare una sistema Live impegna abbastanza "
+"risorse e impiega del tempo\n"
+"Puoi comunque ancora aggiungere dei file alla cartella root del filesystem "
+"di SliTaz oppure sul CD-ROM."
 
 #: tazlito-wiz:192
 msgid "Generate the distribution"
-msgstr ""
+msgstr "Crea la distribuzione"
 
 #: tazlito-wiz:210
 msgid "Building the Live system..."
-msgstr ""
+msgstr "Sto costruendo il sistema Live..."
 
 #: tazlito-wiz:223
 msgid "Live system summary"
-msgstr ""
+msgstr "Riepilogo del sistema Live"
 
 #: tazlito-wiz:225
 msgid "Generated ISO"
-msgstr ""
+msgstr "ISO generata"
 
 #: tazlito-wiz:226
 msgid "Image size"
-msgstr ""
+msgstr "Dimensione dell'immagine"
 
 #: tazlito-wiz:227
 msgid "Uncompressed size"
-msgstr ""
+msgstr "Dimensione non compressa"
 
 #: tazlito-wiz:229
 msgid "Information"
-msgstr ""
+msgstr "Informazione"
 
 #: tazlito-wiz:229
 msgid "Value"
-msgstr ""
+msgstr "Valore"
