@@ -938,7 +938,7 @@ files_match() {
 	       "$(ls -l "$2"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$2")" ]; then 
 			return 0
 
-	fi
+	fi 2> /dev/null
 	return 1
 }
 
@@ -2709,6 +2709,8 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
+				cp -a ${ROOTFS}0$n/boot $ROOTCD
+				make_bzImage_hardlink $ROOTCD/boot
 				rm -rf ${ROOTFS}0$n/boot
 
 				cd $DISTRO
@@ -2740,6 +2742,7 @@ EOT
 			mv $ROOTFS ${ROOTFS}$i
 			gen_initramfs ${ROOTFS}$i
 			update_bootconfig "$ROOTCD/boot/isolinux" "$(cat /etc/tazlito/rootfs.list)"
+			ROOTFS=${ROOTFS}1
 		else
 			# Initramfs and ISO image stuff.
 			gen_initramfs $ROOTFS
