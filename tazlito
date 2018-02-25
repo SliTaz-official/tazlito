@@ -514,6 +514,7 @@ create_iso() {
 	cd $2
 	deduplicate
 
+	rm -rf $2/boot/grub*
 	make_bzImage_hardlink $2/boot
 	alloc_uefi_part $(ls -r $2/boot/vmlinuz*slitaz*)
 
@@ -1521,7 +1522,6 @@ build_loram_ram() {
 	build_initfs ram || return 1
 	build_loram_rootfs    "$1"
 	cp -a $TMP_DIR/iso    $TMP_DIR/loramiso
-	make_bzImage_hardlink $TMP_DIR/loramiso/boot
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	cp $TMP_DIR/rootfs*   $TMP_DIR/loramiso/boot
 	update_metaiso_sizes
@@ -2630,9 +2630,6 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		if [ -d "$ROOTFS/boot" ] ; then
 			action 'Moving the boot directory...'
 			mv $ROOTFS/boot $ROOTCD
-			cd $ROOTCD/boot
-			rm -rf grub*
-			make_bzImage_hardlink
 			status
 		fi
 		cd $DISTRO
@@ -2710,7 +2707,6 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
 				cp -a ${ROOTFS}0$n/boot $ROOTCD
-				make_bzImage_hardlink $ROOTCD/boot
 				rm -rf ${ROOTFS}0$n/boot
 
 				cd $DISTRO
