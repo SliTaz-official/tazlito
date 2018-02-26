@@ -1165,6 +1165,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 	ln -s .   $TMP_DIR/initfs/usr
 	for aufs in aufs overlayfs; do
 		[ -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] && break
+		install_package linux-$aufs $version && break
 		install_package $aufs $version && break
 	done || return 1
 	[ -s /init ] || install_package slitaz-boot-scripts
