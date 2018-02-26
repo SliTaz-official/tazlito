@@ -602,7 +602,7 @@ gen_livecd_isolinux() {
 	create_iso $ISO_NAME.iso $ROOTCD
 
 	action 'Creating the ISO md5sum...'
-	md5sum $ISO_NAME.iso | sort -k 2 > $ISO_NAME.md5
+	md5sum $ISO_NAME.iso > $ISO_NAME.md5
 	status
 
 	separator
@@ -2944,7 +2944,7 @@ files are kept on the CD-ROM. `boldify ' Please insert a Live CD or run:
 		cd $DISTRO
 		create_iso $ISO_NAME.iso $ROOTCD
 		action 'Creating the ISO md5sum...'
-		md5sum $ISO_NAME.iso | sort -k 2 > $ISO_NAME.md5
+		md5sum $ISO_NAME.iso > $ISO_NAME.md5
 		status
 
 		footer "ISO image: $(du -sh $DISTRO/$ISO_NAME.iso)"
