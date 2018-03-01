@@ -965,6 +965,7 @@ mergefs() {
 	while read file; do
 		files_match "$1/$file" "$2/$file" "$file" &&
 		remove_with_path "$2/$file"
+		[ -d "$1/$file" ] && [ -d "$2/$file" ] && rmdir "$2/$file" 2>/dev/null
 	done
 
 	unset IFS
@@ -2709,7 +2710,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
 				action 'Updating the boot directory...'
-				yes n | cp -ai ${ROOTFS}0$n/boot $ROOTCD
+				yes n | cp -ai ${ROOTFS}0$n/boot $ROOTCD 2> /dev/null
 				rm -rf ${ROOTFS}0$n/boot
 
 				cd $DISTRO
