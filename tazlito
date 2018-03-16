@@ -259,11 +259,15 @@ set64() {
 }
 
 
-# Force the size in the 2nd eltorito boot file (/boot/isolinux/efi.img)
+# Force size and location in the 2nd eltorito boot file (/boot/isolinux/efi.img)
 
 fix_efi_boot_img_size() {
-	i=$(stat -m $2/boot/isolinux/boot.cat | sed q)
-	set -- $1 $((102+2048*$i)) $3
+	i=$((2048*$(stat -m $2/boot/isolinux/boot.cat | sed q)+102))
+	set -- $1 $i $3 $i $2
+	for i in $(seq 0 8 24); do
+		printf '\\\\x%02X' $((($3 >> $i) & 255))
+	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
+	set -- $1 $((4+$4)) $(stat -m $5/boot/isolinux/efi.img | sed q)
 	for i in $(seq 0 8 24); do
 		printf '\\\\x%02X' $((($3 >> $i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
