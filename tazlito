@@ -443,6 +443,10 @@ EOT
 	fix_efi_img_size $(($s*512)) $1
 	fix_efi_boot_img_size $1 $2 $s
 	rm -f /tmp/fat*$$
+
+	# Cleanup cache
+	umount $2
+	mount -o loop,ro $1 $2
 }
 
 
