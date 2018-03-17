@@ -267,7 +267,7 @@ fix_efi_boot_img_size() {
 	for i in $(seq 0 8 24); do
 		printf '\\\\x%02X' $((($3 >> $i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
-	set -- $1 $((4+$4)) $(stat -m $5/boot/isolinux/efi.img | sed q)
+	set -- $1 $((2+$4)) $(stat -m $5/boot/isolinux/efi.img | sed q)
 	for i in $(seq 0 8 24); do
 		printf '\\\\x%02X' $((($3 >> $i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
@@ -898,7 +898,7 @@ extract_flavor() {
 			zcat "$1.$i" | cpio -tv 2>/dev/null > "$1.list$i"; infos="$infos\n$1.list$i"
 			rm "$1.$i"
 		done
-		touch -t 197001010100.00 "$1.*"
+		touch -t 197001010100.00 $1.*
 		# Info to be stored inside ISO
 		[ "$2" == info ] && echo -e $infos | cpio -o -H newc | dogzip info
 		rm $1.list*
