@@ -18,6 +18,8 @@ VERSION='6.0'
 # Force to use Busybox cpio and wget
 alias cpio='busybox cpio'
 alias wget='busybox wget'
+alias stat='busybox stat'
+alias awk='busybox awk'
 
 # Tazlito configuration variables to be shorter
 # and to use words rather than numbers.
@@ -259,15 +261,21 @@ set64() {
 }
 
 
+first_block() {
+	busybox stat -m "$1" | sed q
+}
+
+
+
 # Force size and location in the 2nd eltorito boot file (/boot/isolinux/efi.img)
 
 fix_efi_boot_img_size() {
-	i=$((2048*$(stat -m $2/boot/isolinux/boot.cat | sed q)+102))
+	i=$((2048*$(first_block $2/boot/isolinux/boot.cat)+102))
 	set -- $1 $i $3 $i $2
 	for i in $(seq 0 8 24); do
 		printf '\\\\x%02X' $((($3 >> $i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
-	set -- $1 $((2+$4)) $(stat -m $5/boot/isolinux/efi.img | sed q)
+	set -- $1 $((2+$4)) $(first_block $5/boot/isolinux/efi.img)
 	for i in $(seq 0 8 24); do
 		printf '\\\\x%02X' $((($3 >> $i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
@@ -304,7 +312,7 @@ fixup_uefi_part() {
 	# Build file list tree
 
 	( cd $2 ; find efi -type f -exec echo \
-	  'stat -c "$(stat -m {} | sed q) %s f %n" {}' \; | sh | sort -n ) \
+	  'stat -c "$(first_block {}) %s f %n" {}' \; | sh | sort -n ) \
 		>/tmp/fatfiles$$
 	n=$(sed 's/ .*//;q' /tmp/fatfiles$$)
 	( cd $2; find efi ) | awk -v n=$n 'BEGIN { FS="/" }
@@ -420,9 +428,9 @@ fixup_uefi_part() {
 	dd if=/dev/zero bs=512 count=$r of=/tmp/fatbr$$ 2> /dev/null
 	echo -en '\x55\xAA' | \
 		dd of=/tmp/fatbr$$ seek=510 bs=1 conv=notrunc 2> /dev/null
-	n=$(stat -m $2/boot/isolinux/efi.img | sed q)
+	n=$(first_block $2/boot/isolinux/efi.img)
 	fat="$(printf "%02X %02X" $(($fat%256)) $((($fat>>8)%256)))"
-	s=$((($(stat -m $(ls -r $2/boot/rootfs* | sed q) | sed q) - $n)*4))
+	s=$((($(first_block "$(ls -r $2/boot/rootfs* | sed q)") - $n)*4))
 	if [ $s -gt 65535 ]; then
 		size="00 00"
 		size32="$(printf "%02X %02X %02X %02X" $(($s%256)) \
@@ -566,7 +574,7 @@ EOT
 		sed -i "s|.* $i|$( cd /tmp/mnt$$ ; md5sum $i)|" $2/md5sum
 	done
 	dd if=$2/md5sum of=$1 conv=notrunc bs=2k \
-	   seek=$(stat -m /tmp/mnt$$/md5sum | sed q) 2> /dev/null
+	   seek=$(first_block /tmp/mnt$$/md5sum) 2> /dev/null
 	umount -d /tmp/mnt$$
 	rmdir /tmp/mnt$$
 
