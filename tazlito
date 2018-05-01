@@ -530,7 +530,7 @@ create_iso() {
 	cd $2
 	deduplicate
 
-	rm -rf $2/boot/grub*
+	[ $(ls $2/boot/grub* | wc -l) -lt 2 ] && rm -rf $2/boot/grub*
 	make_bzImage_hardlink $2/boot
 	alloc_uefi_part $(ls -r $2/boot/vmlinuz*slitaz*)
 
