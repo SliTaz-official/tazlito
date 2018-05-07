@@ -2057,8 +2057,8 @@ Additional files	: $ADDFILES
 		# Extract initramfs.
 		cd "$TARGET/rootfs"
 		action 'Extracting the rootfs...'
-		for i in $(ls -r $TARGET/rootfs*); do
-			extract_rootfs "$TARGET/rootcd/boot/$INITRAMFS" "$i"
+		for i in $(ls -r $TARGET/rootcd/boot/rootfs*); do
+			extract_rootfs "$i" "$TARGET/rootfs"
 		done
 		# unpack /usr
 		for i in etc/tazlito/*.extract; do
