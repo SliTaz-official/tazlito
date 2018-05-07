@@ -279,6 +279,9 @@ fix_efi_boot_img_size() {
 	for i in $(seq 0 8 24); do
 		printf '\\\\x%02X' $((($3 >> $i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$2 2>/dev/null
+	for i in $(seq 0 8 24); do
+		printf '\\\\x%02X' $(((($3*4) >> $i) & 255))
+	done | xargs echo -en | dd bs=1 conv=notrunc of=$1 seek=$((0x1C+2048*$3)) 2>/dev/null
 }
 
 
@@ -312,7 +315,7 @@ fixup_uefi_part() {
 	# Build file list tree
 
 	( cd $2 ; find efi -type f -exec echo \
-	  'stat -c "$(first_block {}) %s f %n" {}' \; | sh | sort -n ) \
+	  'stat -c "$(busybox stat -m {} | sed q) %s f %n" {}' \; | sh | sort -n ) \
 		>/tmp/fatfiles$$
 	n=$(sed 's/ .*//;q' /tmp/fatfiles$$)
 	( cd $2; find efi ) | awk -v n=$n 'BEGIN { FS="/" }
@@ -377,7 +380,7 @@ fixup_uefi_part() {
 		c=2
 		b16="/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0"
 		b14="/0/0/0/0/0/0/0/0/0/0/0/0/0/0"
-		print "EFI        /x10" b14 "/x0" c "/0/0/x08/0/0"
+		print "EFI        /x10" b14 "/x0" c "/0/0/0/0/0"
 		for (n=i=0; i<63; i++) print b16 b16
 	}
 	{
@@ -389,7 +392,7 @@ fixup_uefi_part() {
 	}
 	END {
 		path="efi"
-		d21="/x10" b14 "/x%02X/x%02X/0/x08/0/0\n"
+		d21="/x10" b14 "/x%02X/x%02X/0/0/0/0\n"
 		up[0]=0
 		s=1
 		do {
@@ -406,7 +409,8 @@ fixup_uefi_part() {
 				else printf x[1] substr("       ",1,8-length(x[1]))
 				if (length(x[2]) >= 3) printf substr(x[2],1,3)
 				else printf x[2] substr("   ",1,3-length(x[2]))
-				if (type[i] == "d") printf "/x10"; else printf "/0"
+				if (type[i] != "d") printf "/0"
+				else { printf "/x10"; size[i]=0 }
 				printf b14 "/x%02X/x%02X",clu[i]%256,clu[i]/256
 				printf "/x%02X/x%02X/x%02X/x%02X\n",size[i]%256,
 					(size[i]/256)%256,(size[i]/256/256)%256,
@@ -530,7 +534,7 @@ create_iso() {
 	cd $2
 	deduplicate
 
-	[ $(ls $2/boot/grub* | wc -l) -lt 2 ] && rm -rf $2/boot/grub*
+	[ $(ls $2/boot/grub* 2> /dev/null | wc -l) -lt 2 ] && rm -rf $2/boot/grub*
 	make_bzImage_hardlink $2/boot
 	alloc_uefi_part $(ls -r $2/boot/vmlinuz*slitaz*)
 
@@ -2053,7 +2057,9 @@ Additional files	: $ADDFILES
 		# Extract initramfs.
 		cd "$TARGET/rootfs"
 		action 'Extracting the rootfs...'
-		extract_rootfs "$TARGET/rootcd/boot/$INITRAMFS" "$TARGET/rootfs"
+		for i in $(ls -r $TARGET/rootfs*); do
+			extract_rootfs "$TARGET/rootcd/boot/$INITRAMFS" "$i"
+		done
 		# unpack /usr
 		for i in etc/tazlito/*.extract; do
 			[ -f "$i" ] && . $i ../rootcd
