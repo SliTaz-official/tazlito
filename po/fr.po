@@ -266,7 +266,7 @@ msgstr[1] "Paquets - La saveur %s a %d paquets"
 
 #: tazlito-wiz:122
 msgid "Additional packages separated by space or by line:"
-msgstr "Paquets supplémentaires sépararés par un espace ou ligne par ligne :"
+msgstr "Paquets supplémentaires séparés par un espace ou ligne par ligne :"
 
 #: tazlito-wiz:122
 msgid "(will be auto added to \"Edit packages list\")"
@@ -294,7 +294,7 @@ msgid ""
 msgstr ""
 "\n"
 "Maintenant il temps de générer la distro. C'est le dernier moment pour "
-"recommencer ou stoper. La création d'un Live CD est gourmande en ressources "
+"recommencer ou stopper. La création d'un Live CD est gourmande en ressources "
 "et prend du temps.\n"
 "Notez que vous pouvez encore ajouter des fichiers dans le répertoire racine "
 "de SliTaz ou du cdrom."
