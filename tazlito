@@ -405,7 +405,7 @@ fixup_uefi_part() {
       n=($1%16)*256+prev
       if (n!=0) c[pos+1]=n
       pos++
-      prev=$1/16
+      prev=int($1/16)
       state++
       next
     }
@@ -422,7 +422,7 @@ END {
   for (i=1;i<=pos;i+=2) {
     if (c[i]=="") c[i]=0
     if (c[i+1]=="") c[i+1]=0
-    if (fat==12) printf "0  %02X %02X %02X |\n",c[i]%256,(c[i+1]%16)*16+(c[i]/256)%256,(c[i+1]/16)%256
+    if (fat==12) printf "0  %02X %1X%1X %02X |\n",c[i]%256,c[i+1]%16,(c[i]/256)%16,(c[i+1]/16)%256
     else printf "0  %02X %02X %02X %02X |\n",c[i]%256,(c[i]/256)%256,c[i+1]%256,(c[i+1]/256)%256
   }
 }' | hexdump -R | dd of="$1" seek=$((4*$efiblock+$fatsz+$resv)) \
@@ -457,13 +457,14 @@ alloc_uefi_part() {
 				stat -c "%s %n" "$i"
 			done 2> /dev/null
 			cat >> $basedir/efi/boot/startup.nsh <<EOT
-FS0:\\EFI\\BOOT\\$(basename $1) rw root=0x100$( ( cd $basedir/efi/boot ; \
-ls -r rootfs*gz ) | while read f ; do [ "$efifile" == "bootx64.efi" -a \
--s $basedir/efi/boot/${f}64 ] && f=${f}64; echo -n " initrd=/EFI/BOOT/$f";done)
+FS0:\\EFI\\BOOT\\$(basename $1) rw root=0x100 autologin\
+$( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
+[ "$efifile" == "bootx64.efi" -a -s $basedir/efi/boot/${f}64 ] && \
+f=${f}64; echo -n " initrd=/EFI/BOOT/$f";done)
 EOT
 		fi
 		shift
-	done; } | awk '{ n+=int(($1+2047)/2048) } END { print n+1 }')
+	done; } | sort | uniq | awk '{ n+=int(($1+2047)/2048) } END { print n+1 }')
 	[ ${fclust:-0} -eq 0 ] && return
 	local dclust=$( (cd $basedir; find efi -type d 2>/dev/null) | awk '
 		BEGIN {
@@ -525,12 +526,12 @@ EOT
 	mkdir -p /tmp/mnt$$
 	mount -o loop $basedir/boot/isolinux/efi.img /tmp/mnt$$
 	( cd $basedir; find efi -type d | cpio -o -H newc ) | \
-		( cd /tmp/mnt$$ ; cpio -idmu )
+		( cd /tmp/mnt$$ ; cpio -idmu 2> /dev/null )
 	sync
 	dd if=$basedir/boot/isolinux/efi.img of=/tmp/fat$$ \
 		skip=$rsect bs=512 count=$fsect 2> /dev/null
 	( cd $basedir; find efi -type f | cpio -o -H newc ) | \
-		( cd /tmp/mnt$$ ; cpio -idmu )
+		( cd /tmp/mnt$$ ; cpio -idmu 2> /dev/null )
 	umount /tmp/mnt$$
 	cat /tmp/fat$$ /tmp/fat$$ | dd of=$basedir/boot/isolinux/efi.img \
 		seek=$rsect bs=512 conv=notrunc 2> /dev/null
@@ -2030,7 +2031,7 @@ Additional files	: $ADDFILES
 		;;
 
 
-	extract-distro)
+	extract-distro|extract-iso)
 		# Extract an ISO image to a directory and rebuild the LiveCD tree.
 		#
 		check_root
@@ -2079,13 +2080,13 @@ Additional files	: $ADDFILES
 		done
 
 		action 'Copying the rootfs...'
-		cp $TMP_DIR/boot/rootfs*.?z "$TARGET/rootcd/boot"
+		cp $TMP_DIR/boot/rootfs*.?z* "$TARGET/rootcd/boot"
 		status
 
 		# Extract initramfs.
 		cd "$TARGET/rootfs"
 		action 'Extracting the rootfs...'
-		for i in $(ls -r $TARGET/rootcd/boot/rootfs*); do
+		for i in $(ls -r $TARGET/rootcd/boot/rootfs*z); do
 			extract_rootfs "$i" "$TARGET/rootfs"
 		done
 		# unpack /usr
