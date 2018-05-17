@@ -311,10 +311,19 @@ fixup_uefi_part() {
 	fix_efi_boot_img_size $1 $2 $n $efiblock
 	
 	# Build file list tree
-	fatsz=$(get 22 "$2/boot/isolinux/efi.img")
 	resv=$(get 14 "$2/boot/isolinux/efi.img")
-	basecluster=$((($resv+2*$fatsz)/4+$efiblock-1))
-	hd "$2/boot/isolinux/efi.img" | awk 'BEGIN { skiphead=4 }
+	if [ $(get 57 "$2/boot/isolinux/efi.img" 1) -ne 49 ]; then
+		skiphead=5
+		fatsz=$(get 36 "$2/boot/isolinux/efi.img" 4)
+		basecluster=$((($resv+2*$fatsz)/4+$efiblock-2))
+		dd if=$1 bs=512 skip=$(($efiblock*4)) count=3 \
+			of=$1 seek=$(($efiblock*4+3)) conv=notrunc
+	else
+		skiphead=4
+		fatsz=$(get 22 "$2/boot/isolinux/efi.img")
+		basecluster=$((($resv+2*$fatsz)/4+$efiblock-1))
+	fi 2> /dev/null
+	hd "$2/boot/isolinux/efi.img" | awk 'BEGIN { skiphead='$skiphead' }
 {
   if (skiphead!=0) {
     if ($1=="*") skiphead--
@@ -374,6 +383,7 @@ fixup_uefi_part() {
 ' | (	while read offset cluster file; do
 		cluster=$(($(first_block "$2/$file")-$basecluster))
 		set32 $(($efiblock*2048+0x$offset+10)) $cluster "$1" 16
+		set32 $(($efiblock*2048+0x$offset+4)) $(($cluster>>16)) "$1" 16
 		echo "$cluster $((($(stat -c %s "$2/$file")+2047)/2048)) $file"
 	done
 
@@ -386,12 +396,13 @@ fixup_uefi_part() {
   if (state==0) {
     if ($2=="") {
       if ($1==12849) fat=12
-      else fat=16
+      else if ($1==13873) fat=16
+      else fat=32
       state++
     }
     else {
       for (i=1;i<$2;i++) c[$1+i]=$1+i
-      c[$1+$2]=65535
+      c[$1+$2]=268435455
     }
     next
   }
@@ -410,10 +421,21 @@ fixup_uefi_part() {
       next
     }
     n=$1*256+prev
+    if (fat==32) {
+      prev=n
+      state=13
+      next
+    }
   }
   else if (state==3) {
     n=$1*16+prev
   }
+  else if (state==13) {
+    prev=$1*65536+prev
+    state++
+    next
+  }
+  else n=$1*16777216+prev
   if (n!=0) c[pos+1]=n
   pos++
   state=1
@@ -423,7 +445,11 @@ END {
     if (c[i]=="") c[i]=0
     if (c[i+1]=="") c[i+1]=0
     if (fat==12) printf "0  %02X %1X%1X %02X |\n",c[i]%256,c[i+1]%16,(c[i]/256)%16,(c[i+1]/16)%256
-    else printf "0  %02X %02X %02X %02X |\n",c[i]%256,(c[i]/256)%256,c[i+1]%256,(c[i+1]/256)%256
+    else if (fat==16) printf "0  %02X %02X %02X %02X |\n",c[i]%256,(c[i]/256)%256,c[i+1]%256,(c[i+1]/256)%256
+    else {
+      printf "0  %02X %02X %02X %02X |\n",c[i]%256,(c[i]/256)%256,(c[i]/65536)%256,(c[i]/16777216)%256
+      printf "0  %02X %02X %02X %02X |\n",c[i+1]%256,(c[i+1]/256)%256,(c[i+1]/65536)%256,(c[i+1]/16777216)%256
+    }
   }
 }' | hexdump -R | dd of="$1" seek=$((4*$efiblock+$fatsz+$resv)) \
 		conv=notrunc bs=512 > /dev/null 2>&1
@@ -480,19 +506,30 @@ EOT
 			print n
 		}')
 	local clusters=$(($fclust+$dclust))
-	if [ $clusters -lt 4085 ]; then
+	if [ $clusters -lt 4068 ]; then
 		fsect=$(((($clusters+2)*3+1023)/1024))
 		ftype="31 32"
 		fhead="F8 FF FF"
-	else
+		rsect=$(( 1+ ((2*$fsect)-1)%4 ))
+		fsz="$(printf "%04X" $fsect | sed 's/\(..\)\(..\)/\2 \1/')"
+		rootsz=2
+	elif [ $clusters -lt 65525 ]; then
 		fsect=$((($clusters+2+255)/256))
 		ftype="31 36"
 		fhead="F8 FF FF FF"
+		rsect=$(( 1+ ((2*$fsect)-1)%4 ))
+		fsz="$(printf "%04X" $fsect | sed 's/\(..\)\(..\)/\2 \1/')"
+		rootsz=2
+	else
+		fsect=$((($clusters+2+127)/128))
+		ftype="33 32"
+		fhead="F8 FF FF 0F FF FF FF FF F8 FF FF 0F"
+		rsect=$(( 6+ ((2*$fsect)-6)%4 ))
+		fsz="$(printf "%08X" $fsect | sed 's/\(..\)\(..\)\(..\)\(..\)/\4 \3 \2 \1/')"
+		rootsz=1
 	fi
-	rsect=$(( 1+ ((2*$fsect)-1)%4 ))
-	fsz="$(printf "%02X %02X" $(($fsect%256)) $((($fsect>>8)%256)))"
 	#       reserved +   fat*2   + root dir  +   dirs
-	count=$((($rsect + $fsect*2)/4 +  2  + $dclust ))
+	count=$((($rsect + $fsect*2)/4 +  $rootsz  + $dclust ))
 	s=$((($count+$fclust)*4))
 	if [ $s -gt 65535 ]; then
 		size="00 00"
@@ -506,22 +543,47 @@ EOT
 		count=$s 2> /dev/null
 
 	# Create boot sector
-	echo -en '\x55\xAA' | dd of=$basedir/boot/isolinux/efi.img \
-		seek=510 bs=1 conv=notrunc 2> /dev/null
-	hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
-		conv=notrunc 2> /dev/null
+	if [ "$ftype" == "33 32" ]; then
+		hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
+			conv=notrunc
+0  eb 58 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
+0  02 00 00 $size f8 00 00  20 00 40 00 00 00 00 00  |
+0  $size32     $fsz         00 00 00 00 02 00 00 00  |
+0  01 00 03 00 00 00 00 00  00 00 00 00 00 00 00 00  |  
+0  80 00 29 00 00 00 00 53  59 53 54 45 4d 00 00 00  |
+0  00 00 46 41 54 $ftype 20 20 20 cd 18 cd 19 eb fa  |
+EOT
+		while read ofs data; do
+			echo "0 ${data//:/ } |" | hexdump -R | dd conv=notrunc \
+			bs=1 seek=$ofs of=$basedir/boot/isolinux/efi.img
+		done <<EOT
+510	55:aa:52:52:61:41
+996	72:72:41:61:ff:ff:ff:ff:02
+1022	55:aa
+EOT
+	else
+		echo -en '\x55\xAA' | dd of=$basedir/boot/isolinux/efi.img \
+			seek=510 bs=1 conv=notrunc
+		hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
+			conv=notrunc
 0  eb 3c 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
 0  02 40 00 $size f8 $fsz   20 00 40 00 00 00 00 00  |
-0  $size32     80 00 29 00  00 00 00 4e 4f 20 4e 41  |
-0  4d 45 20 20 20 20 46 41  54 $ftype 20 20 20 cd 18  |
+0  $size32     80 00 29 00  00 00 00 53 59 53 54 45  |
+0  4d 20 20 20 20 20 46 41  54 $ftype 20 20 20 cd 18  |
 0  cd 19 eb fa  |
 EOT
+	fi 2> /dev/null
 
 	# Create fats
 	echo "0  $fhead |" | hexdump -R | dd of=$basedir/boot/isolinux/efi.img \
 		seek=$(($rsect)) bs=512 conv=notrunc 2> /dev/null
 	echo "0  $fhead |" | hexdump -R | dd of=$basedir/boot/isolinux/efi.img \
 		seek=$(($rsect+$fsect)) bs=512 conv=notrunc 2> /dev/null
+
+	# Add label
+	echo "0  53 59 53 54 45 4d 00 00  00 00 00 08 |" | hexdump -R | \
+		dd of=$basedir/boot/isolinux/efi.img bs=512 conv=notrunc \
+		seek=$(($rsect+$fsect+$fsect)) 2> /dev/null
 
 	mkdir -p /tmp/mnt$$
 	mount -o loop $basedir/boot/isolinux/efi.img /tmp/mnt$$
