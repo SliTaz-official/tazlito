@@ -1258,6 +1258,20 @@ check_iso_for_loram() {
 }
 
 
+# Remove duplicated files in $1/efi/boot from $1/boot
+
+cleanup_efi_boot() {
+	for i in $1/efi/boot/* ; do
+		[ -f $i ] || continue
+		cmp $i ${i/\/efi\//\/} 2> /dev/null || continue
+		rm -f $i
+		case "$i" in
+		*vmlinuz*) sed -i '$d' $(dirname $i)/startup.nsh
+		esac
+	done
+}
+
+
 # Build initial rootfs for loram ISO ram/cdrom/http
 
 build_initfs() {
@@ -1561,6 +1575,7 @@ unmeta_boot() {
 build_loram_cdrom() {
 	build_initfs cdrom || return 1
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
+	cleanup_efi_boot $TMP_DIR/loramiso
 	mkdir $TMP_DIR/loramiso/fs
 	cd $TMP_DIR/loramiso/fs
 	for i in $( ls ../boot/root* | sort -r ) ; do
@@ -1586,6 +1601,7 @@ build_loram_cdrom() {
 build_loram_http() {
 	build_initfs http || return 1
 	cp -a $TMP_DIR/iso $TMP_DIR/loramiso
+	cleanup_efi_boot $TMP_DIR/loramiso
 	rm -f $TMP_DIR/loramiso/boot/rootfs*
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	unmeta_boot
@@ -1636,6 +1652,7 @@ build_loram_ram() {
 	build_initfs ram || return 1
 	build_loram_rootfs    "$1"
 	cp -a $TMP_DIR/iso    $TMP_DIR/loramiso
+	cleanup_efi_boot      $TMP_DIR/loramiso
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	cp $TMP_DIR/rootfs*   $TMP_DIR/loramiso/boot
 	update_metaiso_sizes
