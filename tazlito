@@ -479,14 +479,26 @@ alloc_uefi_part() {
 		   [ $(get $((0x82)) "$1") == $((0x4550)) ]; then
 			mkdir -p $basedir/efi/boot 2> /dev/null
 			for i in "$1" $basedir/boot/rootfs* ; do
-				ln "$i" $basedir/efi/boot/
+				ln "$i" $basedir/efi/boot/ &&
 				stat -c "%s %n" "$i"
 			done 2> /dev/null
-			cat >> $basedir/efi/boot/startup.nsh <<EOT
-FS0:\\EFI\\BOOT\\$(basename $1) rw root=0x100 autologin\
+			efilinux="/EFI/BOOT/$(basename $1)"
+			eficmdline="$efilinux rw root=0x100 autologin\
 $( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
 [ "$efifile" == "bootx64.efi" -a -s $basedir/efi/boot/${f}64 ] && \
-f=${f}64; echo -n " initrd=/EFI/BOOT/$f";done)
+f=${f}64; echo -n " initrd=/EFI/BOOT/$f";done)"
+			sed 's|/|\\|g' >> $basedir/efi/boot/startup.nsh <<EOT
+for %i run (1 10)
+  set -v num %i
+  if exist FS%num%:$efilinux then
+    FS%num%:
+    $eficmdline
+  endif
+endfor
+if exist FS0:$efilinux then
+  FS0:
+  $eficmdline
+endif
 EOT
 		fi
 		shift
