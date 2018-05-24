@@ -488,6 +488,7 @@ $( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
 [ "$efifile" == "bootx64.efi" -a -s $basedir/efi/boot/${f}64 ] && \
 f=${f}64; echo -n " initrd=/EFI/BOOT/$f";done)"
 			sed 's|/|\\|g' >> $basedir/efi/boot/startup.nsh <<EOT
+# start $efilinux
 for %i run (1 10)
   set -v num %i
   if exist FS%num%:$efilinux then
@@ -499,6 +500,7 @@ if exist FS0:$efilinux then
   FS0:
   $eficmdline
 endif
+# stop $efilinux
 EOT
 		fi
 		shift
@@ -1278,9 +1280,14 @@ cleanup_efi_boot() {
 		cmp $i ${i/\/efi\//\/} 2> /dev/null || continue
 		rm -f $i
 		case "$i" in
-		*vmlinuz*) sed -i '$d' $(dirname $i)/startup.nsh
+		*vmlinuz*) sed -i '/# start /,/# stop /d' \
+				$(dirname $i)/startup.nsh
 		esac
-	done
+		if [ ! -s $(dirname $i)/startup.nsh ]; then
+			rm $(dirname $i)/startup.nsh
+			rmdir $1/efi/boot && rmdir $1/efi
+		fi
+	done 2> /dev/null
 }
 
 
@@ -2173,6 +2180,8 @@ Additional files	: $ADDFILES
 		action 'Copying the rootfs...'
 		cp $TMP_DIR/boot/rootfs*.?z* "$TARGET/rootcd/boot"
 		status
+
+		cleanup_efi_boot "$TARGET/rootcd"
 
 		# Extract initramfs.
 		cd "$TARGET/rootfs"
