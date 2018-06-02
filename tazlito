@@ -478,30 +478,16 @@ alloc_uefi_part() {
 		if [ ! -s $basedir/efi/boot/$efifile ] &&
 		   [ $(get $((0x82)) "$1") == $((0x4550)) ]; then
 			mkdir -p $basedir/efi/boot 2> /dev/null
-			ln "$1" "$basedir/efi/boot/$(basename $1).efi"
+			ln "$1" "$basedir/efi/boot/$efifile"
 			stat -c "%s %n" "$1"
 			for i in $basedir/boot/rootfs* ; do
 				ln "$i" $basedir/efi/boot/ &&
 				stat -c "%s %n" "$i"
 			done 2> /dev/null
-			efilinux="/EFI/BOOT/$(basename $1).efi"
-			sed 's|/|\\|g' >> $basedir/efi/boot/startup.nsh <<EOT
-# start tazlito $efilinux
-@echo -off
-set -v num 0
-for %i run (1 20)
-  if exist FS%num%:$efilinux then
-    echo -on
-    FS%num%:
-    $efilinux rw root=0x100 autologin\
+			sed 's|/|\\|g' > $basedir/efi/boot/linux.cmdline <<EOT
+rw root=0x100 autologin\
 $( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
-[ "$efifile" == "bootx64.efi" -a -s $basedir/efi/boot/${f}64 ] && \
-f=${f}64; echo -n " initrd=/EFI/BOOT/$f";done)
-    @echo -off
-  endif
-  set -v num %i
-endfor
-# stop tazlito $efilinux
+echo -n " initrd=/EFI/BOOT/$f";done)
 EOT
 		fi
 		shift
@@ -1282,13 +1268,9 @@ cleanup_efi_boot() {
 		cmp $i ${b%.efi} || continue
 		rm -f $i
 		case "$i" in
-		*vmlinuz*) sed -i '/# start tazlito /,/# stop tazlito /d' \
-				$(dirname $i)/startup.nsh
+		*vmlinuz*) rm -f $(dirname $i)/linux.cmdline ;;
 		esac
-		if [ ! -s $(dirname $i)/startup.nsh ]; then
-			rm $(dirname $i)/startup.nsh
-			rmdir $1/efi/boot && rmdir $1/efi
-		fi
+		rmdir $1/efi/boot && rmdir $1/efi
 	done 2> /dev/null
 }
 
