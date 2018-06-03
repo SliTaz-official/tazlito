@@ -304,6 +304,7 @@ fix_efi_img_size() {
 
 fixup_uefi_part() {
 	[ -s $2/boot/isolinux/efi.img ] || return
+	[ -x $2/boot/isolinux/efi.img ] && return
 	local n=$(get 19 "$2/boot/isolinux/efi.img")
 	[ $n -eq 0 ] && n=$(get 32 "$2/boot/isolinux/efi.img" 4)
 	efiblock=$(first_block "$2/boot/isolinux/efi.img")
@@ -466,6 +467,10 @@ END {
 
 alloc_uefi_part() {
 	local basedir=$(dirname "$1")/..
+	if [ -s $basedir/boot/isolinux/efi.img ]; then
+		chmod +x $basedir/boot/isolinux/efi.img
+		return
+	fi
 	local fclust=$({
 	[ -d $basedir/efi ] &&
 		find $basedir/efi -type f -exec stat -c "%s %n" {} \;
