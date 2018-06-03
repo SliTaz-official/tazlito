@@ -1267,6 +1267,9 @@ check_iso_for_loram() {
 # Remove duplicated files in $1/efi/boot from $1/boot
 
 cleanup_efi_boot() {
+	[ -s $1/boot/isolinux/efi.img ] &&
+	[ ! -x $1/boot/isolinux/efi.img ] &&
+	rm -f $1/boot/isolinux/efi.img
 	for i in $1/efi/boot/* ; do
 		[ -f $i ] || continue
 		case "$i" in
