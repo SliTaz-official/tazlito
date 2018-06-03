@@ -1264,12 +1264,14 @@ check_iso_for_loram() {
 cleanup_efi_boot() {
 	for i in $1/efi/boot/* ; do
 		[ -f $i ] || continue
-		b=${i/\/efi\//\/}
-		cmp $i ${b%.efi} || continue
-		rm -f $i
 		case "$i" in
-		*vmlinuz*) rm -f $(dirname $i)/linux.cmdline ;;
+		*/rootfs*)	cmp $i ${i/\/efi\//\/} || continue ;;
+		*/bootia32.efi)	cmp $i $1/boot/bzImage || continue
+				rm $1/efi/boot/linux.cmdline ;;
+		*/bootx64.efi)	cmp $i $1/boot/bzImage64 || continue
+				rm $1/efi/boot/linux.cmdline* ;;
 		esac
+		rm -f $i
 		rmdir $1/efi/boot && rmdir $1/efi
 	done 2> /dev/null
 }
