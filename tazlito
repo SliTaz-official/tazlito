@@ -489,6 +489,7 @@ alloc_uefi_part() {
 				ln "$i" $basedir/efi/boot/ &&
 				stat -c "%s %n" "$i"
 			done 2> /dev/null
+			[ -s $basedir/efi/boot/linux.cmdline ] ||
 			sed 's|/|\\|g' > $basedir/efi/boot/linux.cmdline <<EOT
 rw root=0x100 autologin\
 $( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
