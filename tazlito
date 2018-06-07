@@ -1298,29 +1298,37 @@ mirror3.slitaz.org mirror.slitaz.org"
 
 	[ -s /usr/share/boot/busybox-static ] || install_package busybox-static
 	need_lib=false
-	for i in bin dev run mnt proc tmp sys lib/modules; do
+	for i in bin dev run mnt proc tmp sys lib/modules/64; do
 		mkdir -p $TMP_DIR/initfs/$i
 	done
 	ln -s bin $TMP_DIR/initfs/sbin
 	ln -s .   $TMP_DIR/initfs/usr
 	for aufs in aufs overlayfs; do
-		[ -f /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z ] && break
-		install_package linux-$aufs $version && break
+		for v in $version ; do
+			[ -f /lib/modules/$v/kernel/fs/$aufs/$aufs.ko.?z ] && continue
+			install_package ${v/*taz/linux}-$aufs $v && continue
+		done
 		install_package $aufs $version && break
 	done || return 1
 	[ -s /init ] || install_package slitaz-boot-scripts
 	cp /init $TMP_DIR/initfs/
-	cp /lib/modules/$version/kernel/fs/$aufs/$aufs.ko.?z \
-		$TMP_DIR/initfs/lib/modules
+	for v in $version ; do
+		cp /lib/modules/$v/kernel/fs/$aufs/$aufs.ko.?z \
+			$TMP_DIR/initfs/lib/modules/${v/*taz/}
+	done
 	if [ "$1" == 'cdrom' ]; then
 		sed -i '/mod squashfs/d' $TMP_DIR/initfs/init
 	else
 		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
-		while [ ! -f /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z ]; do
-			install_package linux-squashfs $version || return 1
+		for v in $version ; do
+			while [ ! -f /lib/modules/$v/kernel/fs/squashfs/squashfs.ko.?z ]; do
+				install_package linux-squashfs $v || return 1
+			done
 		done
-		cp /lib/modules/$version/kernel/fs/squashfs/squashfs.ko.?z \
-			$TMP_DIR/initfs/lib/modules
+		for v in $version ; do
+			cp /lib/modules/$v/kernel/fs/squashfs/squashfs.ko.?z \
+				$TMP_DIR/initfs/lib/modules/${v/*taz/}
+		done
 		#ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
 		#cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	fi
@@ -1359,20 +1367,22 @@ mirror3.slitaz.org mirror.slitaz.org"
 		done 2>&1 > /dev/null
 		cd - > /dev/null
 		cp $TMP_DIR/fs/etc/slitaz-release $TMP_DIR/initfs/etc/
-		find $TMP_DIR/fs/lib/modules/*/kernel/drivers/net/ethernet \
-				-type f -name '*.ko*' | while read mod; do
-			f=$TMP_DIR/initfs/lib/modules/$(basename $mod | sed s/..z$//)
-			uncompress $mod > $f
-			grep -q alias=pci: $f || rm -f $f
-		done
-		for i in $TMP_DIR/initfs/lib/modules/*.ko ; do
-			f=$(basename $i)..z
-			grep -q $f:$ $TMP_DIR/fs/lib/modules/*/modules.dep && continue
-			deps="$(grep $f: $TMP_DIR/fs/lib/modules/*/modules.dep | sed 's/.*: //')"
-			echo "$deps" | sed 's|kernel/[^ ]*/||g;s/.ko..z//g' > $TMP_DIR/initfs/lib/modules/$(basename $i .ko).dep
-			for j in $deps; do
-				mod=$(ls $TMP_DIR/fs/lib/modules/*/$j)
-				uncompress $mod > $TMP_DIR/initfs/lib/modules/$(basename $j | sed s/..z$//)
+		for v in $version ; do
+			find $TMP_DIR/fs/lib/modules/$v/kernel/drivers/net/ethernet \
+					-type f -name '*.ko*' | while read mod; do
+				f=$TMP_DIR/initfs/lib/modules/${v/*taz/}/$(basename $mod | sed s/..z$//)
+				uncompress $mod > $f
+				grep -q alias=pci: $f || rm -f $f
+				done
+			for i in $TMP_DIR/initfs/lib/modules/${v/*taz/}/*.ko ; do
+				f=$(basename $i)..z
+				grep -q $f:$ $TMP_DIR/fs/lib/modules/$v/modules.dep && continue
+				deps="$(grep $f: $TMP_DIR/fs/lib/modules/$v/modules.dep | sed 's/.*: //')"
+				echo "$deps" | sed 's|kernel/[^ ]*/||g;s/.ko..z//g' > ${i/.ko/}.dep
+				for j in $deps; do
+					mod=$(ls $TMP_DIR/fs/lib/modules/$v/$j)
+					uncompress $mod > $(echo $j | sed s/..z$//)
+				done
 			done
 		done
 		longline "Default URLs for /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-loram-cdrom.iso /iso/$(cat $TMP_DIR/initfs/etc/slitaz-release)/flavors/slitaz-$(cat $TMP_DIR/initfs/etc/slitaz-release)-loram-cdrom.iso: $urliso"
@@ -1398,8 +1408,10 @@ mirror3.slitaz.org mirror.slitaz.org"
 		ln $TMP_DIR/initfs/bin/busybox $TMP_DIR/initfs/bin/$i
 	done
 	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
-	cp /lib/modules/$version/kernel/drivers/block/floppy.ko.?z \
-		$TMP_DIR/initfs/lib/modules 2>/dev/null
+	for v in $version ; do
+		cp /lib/modules/$v/kernel/drivers/block/floppy.ko.?z \
+			$TMP_DIR/initfs/lib/modules/${v/*taz/} 2>/dev/null
+	done
 	for i in /dev/console /dev/null /dev/tty /dev/tty0 /dev/zero \
 		 /dev/kmem /dev/mem /dev/random /dev/urandom; do
 		cp -a $i $TMP_DIR/initfs/dev
@@ -1440,7 +1452,8 @@ size="\$(grep rootfssize= < /proc/cmdline | \\
 [ -n "\$size" ] || size="-o size=90%"
 
 mount -t sysfs sysfs /sys
-for i in /lib/modules/*.ko ; do
+for i in /lib/modules/*/*.ko /lib/modules/*.ko ; do
+	[ -s \$i ] && continue
 	echo -en "Probe \$i           \\r"
 	for j in \$(grep alias=pci: \$i | sed 's/alias//;s/\*/.*/g'); do
 		grep -q "\$j" /sys/bus/pci/devices/*/uevent || continue
@@ -1501,7 +1514,9 @@ branch=:/mnt/.cdrom/\$DIR
 if [ ! -d /mnt/.cdrom/\$DIR/etc ]; then
 branch=
 lp=1
-insmod /lib/modules/squashfs.ko 2> /dev/null
+for i in /lib/modules/*/squashfs.ko /lib/modules/squashfs.ko ; do
+	[ -s \$i ] && insmod \$i
+done 2> /dev/null
 for i in \${path}boot/rootfs?.* ; do
 	fs=\${i#*root}
 	branch=\$branch:/mnt/.\$fs
@@ -1513,7 +1528,10 @@ done
 fi
 mkdir -p /mnt/.rw/mnt/.httpfs
 while read type opt; do
-	insmod /lib/modules/\$type.ko && mount -t \$type -o \$opt none /mnt && break
+	for i in /lib/modules/*/\$type.ko /lib/modules/\$type.ko ; do
+		[ -s \$i ] && insmod \$i &&
+		mount -t \$type -o \$opt none /mnt && break 2
+	done
 done <<EOT
 aufs		br=/mnt/.rw\$branch
 overlayfs	workdir=/mnt/.wd\${branch/:/,lowerdir=},upperdir=/mnt/.rw
@@ -1524,7 +1542,8 @@ rm -rf /lib/modules
 [ -x /mnt/sbin/init ] && exec /bin/switch_root mnt /sbin/init || sh
 EOTEOT
 	chmod +x $TMP_DIR/initfs/init
-	for i in $TMP_DIR/initfs/lib/modules/*z ; do
+	for i in $TMP_DIR/initfs/lib/modules/*z $TMP_DIR/initfs/lib/modules/*/*z ; do
+		[ -s $i ] || continue
 		unxz $i || gunzip $i || lzma d $i ${i%.gz}
 		rm -f $i
 	done 2>/dev/null
@@ -1541,19 +1560,22 @@ EOTEOT
 
 build_loram_rootfs() {
 	rootfs_sizes=""
-	for i in $TMP_DIR/iso/boot/rootfs*; do
+	for i in $(ls -r $TMP_DIR/iso/boot/rootfs*); do
 		mkdir -p $TMP_DIR/fs
 		cd $TMP_DIR/fs
 		uncompress $i | cpio -idm
 		deduplicate
 		cd - > /dev/null
-		rootfs=$TMP_DIR/$(basename $i)
+		rootfs=$TMP_DIR/$(basename $i 64)
+		[ $rootfs == $TMP_DIR/rootfs.gz ] && rootfs=$TMP_DIR/rootfs0.gz
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp ${1:-xz -Xbcj x86}
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
 		( cd $(dirname $rootfs); echo $(basename $rootfs) | cpio -o -H newc ) > $rootfs.cpio
+		[ $(ls -a fs | wc -l) -le 2 ] && cpio -o -H newc > $rootfs.cpio < /dev/null
+		case "$i" in *64) rootfs=${rootfs}64 ;; esac
 		rm -f $rootfs
-		mv $rootfs.cpio $rootfs
+		mv ${rootfs%64}.cpio $rootfs
 		cd - > /dev/null
 		rm -rf $TMP_DIR/fs
 	done
@@ -1627,6 +1649,8 @@ build_loram_http() {
 # Reduce sizes with rootfs gains.
 
 update_metaiso_sizes() {
+	[ -s $TMP_DIR/loramiso/boot/rootfs0.gz ] &&
+		sed -i 's|rootfs.gz|&,/boot/rootfs0.gz|' $TMP_DIR/loramiso/boot/isolinux/*.cfg
 	for cfg in $(grep -El '(append|ifmem) [0-9]' $TMP_DIR/loramiso/boot/isolinux/*.cfg)
 	do
 		local append="$(grep -E '(append|ifmem) [0-9]' $cfg)"
