@@ -550,6 +550,7 @@ EOT
 		count=$s 2> /dev/null
 
 	# Create boot sector
+	doslabel="$(echo "SLITAZ BOOT         " | od -v -N 11 -t x1 -w1 -An)"
 	if [ "$ftype" == "33 32" ]; then
 		hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
 			conv=notrunc
@@ -557,8 +558,8 @@ EOT
 0  02 00 00 $size f8 00 00  20 00 40 00 00 00 00 00  |
 0  $size32     $fsz         00 00 00 00 02 00 00 00  |
 0  01 00 03 00 00 00 00 00  00 00 00 00 00 00 00 00  |  
-0  80 00 29 00 00 00 00 53  59 53 54 45 4d 00 00 00  |
-0  00 00 46 41 54 $ftype 20 20 20 cd 18 cd 19 eb fa  |
+0  80 00 29 00 00 00 00 $doslabel                    |
+0        46 41 54 $ftype 20 20 20 cd 18 cd 19 eb fa  |
 EOT
 		while read ofs data; do
 			echo "0 ${data//:/ } |" | hexdump -R | dd conv=notrunc \
@@ -575,8 +576,8 @@ EOT
 			conv=notrunc
 0  eb 3c 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
 0  02 40 00 $size f8 $fsz   20 00 40 00 00 00 00 00  |
-0  $size32     80 00 29 00  00 00 00 53 59 53 54 45  |
-0  4d 20 20 20 20 20 46 41  54 $ftype 20 20 20 cd 18  |
+0  $size32     80 00 29 00  00 00 00 $doslabel       |
+0                    46 41  54 $ftype 20 20 20 cd 18  |
 0  cd 19 eb fa  |
 EOT
 	fi 2> /dev/null
@@ -588,7 +589,7 @@ EOT
 		seek=$(($rsect+$fsect)) bs=512 conv=notrunc 2> /dev/null
 
 	# Add label
-	echo "0  53 59 53 54 45 4d 20 20  20 20 20 08 |" | hexdump -R | \
+	echo "0  $doslabel 08 |" | hexdump -R | \
 		dd of=$basedir/boot/isolinux/efi.img bs=512 conv=notrunc \
 		seek=$(($rsect+$fsect+$fsect)) 2> /dev/null
 
@@ -773,6 +774,12 @@ align_to_32bits() {
 }
 
 
+dolz4() {
+	[ "$(which lz4)" ] || tazpkg get-install lz4
+	lz4 -9 > $1
+}
+
+
 dogzip() {
 	gzip -9 > $1
 	[ -x /usr/bin/advdef ] && advdef -qz4 $1
@@ -787,6 +794,10 @@ pack_rootfs() {
 		none)
 			_ 'Creating %s without compression...' 'initramfs'
 			cat > $2
+			;;
+		lz4)
+			_ 'Creating %s with lz4 compression...' 'initramfs'
+			dolz4 $2
 			;;
 		gzip)
 			_ 'Creating %s with gzip compression...' 'initramfs'
@@ -816,6 +827,10 @@ write_initramfs() {
 		gzip)
 			_ 'Creating %s with gzip compression...' "$INITRAMFS"
 			cpio -o -H newc | dogzip "/$INITRAMFS"
+			;;
+		lz4)
+			_ 'Creating %s with lz4 compression...' "$INITRAMFS"
+			cpio -o -H newc | dolz4 "/$INITRAMFS"
 			;;
 		*)
 			# align='y'
