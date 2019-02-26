@@ -94,7 +94,7 @@ start() {
 		name="$(echo $main | cut -d'|' -f1)"; name="${name:-custom}"
 		skel="$(echo $main | cut -d'|' -f2)"
 		flvf="$(echo $main | cut -d'|' -f5)"
-		if [ ${flvf/*./} == flavor ]; then
+		if [ ${flvf/*./} = flavor ]; then
 			cp -a $flvf $live ; skel=$(basename $flvf)
 		fi
 		echo "$skel" > $live/skel

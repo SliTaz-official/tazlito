@@ -5,7 +5,7 @@
 # Copyright (C) 2011-2015 SliTaz GNU/Linux - BSD License
 #
 
-if [ "$1" == 'call' ]; then
+if [ "$1" = 'call' ]; then
 	case "$2" in
 		merge_cleanup)
 			mv -f $3.merged $3
@@ -155,7 +155,7 @@ EOT
 		if [ -d /proc/scsi/usb-storage ]; then
 			for dev in /sys/block/sd*; do
 				# removable writable sd* device:
-				if [ "$(cat $dev/removable)" == '1' -a "$(cat $dev/ro)" == '0' ]; then
+				if [ "$(cat $dev/removable)" = '1' -a "$(cat $dev/ro)" = '0' ]; then
 					echo "<optgroup label='$(cat $dev/device/vendor) $(cat $dev/device/model):'>"
 					for part in $dev/sd*; do
 						[ ! -d "$part" ] && break

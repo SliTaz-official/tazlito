@@ -102,7 +102,7 @@ ROOTCD="$DISTRO/rootcd"
 # Print the usage.
 
 usage () {
-	[ $(basename $0) == 'tazlito' ] && cat <<EOT
+	[ $(basename $0) = 'tazlito' ] && cat <<EOT
 
 SliTaz Live Tool - Version: $(colorize 34 "$VERSION")
 
@@ -224,7 +224,7 @@ installed_package_name() {
 		unset VERSION EXTRAVERSION
 		eval $(grep -s ^VERSION=      $INSTALLED/$i/receipt)
 		eval $(grep -s ^EXTRAVERSION= $INSTALLED/$i/receipt)
-		if [ "$i-$VERSION$EXTRAVERSION" == "$tazpkg" ]; then
+		if [ "$i-$VERSION$EXTRAVERSION" = "$tazpkg" ]; then
 			echo $i
 			break
 		fi
@@ -289,7 +289,7 @@ fix_efi_img_size() {
 		while [ $sz -gt 0 ]; do
 			local len=$(get $e "$2")
 			[ "$(dd if="$2" bs=1 skip=$(($e+33)) count=${#i} \
-				2>/dev/null)" == "$i" ] && continue 2
+				2>/dev/null)" = "$i" ] && continue 2
 			[ $len -eq 0 ] && break
 			sz=$(($sz-$len))
 			e=$(($e+$len))
@@ -481,7 +481,7 @@ alloc_uefi_part() {
 		*taz64) efifile=bootx64.efi ;;
 		esac
 		if [ ! -s $basedir/efi/boot/$efifile ] &&
-		   [ $(get $((0x82)) "$1") == $((0x4550)) ]; then
+		   [ $(get $((0x82)) "$1") = $((0x4550)) ]; then
 			mkdir -p $basedir/efi/boot 2> /dev/null
 			ln "$1" "$basedir/efi/boot/$efifile"
 			stat -c "%s %n" "$1"
@@ -551,7 +551,7 @@ EOT
 
 	# Create boot sector
 	doslabel="$(echo "SLITAZ BOOT         " | od -v -N 11 -t x1 -w1 -An)"
-	if [ "$ftype" == "33 32" ]; then
+	if [ "$ftype" = "33 32" ]; then
 		hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
 			conv=notrunc
 0  eb 58 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
@@ -838,7 +838,7 @@ write_initramfs() {
 			cpio -o -H newc > "/$INITRAMFS"
 			;;
 	esac < /tmp/list
-	[ "$align" == 'y' -a -z "$noalign" ] && align_to_32bits "/$INITRAMFS"
+	[ "$align" = 'y' -a -z "$noalign" ] && align_to_32bits "/$INITRAMFS"
 	echo 1 > /tmp/rootfs
 }
 
@@ -846,12 +846,12 @@ write_initramfs() {
 # Deduplicate files (MUST be on the same filesystem).
 
 deduplicate() {
-	find "${@:-.}" -type f -size +0c -xdev -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
+	find "${@:-.}" -xdev -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
 		(
 			save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
 			while read attr inode link file; do
 				[ -L "$file" ] && continue
-				if [ "$attr" == "$old_attr" -a "$inode" != "$old_inode" ]; then
+				if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
 					if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
 						rm -f "$file"
 						if ln "$old_file" "$file" 2>/dev/null; then
@@ -868,12 +868,12 @@ deduplicate() {
 			_ '%s Kbytes saved in %s duplicate files.' "$save" "$hardlinks"
 		)
 
-	find "$@" -type l -xdev -exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
+	find "$@" -xdev -type l -exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
 		(
 			old_attr=""; hardlinks=0;
 			while read attr inode link file; do
 				attr="${attr/-TARGET-/-$(readlink $file)}"
-				if [ "$attr" == "$old_attr" ]; then
+				if [ "$attr" = "$old_attr" ]; then
 					if [ "$inode" != "$old_inode" ]; then
 						rm -f "$file"
 						if ln "$old_file" "$file" 2>/dev/null; then
@@ -1025,7 +1025,7 @@ extract_flavor() {
 		done
 		touch -t 197001010100.00 $1.*
 		# Info to be stored inside ISO
-		[ "$2" == info ] && echo -e $infos | cpio -o -H newc | dogzip info
+		[ "$2" = info ] && echo -e $infos | cpio -o -H newc | dogzip info
 		rm $1.list*
 
 		# Renames
@@ -1060,16 +1060,16 @@ files_match() {
 		return 1
 
 	elif [ -L "$1" ] && [ -L "$2" ]; then
-		[ "$(readlink "$1")" == "$(readlink "$2")" ] && return 0
+		[ "$(readlink "$1")" = "$(readlink "$2")" ] && return 0
 
 	elif [ -f "$1" ] && [ -f "$2" ]; then
 		cmp -s "$1" "$2" && return 0
 
-		[ "$(basename "$3")" == 'volatile.cpio.gz' ] &&
-		[ "$(dirname $(dirname "$3"))" == ".$INSTALLED" ] &&
+		[ "$(basename "$3")" = 'volatile.cpio.gz' ] &&
+		[ "$(dirname $(dirname "$3"))" = ".$INSTALLED" ] &&
 			return 0
 
-	elif [ "$(ls -l "$1"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$1")" == \
+	elif [ "$(ls -l "$1"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$1")" = \
 	       "$(ls -l "$2"|cut -c1-10)$(stat -c '%a:%u:%g:%t:%T' "$2")" ]; then 
 			return 0
 
@@ -1331,7 +1331,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 		cp /lib/modules/$v/kernel/fs/$aufs/$aufs.ko.?z \
 			$TMP_DIR/initfs/lib/modules/${v/*taz/}
 	done
-	if [ "$1" == 'cdrom' ]; then
+	if [ "$1" = 'cdrom' ]; then
 		sed -i '/mod squashfs/d' $TMP_DIR/initfs/init
 	else
 		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
@@ -1347,7 +1347,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 		#ls /sbin/unsquashfs /usr/lib/liblzma.so* $INSTALLED/squashfs/* | \
 		#cpio -o -H newc > $TMP_DIR/initfs/extractfs.cpio
 	fi
-	if [ "$1" == 'http' ]; then
+	if [ "$1" = 'http' ]; then
 		mkdir $TMP_DIR/initfs/etc $TMP_DIR/fs
 		ln -s /proc/mounts $TMP_DIR/initfs/etc/mtab
 		cp /usr/share/udhcpc/default.script $TMP_DIR/initfs/lib/udhcpc
@@ -1438,7 +1438,7 @@ mirror3.slitaz.org mirror.slitaz.org"
 	$need_lib && for i in /lib/ld-* /lib/lib[cm][-\.]* ; do
 		cp -a $i $TMP_DIR/initfs/lib
 	done
-	[ "$1" == 'http' ] && cat > $TMP_DIR/initfs/init <<EOTEOT
+	[ "$1" = 'http' ] && cat > $TMP_DIR/initfs/init <<EOTEOT
 #!/bin/sh
 
 getarg() {
@@ -1582,7 +1582,7 @@ build_loram_rootfs() {
 		deduplicate
 		cd - > /dev/null
 		rootfs=$TMP_DIR/$(basename $i 64)
-		[ $rootfs == $TMP_DIR/rootfs.gz ] && rootfs=$TMP_DIR/rootfs0.gz
+		[ $rootfs = $TMP_DIR/rootfs.gz ] && rootfs=$TMP_DIR/rootfs0.gz
 		/usr/sbin/mksquashfs $TMP_DIR/fs $rootfs -comp ${1:-xz -Xbcj x86}
 		cd $TMP_DIR
 		rootfs_sizes="$rootfs_sizes $(( $(du -s $TMP_DIR/fs | cut -f1) - $(du -s $rootfs | cut -f1) ))"
@@ -1673,7 +1673,7 @@ update_metaiso_sizes() {
 		local new
 		set -- $append
 		shift
-		[ "$1" == "ifmem" ] && shift
+		[ "$1" = "ifmem" ] && shift
 		new=""
 		while [ -n "$2" ]; do
 			local s
@@ -1734,7 +1734,7 @@ find_flavor_rootfs() {
 	cat $1$INSTALLED/*/md5sum | \
 	while read md5 file; do
 		[ -e "$1$file" ] || continue
-		[ "$(md5sum < "$1$file")" == "$md5  -" ] &&
+		[ "$(md5sum < "$1$file")" = "$md5  -" ] &&
 		rm -f "$1$file"
 	done
 
@@ -2200,7 +2200,7 @@ Additional files	: $ADDFILES
 		status
 
 		for i in $(ls $TMP_DIR); do
-			[ "$i" == 'boot' ] && continue
+			[ "$i" = 'boot' ] && continue
 			cp -a "$TMP_DIR/$i" "$TARGET/rootcd"
 		done
 
@@ -2366,7 +2366,7 @@ EOT
 			EXTRAVERSION=""
 			eval $(grep ^EXTRAVERSION= $ROOTFS$INSTALLED/$i/receipt)
 			eval $(grep ^CATEGORY= $ROOTFS$INSTALLED/$i/receipt)
-			if [ "$CATEGORY" == 'non-free' -a "${i%%-*}" != 'get' ]; then
+			if [ "$CATEGORY" = 'non-free' -a "${i%%-*}" != 'get' ]; then
 				echo "$i" >> $FLAVOR.nonfree
 			else
 				echo "$i-$VERSION$EXTRAVERSION" >> $FLAVOR.pkglist
@@ -2728,7 +2728,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				if [ ! -d "$ADDFILES/rootcd" ] ; then
 					mkdir -p "$ADDFILES/rootcd"
 					for i in $(ls $TMP_MNT); do
-						[ "$i" == 'boot' ] && continue
+						[ "$i" = 'boot' ] && continue
 						cp -a "$TMP_MNT/$i" "$ADDFILES/rootcd"
 					done
 				fi
@@ -2747,7 +2747,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		cp -f /etc/slitaz-release    $root/etc/slitaz-release
 		strip_versions "$LIST_NAME"
 
-		if [ "$REPACK" == 'y' ]; then
+		if [ "$REPACK" = 'y' ]; then
 			# Determine full packages list with all dependencies
 			tmp_dir="$(mktemp -d)"
 			cp "$LIST_NAME" "$tmp_dir/flavor.pkglist"
@@ -3017,7 +3017,7 @@ suitable cpio archive (rootfs.gz) and generate a bootable ISO image (slitaz.iso)
 		newline
 		emsg "<b>Archive compression:</b> <c 36>$COMPRESSION</c>"
 
-		[ "$COMPRESSION" == 'gzip' ] && colorize 31 "gzip-compressed rootfs unsupported and may fail to boot"
+		[ "$COMPRESSION" = 'gzip' ] && colorize 31 "gzip-compressed rootfs unsupported and may fail to boot"
 		# Save some space
 		rm -rf /var/cache/tazpkg/*
 		rm -f  /var/lib/tazpkg/*.bak
