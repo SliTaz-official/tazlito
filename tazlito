@@ -868,11 +868,14 @@ deduplicate() {
 			_ '%s Kbytes saved in %s duplicate files.' "$save" "$hardlinks"
 		)
 
-	find "$@" -xdev -type l -exec stat -c '%s-%u-%g-TARGET- %i %h %n' {} \; | sort | \
+	find "$@" -xdev -type l -exec stat -c '%s-%u-%g %i %h %n' {} \; | \
+		while read attr inode link file; do
+			echo "$attr-$(readlink "$file" | uuencode -m - | \
+				sed '1d;:b;{N;s/\n//;bb;}') $inode $link $file"
+		done | sort | \
 		(
 			old_attr=""; hardlinks=0;
 			while read attr inode link file; do
-				attr="${attr/-TARGET-/-$(readlink $file)}"
 				if [ "$attr" = "$old_attr" ]; then
 					if [ "$inode" != "$old_inode" ]; then
 						rm -f "$file"
