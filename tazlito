@@ -846,22 +846,24 @@ write_initramfs() {
 # Deduplicate files (MUST be on the same filesystem).
 
 deduplicate() {
-	find "${@:-.}" -xdev -type f -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
+	find "${@:-.}" -xdev -type f ! -type l -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
 		(
-			save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""
+			save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""; hinode=""
 			while read attr inode link file; do
-				[ -L "$file" ] && continue
-				if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ]; then
-					if cmp "$file" "$old_file" >/dev/null 2>&1 ; then
-						rm -f "$file"
-						if ln "$old_file" "$file" 2>/dev/null; then
-							inode="$old_inode"
-							[ "$link" -eq 1 ] && hardlinks=$(($hardlinks+1)) &&
-								save="$(($save+(${attr%%-*}+512)/1024))"
-						else
-							cp -a "$old_file" "$file"
-						fi
+				if [ "$attr" = "$old_attr" -a "$inode" != "$old_inode" ] &&
+				   { [ "$inode" = "$hinode" ] || cmp "$file" "$old_file" >/dev/null 2>&1; } ; then
+					rm -f "$file"
+					if ln "$old_file" "$file" 2>/dev/null; then
+						hinode="$inode"
+						inode="$old_inode"
+						[ "$link" -eq 1 ] && hardlinks=$(($hardlinks+1)) &&
+							save="$(($save+(${attr%%-*}+512)/1024))"
+						continue
+					else
+						cp -p "$old_file" "$file"
 					fi
+				else
+					hinode=""
 				fi
 				old_attr="$attr" ; old_inode="$inode" ; old_file="$file"
 			done
