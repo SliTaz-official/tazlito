@@ -643,9 +643,10 @@ $PWD/boot/isolinux/boot.cat
 $PWD/boot/isolinux/isolinux.bin
 $PWD/boot/isolinux/isolinux.cfg
 $PWD/boot/isolinux/vesamenu.c32
+$PWD/boot/isolinux/splash.*g
 $PWD/boot/isolinux/i18n.cfg
-$PWD/boot/isolinux/kbd
 $PWD/boot/isolinux/c32box.c32
+$PWD/boot/isolinux/kbd
 $PWD/boot/isolinux/efi.img
 $PWD/boot/bzImage*
 $PWD/efi/boot/linux.cmdline*
