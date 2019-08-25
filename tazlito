@@ -648,8 +648,8 @@ $PWD/boot/isolinux/kbd
 $PWD/boot/isolinux/c32box.c32
 $PWD/boot/isolinux/efi.img
 $PWD/boot/bzImage*
-$PWD/boot/rootfs*
 $PWD/efi/boot/linux.cmdline*
+$PWD/boot/rootfs*
 EOT
 
 	action 'Computing md5...'
