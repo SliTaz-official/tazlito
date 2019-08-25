@@ -637,14 +637,19 @@ create_iso() {
 	make_bzImage_hardlink $2/boot
 	alloc_uefi_part $(ls -r $2/boot/vmlinuz*slitaz*)
 
-	cat > /tmp/cdsort$$ <<EOT
-$PWD/boot/isolinux 100
-$(ls -r $PWD/boot/rootfs* | awk 'BEGIN{n=149} { print $1 " " n-- }')
-$(ls $PWD/boot/bzImage* | awk 'BEGIN{n=200} { print $1 " " n-- }')
-$(find $PWD/efi -type f 2>/dev/null | sort -r | awk 'BEGIN{n=299} { print $1 " " n-- }')
-$PWD/boot/isolinux/efi.img 300
-$PWD/boot/isolinux/isolinux.bin 399
-$PWD/boot/isolinux/boot.cat 400
+	while read file; do ls -r $file 2> /dev/null; done << EOT | \
+	awk 'BEGIN { n=100 } { print $1 " " n-- }' > /tmp/cdsort$$
+$PWD/boot/isolinux/boot.cat
+$PWD/boot/isolinux/isolinux.bin
+$PWD/boot/isolinux/isolinux.cfg
+$PWD/boot/isolinux/vesamenu.c32
+$PWD/boot/isolinux/i18n.cfg
+$PWD/boot/isolinux/kbd
+$PWD/boot/isolinux/c32box.c32
+$PWD/boot/isolinux/efi.img
+$PWD/boot/bzImage*
+$PWD/efi/boot/linux.cmdline*
+$PWD/boot/rootfs*
 EOT
 
 	action 'Computing md5...'
