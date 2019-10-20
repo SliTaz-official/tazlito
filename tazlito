@@ -1005,7 +1005,7 @@ extract_rootfs() {
 	# First part (lzcat or zcat) may not fail, but cpio will fail on incorrect format
 	(cd "$2"; lzcat "$1" | cpio -idm --quiet 2>/dev/null) && return
 	(cd "$2";  zcat "$1" | cpio -idm --quiet 2>/dev/null) && return
-	(cd "$2";   cat "$1" | cpio -idm --quiet 2>/dev/null)
+	(cd "$2"; cpio -idm --quiet 2>/dev/null < "$1")
 }
 
 
@@ -1764,11 +1764,11 @@ find_flavor_rootfs() {
 
 	# Remove other files blindly
 	for i in $1$INSTALLED/*/files.list; do
-		for file in $(cat "$i"); do
+		while read file; do
 			[ "$1$file" -nt "$i" ] && continue
 			[ -f "$1$file" -a ! -L "$1$file" ] && continue
 			[ -d "$1$file" ] || rm -f "$1$file"
-		done
+		done < $i
 	done
 
 	# Remove tazpkg files and tmp files
@@ -2785,7 +2785,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			newline
 			echo 'Preparing non-free packages...'
 			cp 'non-free.list' "$ROOTFS/etc/tazlito/non-free.list"
-			for pkg in $(cat 'non-free.list'); do
+			while read pkg ; do
 				if [ ! -d "$INSTALLED/$pkg" ]; then
 					if [ ! -d "$INSTALLED/get-$pkg" ]; then
 						tazpkg get-install get-$pkg
@@ -2796,7 +2796,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				pkg=$(ls $pkg*.tazpkg)
 				grep -q "^$pkg$" $LIST_NAME || echo $pkg >> $LIST_NAME
 				mv $pkg $PACKAGES_REPOSITORY
-			done
+			done < non-free.list
 		fi
 		cp $LIST_NAME $DISTRO/distro-packages.list
 		newline
