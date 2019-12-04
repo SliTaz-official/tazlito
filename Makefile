@@ -34,15 +34,15 @@ msgfmt:
 
 install: msgfmt
 	install -m 0755 -d $(DESTDIR)$(PREFIX)/bin
-	install -m 0777 tazlito $(DESTDIR)$(PREFIX)/bin
+	install -m 0755 tazlito $(DESTDIR)$(PREFIX)/bin
 	-[ "$(VERSION)" ] && sed -i 's/^VERSION=.*/VERSION=$(VERSION)/' $(DESTDIR)$(PREFIX)/bin/tazlito
 	ln -sf tazlito $(DESTDIR)$(PREFIX)/bin/deduplicate
 	ln -sf tazlito $(DESTDIR)$(PREFIX)/bin/reduplicate
-	install -m 0777 tazlito-wiz $(DESTDIR)$(PREFIX)/bin
+	install -m 0755 tazlito-wiz $(DESTDIR)$(PREFIX)/bin
 
 	install -m 0755 -d $(DESTDIR)$(PREFIX)/libexec/tazlito
 	@for module in $(MODULES); do \
-		install -m 0777 modules/$$module $(DESTDIR)$(PREFIX)/libexec/tazlito; \
+		install -m 0755 modules/$$module $(DESTDIR)$(PREFIX)/libexec/tazlito; \
 	done;
 
 	install -m 0755 -d $(DESTDIR)/etc/tazlito
