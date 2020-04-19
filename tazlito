@@ -1651,7 +1651,7 @@ build_loram_cdrom() {
 	VOLUM_NAME="SliTaz_LoRAM_CDROM"
 	sed -i "s|root=|isofs= rodev=/dev/cdrom/fs &|;s/.ive/cdrom/" \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
-	sed -i '/LABEL slitaz/{NNNNp;s|z cdrom|& text|;s|L slitaz|&text|;s|root=|screen=text &|;s|,[^ ]*||}' \
+	sed -i '/LABEL slitaz/{NNNNp;s|z cdrom|& text|;s|L slitaz|&text|;s|autologin|screen=text &|;s|,[^ ]*||}' \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
