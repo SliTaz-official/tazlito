@@ -1429,8 +1429,11 @@ mirror3.slitaz.org mirror.slitaz.org"
 		fi
 		need_lib=true
 	fi
-	for i in $($TMP_DIR/initfs/bin/busybox | awk \
-	  '{ if (s) printf "%s",$0 } /Currently/ { s=1 }' | sed 's/,//g'); do
+	bins="sh switch_root"
+	[ "$(echo ls | chroot $TMP_DIR/initfs busybox sh 2> /dev/null)" ] ||
+	bins="$($TMP_DIR/initfs/bin/busybox | awk \
+	  '{ if (s) printf "%s",$0 } /Currently/ { s=1 }' | sed 's/,//g')"
+	for i in $bins ; do
 		ln $TMP_DIR/initfs/bin/busybox $TMP_DIR/initfs/bin/$i
 	done
 	# bootfloppybox will need floppy.ko.?z, /dev/fd0, /dev/tty0
@@ -1649,9 +1652,9 @@ build_loram_cdrom() {
 	mv $TMP_DIR/initfs.gz $TMP_DIR/loramiso/boot/rootfs.gz
 	unmeta_boot
 	VOLUM_NAME="SliTaz_LoRAM_CDROM"
-	sed -i "s|root=|isofs= rodev=/dev/cdrom/fs &|;s/.ive/cdrom/" \
+	busybox sed -i "s|root=|isofs= rodev=/dev/cdrom/fs &|;s/.ive/cdrom/" \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
-	sed -i '/LABEL slitaz/{NNNNp;s|z cdrom|& text|;s|L slitaz|&text|;s|autologin|screen=text &|;s|,[^ ]*||}' \
+	busybox sed -i '/LABEL slitaz/{NNNNp;s|z cdrom|& text|;s|L slitaz|&text|;s|autologin|screen=text &|;s|,[^ ]*||}' \
 		$TMP_DIR/loramiso/boot/isolinux/*.cfg
 	create_iso $OUTPUT $TMP_DIR/loramiso
 }
@@ -1700,11 +1703,11 @@ update_metaiso_sizes() {
 			new="$new $s $2"
 			shift 2
 		done
-		sed -i -e "/append [0-9]/s/append .*/append$new $1/" -e \
+		busybox sed -i -e "/append [0-9]/s/append .*/append$new $1/" -e \
 			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
-		sed -i 's|\(initrd=\)\([^r]*\)\(rootfs\)|\1\2rootfs.gz,\2\3|' $cfg
-		sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
-		sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|root=|screen=text &|;s|,[^ ]*||}' $cfg
+		busybox sed -i 's|\(initrd=\)\([^r]*\)\(rootfs\)|\1\2rootfs.gz,\2\3|' $cfg
+		busybox sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
+		busybox sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|video=|screen=text &|;s|,[^ ]*||}' $cfg
 	done
 }
 
