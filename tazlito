@@ -1707,7 +1707,7 @@ update_metaiso_sizes() {
 			"/append ifmem [0-9]/s/append .*/append ifmem$new $1/" $cfg
 		busybox sed -i 's|\(initrd=\)\([^r]*\)\(rootfs\)|\1\2rootfs.gz,\2\3|' $cfg
 		busybox sed -i '/LABEL base/{NNNNp;s|base .ive|cdrom|;s|base|cdrom|;s|,[^ ]*||}' $cfg
-		busybox sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|video=|screen=text &|;s|,[^ ]*||}' $cfg
+		busybox sed -i '/LABEL cdrom/{NNNNp;s|z cdrom|& text|;s|L cdrom|&text|;s|autologin|screen=text &|;s|,[^ ]*||}' $cfg
 	done
 }
 
