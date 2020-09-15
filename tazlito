@@ -491,7 +491,7 @@ alloc_uefi_part() {
 			done 2> /dev/null
 			[ -s $basedir/efi/boot/linux.cmdline ] ||
 			sed 's|/|\\|g' > $basedir/efi/boot/linux.cmdline <<EOT
-rw root=0x100 autologin\
+rw root=0x100$(sed '/bzImage/!d;s|.*root=[^ ]*||;q' $basedir/boot/isolinux/isolinux.cfg)\
 $( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
 echo -n " initrd=/EFI/BOOT/$f";done)
 EOT
