@@ -632,6 +632,7 @@ make_bzImage_hardlink() {
 create_iso() {
 	cd $2
 	deduplicate
+	sed -i "s|20[1-9][0-9]|$(date +%Y)|" $2/README $2/index.html
 
 	[ $(ls $2/boot/grub* 2> /dev/null | wc -l) -lt 2 ] && rm -rf $2/boot/grub*
 	make_bzImage_hardlink $2/boot
@@ -654,7 +655,7 @@ $PWD/boot/rootfs*
 EOT
 
 	action 'Computing md5...'
-	touch boot/isolinux/boot.cat
+	touch $2/boot/isolinux/boot.cat
 	find * -type f ! -name md5sum ! -name 'vmlinuz-*' -exec md5sum {} \; | \
 		sort -k 2 > md5sum
 	status
