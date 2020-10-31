@@ -34,6 +34,7 @@ INSTALLED="$LOCALSTATE/installed"
 CACHE_DIR='/var/cache/tazpkg'
 MIRROR="$LOCALSTATE/mirror"
 DEFAULT_MIRROR="http://mirror1.slitaz.org/packages/$(cat /etc/slitaz-release)/"
+efi_img="efi/esp.img"
 
 log='/var/log/tazlito.log'
 if [ $(id -u) -eq 0 ]; then
@@ -269,7 +270,7 @@ first_block() {
 
 
 
-# Force size and location in the 2nd eltorito boot file (/boot/isolinux/efi.img)
+# Force size and location in the 2nd eltorito boot file (/$efi_img)
 
 fix_efi_boot_img_size() {
 	local n=$3
@@ -279,11 +280,11 @@ fix_efi_boot_img_size() {
 }
 
 
-# Force the size for the /boot/isolinux/efi.img file
+# Force the size for the /$efi_img file
 
 fix_efi_img_size() {
 	local e=$((0x809C))
-	for i in BOOT ISOLINUX EFI.IMG ; do
+	for i in $(echo ${efi_img//\// } | tr a-z A-Z) ; do
 		local sz=$(get $(($e+10)) "$2" 4)
 		e=$(($(get $(($e+2)) "$2" 4) * 2048))
 		while [ $sz -gt 0 ]; do
@@ -300,31 +301,31 @@ fix_efi_img_size() {
 }
 
 
-# create /boot/isolinux/efi.img to share EFI files with the iso image
+# create /$efi_img to share EFI files with the iso image
 
 fixup_uefi_part() {
-	[ -s $2/boot/isolinux/efi.img ] || return
-	[ -x $2/boot/isolinux/efi.img ] && return
-	local n=$(get 19 "$2/boot/isolinux/efi.img")
-	[ $n -eq 0 ] && n=$(get 32 "$2/boot/isolinux/efi.img" 4)
-	efiblock=$(first_block "$2/boot/isolinux/efi.img")
+	[ -s $2/$efi_img ] || return
+	[ -x $2/$efi_img ] && return
+	local n=$(get 19 "$2/$efi_img")
+	[ $n -eq 0 ] && n=$(get 32 "$2/$efi_img" 4)
+	efiblock=$(first_block "$2/$efi_img")
 	fix_efi_img_size $(($n*512)) $1
 	fix_efi_boot_img_size $1 $2 $n $efiblock
 	
 	# Build file list tree
-	resv=$(get 14 "$2/boot/isolinux/efi.img")
-	if [ $(get 57 "$2/boot/isolinux/efi.img" 1) -ne 49 ]; then
+	resv=$(get 14 "$2/$efi_img")
+	if [ $(get 57 "$2/$efi_img" 1) -ne 49 ]; then
 		skiphead=5
-		fatsz=$(get 36 "$2/boot/isolinux/efi.img" 4)
+		fatsz=$(get 36 "$2/$efi_img" 4)
 		basecluster=$((($resv+2*$fatsz)/4+$efiblock-2))
 		dd if=$1 bs=512 skip=$(($efiblock*4)) count=3 \
 			of=$1 seek=$(($efiblock*4+3)) conv=notrunc
 	else
 		skiphead=4
-		fatsz=$(get 22 "$2/boot/isolinux/efi.img")
+		fatsz=$(get 22 "$2/$efi_img")
 		basecluster=$((($resv+2*$fatsz)/4+$efiblock-1))
 	fi 2> /dev/null
-	hd "$2/boot/isolinux/efi.img" | awk 'BEGIN { skiphead='$skiphead' }
+	hd "$2/$efi_img" | awk 'BEGIN { skiphead='$skiphead' }
 {
   if (skiphead!=0) {
     if ($1=="*") skiphead--
@@ -389,8 +390,8 @@ fixup_uefi_part() {
 	done
 
 	# Update fat12 or fat16
-	get 57 "$2/boot/isolinux/efi.img"
-	dd if="$2/boot/isolinux/efi.img" bs=512 count=$fatsz skip=$resv 2> /dev/null | \
+	get 57 "$2/$efi_img"
+	dd if="$2/$efi_img" bs=512 count=$fatsz skip=$resv 2> /dev/null | \
 	od -An -t u1 -w1 -v
     ) | awk '
 {
@@ -467,8 +468,8 @@ END {
 
 alloc_uefi_part() {
 	local basedir=$(dirname "$1")/..
-	if [ -s $basedir/boot/isolinux/efi.img ]; then
-		chmod +x $basedir/boot/isolinux/efi.img
+	if [ -s $basedir/$efi_img ]; then
+		chmod +x $basedir/$efi_img
 		return
 	fi
 	local fclust=$({
@@ -546,13 +547,13 @@ EOT
 		size="$(printf "%02X %02X" $(($s%256)) $((($s>>8)%256)) )"
 		size32="00 00 00 00"
 	fi
-	dd if=/dev/zero bs=512 of=$basedir/boot/isolinux/efi.img \
+	dd if=/dev/zero bs=512 of=$basedir/$efi_img \
 		count=$s 2> /dev/null
 
 	# Create boot sector
 	doslabel="$(echo "SLITAZ BOOT         " | od -v -N 11 -t x1 -w1 -An)"
 	if [ "$ftype" = "33 32" ]; then
-		hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
+		hexdump -R <<EOT | dd of=$basedir/$efi_img \
 			conv=notrunc
 0  eb 58 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
 0  02 00 00 $size f8 00 00  20 00 40 00 00 00 00 00  |
@@ -563,16 +564,16 @@ EOT
 EOT
 		while read ofs data; do
 			echo "0 ${data//:/ } |" | hexdump -R | dd conv=notrunc \
-			bs=1 seek=$ofs of=$basedir/boot/isolinux/efi.img
+			bs=1 seek=$ofs of=$basedir/$efi_img
 		done <<EOT
 510	55:aa:52:52:61:41
 996	72:72:41:61:ff:ff:ff:ff:02
 1022	55:aa
 EOT
 	else
-		echo -en '\x55\xAA' | dd of=$basedir/boot/isolinux/efi.img \
+		echo -en '\x55\xAA' | dd of=$basedir/$efi_img \
 			seek=510 bs=1 conv=notrunc
-		hexdump -R <<EOT | dd of=$basedir/boot/isolinux/efi.img \
+		hexdump -R <<EOT | dd of=$basedir/$efi_img \
 			conv=notrunc
 0  eb 3c 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
 0  02 40 00 $size f8 $fsz   20 00 40 00 00 00 00 00  |
@@ -583,32 +584,32 @@ EOT
 	fi 2> /dev/null
 
 	# Create fats
-	echo "0  $fhead |" | hexdump -R | dd of=$basedir/boot/isolinux/efi.img \
+	echo "0  $fhead |" | hexdump -R | dd of=$basedir/$efi_img \
 		seek=$(($rsect)) bs=512 conv=notrunc 2> /dev/null
-	echo "0  $fhead |" | hexdump -R | dd of=$basedir/boot/isolinux/efi.img \
+	echo "0  $fhead |" | hexdump -R | dd of=$basedir/$efi_img \
 		seek=$(($rsect+$fsect)) bs=512 conv=notrunc 2> /dev/null
 
 	# Add label
 	echo "0  $doslabel 08 |" | hexdump -R | \
-		dd of=$basedir/boot/isolinux/efi.img bs=512 conv=notrunc \
+		dd of=$basedir/$efi_img bs=512 conv=notrunc \
 		seek=$(($rsect+$fsect+$fsect)) 2> /dev/null
 
 	mkdir -p /tmp/mnt$$
-	mount -o loop $basedir/boot/isolinux/efi.img /tmp/mnt$$
+	mount -o loop $basedir/$efi_img /tmp/mnt$$
 	( cd $basedir; find efi -type d | cpio -o -H newc ) | \
 		( cd /tmp/mnt$$ ; cpio -idmu 2> /dev/null )
 	sync
-	dd if=$basedir/boot/isolinux/efi.img of=/tmp/fat$$ \
+	dd if=$basedir/$efi_img of=/tmp/fat$$ \
 		skip=$rsect bs=512 count=$fsect 2> /dev/null
-	( cd $basedir; find efi -type f | cpio -o -H newc ) | \
+	( cd $basedir; find efi/boot -type f | cpio -o -H newc ) | \
 		( cd /tmp/mnt$$ ; cpio -idmu 2> /dev/null )
 	umount /tmp/mnt$$
-	cat /tmp/fat$$ /tmp/fat$$ | dd of=$basedir/boot/isolinux/efi.img \
+	cat /tmp/fat$$ /tmp/fat$$ | dd of=$basedir/$efi_img \
 		seek=$rsect bs=512 conv=notrunc 2> /dev/null
 	rm /tmp/fat$$
 	rmdir /tmp/mnt$$
 
-	dd count=0 bs=2k of=$basedir/boot/isolinux/efi.img \
+	dd count=0 bs=2k of=$basedir/$efi_img \
 		seek=$count 2> /dev/null
 }
 
@@ -648,7 +649,7 @@ $PWD/boot/isolinux/splash.*g
 $PWD/boot/isolinux/i18n.cfg
 $PWD/boot/isolinux/c32box.c32
 $PWD/boot/isolinux/kbd
-$PWD/boot/isolinux/efi.img
+$PWD/$efi_img
 $PWD/boot/bzImage*
 $PWD/efi/boot/linux.cmdline*
 $PWD/boot/rootfs*
@@ -664,7 +665,7 @@ EOT
 	title 'Generating ISO image'
 
 	_ 'Generating %s' "$1"
-	uefi="$(cd $2 ; ls boot/isolinux/efi.img 2> /dev/null)"
+	uefi="$(cd $2 ; ls $efi_img 2> /dev/null)"
 	genisoimage -R  -o $1  -hide-rr-moved -sort /tmp/cdsort$$ \
 		-b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat \
 		-no-emul-boot   -boot-load-size 4   -boot-info-table \
@@ -680,7 +681,7 @@ EOT
 	mount -o loop,ro $1 /tmp/mnt$$
 	fixup_uefi_part $1 /tmp/mnt$$
 	for i in boot/isolinux/isolinux.bin boot/isolinux/boot.cat \
-		 ${uefi:+boot/isolinux/efi.img} ; do
+		 ${uefi:+$efi_img} ; do
 		sed -i "s|.* $i|$( cd /tmp/mnt$$ ; md5sum $i)|" $2/md5sum
 	done
 	dd if=$2/md5sum of=$1 conv=notrunc bs=2k \
@@ -1295,9 +1296,9 @@ check_iso_for_loram() {
 # Remove duplicated files in $1/efi/boot from $1/boot
 
 cleanup_efi_boot() {
-	[ -s $1/boot/isolinux/efi.img ] &&
-	[ ! -x $1/boot/isolinux/efi.img ] &&
-	rm -f $1/boot/isolinux/efi.img
+	for i in $1/$efi_img $1/boot/isolinux/efi.img ; do
+		[ -s $i ] && [ ! -x $i ] && rm -f $i
+	done
 	for i in $1/efi/boot/* ; do
 		[ -f $i ] || continue
 		case "$i" in
