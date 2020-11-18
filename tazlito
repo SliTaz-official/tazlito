@@ -274,7 +274,9 @@ first_block() {
 
 fix_efi_boot_img_size() {
 	local n=$3
-	[ $n -gt 65535 ] && n=65535
+	# Sector count on 16 bits (max 128MB), see offset 6-7 in page 11 of
+	# https://pdos.csail.mit.edu/6.828/2014/readings/boot-cdrom.pdf
+	[ $n -gt 65535 ] && n=65535 && echo "Warning: truncate EFI eltorito boot file"
 	set32 $((0x66+2048*$(first_block $2/boot/isolinux/boot.cat))) $n $1 16
 	set32 $((0x1C+2048*$4)) $(($4*4)) $1
 }
