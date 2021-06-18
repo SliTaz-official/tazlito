@@ -173,6 +173,11 @@ todomsg() {
 }
 
 
+hexdump_R() {
+	sed '/ /!d;s/  |.*//;s| *$||;s|  *|\\\\x|g;s|^[^\\]*|busybox echo -en |' | sh
+}
+
+
 # Download a file from this mirror
 
 download_from() {
@@ -455,7 +460,7 @@ END {
       printf "0  %02X %02X %02X %02X |\n",c[i+1]%256,(c[i+1]/256)%256,(c[i+1]/65536)%256,(c[i+1]/16777216)%256
     }
   }
-}' | hexdump -R | dd of="$1" seek=$((4*$efiblock+$fatsz+$resv)) \
+}' | hexdump_R | dd of="$1" seek=$((4*$efiblock+$fatsz+$resv)) \
 		conv=notrunc bs=512 > /dev/null 2>&1
 	dd if="$1" of="$1" conv=notrunc bs=512 skip=$((4*$efiblock+$fatsz+$resv)) \
 		count=$fatsz seek=$((4*$efiblock+$resv)) > /dev/null 2>&1
@@ -555,7 +560,7 @@ EOT
 	# Create boot sector
 	doslabel="$(echo "SLITAZ BOOT         " | od -v -N 11 -t x1 -w1 -An)"
 	if [ "$ftype" = "33 32" ]; then
-		hexdump -R <<EOT | dd of=$basedir/$efi_img \
+		hexdump_R <<EOT | dd of=$basedir/$efi_img \
 			conv=notrunc
 0  eb 58 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
 0  02 00 00 $size f8 00 00  20 00 40 00 00 00 00 00  |
@@ -565,7 +570,7 @@ EOT
 0        46 41 54 $ftype 20 20 20 cd 18 cd 19 eb fa  |
 EOT
 		while read ofs data; do
-			echo "0 ${data//:/ } |" | hexdump -R | dd conv=notrunc \
+			echo "0 ${data//:/ } |" | hexdump_R | dd conv=notrunc \
 			bs=1 seek=$ofs of=$basedir/$efi_img
 		done <<EOT
 510	55:aa:52:52:61:41
@@ -575,7 +580,7 @@ EOT
 	else
 		echo -en '\x55\xAA' | dd of=$basedir/$efi_img \
 			seek=510 bs=1 conv=notrunc
-		hexdump -R <<EOT | dd of=$basedir/$efi_img \
+		hexdump_R <<EOT | dd of=$basedir/$efi_img \
 			conv=notrunc
 0  eb 3c 90 53 6c 69 54 61  7a 00 00 00 02 04 $rsect 00  |
 0  02 40 00 $size f8 $fsz   20 00 40 00 00 00 00 00  |
@@ -586,13 +591,13 @@ EOT
 	fi 2> /dev/null
 
 	# Create fats
-	echo "0  $fhead |" | hexdump -R | dd of=$basedir/$efi_img \
+	echo "0  $fhead |" | hexdump_R | dd of=$basedir/$efi_img \
 		seek=$(($rsect)) bs=512 conv=notrunc 2> /dev/null
-	echo "0  $fhead |" | hexdump -R | dd of=$basedir/$efi_img \
+	echo "0  $fhead |" | hexdump_R | dd of=$basedir/$efi_img \
 		seek=$(($rsect+$fsect)) bs=512 conv=notrunc 2> /dev/null
 
 	# Add label
-	echo "0  $doslabel 08 |" | hexdump -R | \
+	echo "0  $doslabel 08 |" | hexdump_R | \
 		dd of=$basedir/$efi_img bs=512 conv=notrunc \
 		seek=$(($rsect+$fsect+$fsect)) 2> /dev/null
 
@@ -654,7 +659,7 @@ $PWD/boot/isolinux/kbd
 $PWD/$efi_img
 $PWD/boot/bzImage*
 $PWD/efi/boot/linux.cmdline*
-$PWD/boot/rootfs*
+$(ls $PWD/boot/rootfs* | tac)
 EOT
 
 	action 'Computing md5...'
@@ -1351,9 +1356,9 @@ mirror3.slitaz.org mirror.slitaz.org"
 	else
 		[ ! -f /usr/sbin/mksquashfs ] && ! install_package squashfs && return 1
 		for v in $version ; do
-			while [ ! -f /lib/modules/$v/kernel/fs/squashfs/squashfs.ko.?z ]; do
+			if [ ! -f /lib/modules/$v/kernel/fs/squashfs/squashfs.ko.?z ]; then
 				install_package linux-squashfs $v || return 1
-			done
+			fi
 		done
 		for v in $version ; do
 			cp /lib/modules/$v/kernel/fs/squashfs/squashfs.ko.?z \
