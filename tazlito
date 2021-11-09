@@ -481,7 +481,7 @@ alloc_uefi_part() {
 	fi
 	local fclust=$({
 	[ -d $basedir/efi ] &&
-		find $basedir/efi -type f -exec stat -c "%s %n" {} \;
+		find $basedir/efi -type f -exec busybox stat -c "%s %n" {} \;
 	while [ -s "$1" ]; do
 		local efifile
 		case "$1" in
@@ -861,7 +861,7 @@ write_initramfs() {
 # Deduplicate files (MUST be on the same filesystem).
 
 deduplicate() {
-	find "${@:-.}" -xdev -type f ! -type l -size +0c -exec stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
+	find "${@:-.}" -xdev -type f ! -type l -size +0c -exec busybox stat -c '%s-%a-%u-%g %i %h %n' {} \; | sort | \
 		(
 			save=0; hardlinks=0; old_attr=""; old_inode=""; old_link=""; old_file=""; hinode=""
 			while read attr inode link file; do
@@ -885,7 +885,7 @@ deduplicate() {
 			_ '%s Kbytes saved in %s duplicate files.' "$save" "$hardlinks"
 		)
 
-	find "$@" -xdev -type l -exec stat -c '%s-%u-%g %i %h %n' {} \; | \
+	find "$@" -xdev -type l -exec busybox stat -c '%s-%u-%g %i %h %n' {} \; | \
 		while read attr inode link file; do
 			echo "$attr-$(readlink "$file" | uuencode -m - | \
 				sed '1d;:b;{N;s/\n//;bb;}') $inode $link $file"
@@ -1114,7 +1114,7 @@ mergefs() {
 	action 'Merge %s (%s) into %s (%s)' "$(basename "$1")" "$size1" "$(basename "$2")" "$size2"
 
 	# merge symlinks files and devices
-	( cd "$1"; find ) | \
+	( cd "$1"; find . ) | \
 	while read file; do
 		files_match "$1/$file" "$2/$file" "$file" &&
 		remove_with_path "$2/$file"
@@ -1585,7 +1585,7 @@ EOTEOT
 		unxz $i || gunzip $i || lzma d $i ${i%.gz}
 		rm -f $i
 	done 2>/dev/null
-	(cd $TMP_DIR/initfs; find | busybox cpio -o -H newc 2>/dev/null) | \
+	(cd $TMP_DIR/initfs; find . | busybox cpio -o -H newc 2>/dev/null) | \
 	lzma e $TMP_DIR/initfs.gz -si
 	lzma_set_size $TMP_DIR/initfs.gz
 	rm -rf $TMP_DIR/initfs
@@ -1863,7 +1863,7 @@ setup_mirrors() {
 
 	# Repacked packages: high priority
 	repacked="$PACKAGES_REPOSITORY"
-	if [ -d "$repacked" -a "$repacked" != "$fresh" ] && ls "$repacked" | grep -q ".tazpkg"; then
+	if [ -d "$repacked" ] && [ "$repacked" != "$fresh" ] && ls "$repacked" | grep -q ".tazpkg"; then
 		# According to Tazlito setup file (tazlito.conf):
 		# WORK_DIR="/home/slitaz/$SLITAZ_VERSION"
 		# or
@@ -2389,13 +2389,13 @@ EOT
 			EXTRAVERSION=""
 			eval $(grep ^EXTRAVERSION= $ROOTFS$INSTALLED/$i/receipt)
 			eval $(grep ^CATEGORY= $ROOTFS$INSTALLED/$i/receipt)
-			if [ "$CATEGORY" = 'non-free' -a "${i%%-*}" != 'get' ]; then
+			if [ "$CATEGORY" = 'non-free' ] && [ "${i%%-*}" != 'get' ]; then
 				echo "$i" >> $FLAVOR.nonfree
 			else
 				echo "$i-$VERSION$EXTRAVERSION" >> $FLAVOR.pkglist
 			fi
 		done
-		[ -s $FLAVOR.nonfree ] && $FILES="$FILES\n$FLAVOR.nonfree"
+		[ -s $FLAVOR.nonfree ] && FILES="$FILES\n$FLAVOR.nonfree"
 		for i in $LOCALSTATE/undigest/*/mirror ; do
 			[ -s $i ] && cat $i >> $FLAVOR.mirrors
 		done
@@ -2621,12 +2621,12 @@ EOT
 		mkdir -p $TMP_DIR/iso $TMP_DIR/rootfs $TMP_DIR/flavor
 		mount -o loop,ro $2 $TMP_DIR/iso
 		flavordata $2 | (cd $TMP_DIR/flavor; cpio -i 2>/dev/null)
-		if [ -s $TMP_DIR/iso/boot/rootfs1.gz -a \
-		   ! -s $TMP_DIR/flavor/*.desc ]; then
+		if [ -s $TMP_DIR/iso/boot/rootfs1.gz ] &&
+		   [ ! -s $TMP_DIR/flavor/*.desc ]; then
 			_ 'META flavors are not supported.'
 			umount -d $TMP_DIR/iso
-		elif [ ! -s $TMP_DIR/iso/boot/rootfs.gz -a \
-		       ! -s $TMP_DIR/iso/boot/rootfs1.gz ]; then
+		elif [ ! -s $TMP_DIR/iso/boot/rootfs.gz ] &&
+		     [ ! -s $TMP_DIR/iso/boot/rootfs1.gz ]; then
 			_ 'No %s in ISO image. Needs a SliTaz ISO.' '/boot/rootfs.gz'
 			umount -d $TMP_DIR/iso
 		else
@@ -2651,7 +2651,7 @@ EOT
 				[ -d $TMP_DIR/rootcd/efi ] && mv $TMP_DIR/rootcd/efi $TMP_DIR/rootfs
 				sed 's/.*  \(.*\).tazpkg*/\1/' > $TMP_DIR/$FLAVOR.pkglist \
 					< $TMP_DIR/rootfs$INSTALLED.md5
-				PKGCNT=$(grep -v ^# $TMP_DIR/$FLAVOR.pkglist | wc -l | awk '{ print $1 }')
+				PKGCNT=$(grep -cv ^# $TMP_DIR/$FLAVOR.pkglist)
 				if [ -s $TMP_DIR/flavor/*desc ]; then
 					cp $TMP_DIR/flavor/*.desc $TMP_DIR/$FLAVOR.desc
 					[ -s $TMP_DIR/$FLAVOR.receipt ] &&
@@ -2722,13 +2722,13 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			LIST_NAME='distro-packages.list'
 		fi
 
-		[ -d "$ROOTFS" -a -z "$forced" ] && die "A rootfs exists in '$DISTRO'." \
+		[ -d "$ROOTFS" ] && [ -z "$forced" ] && die "A rootfs exists in '$DISTRO'." \
 			'Please clean the distro tree or change directory path.'
 		[ -d "$ROOTFS" ] && rm -rf "$ROOTFS"
 		[ -d "$ROOTCD" ] && rm -rf "$ROOTCD"
 
 		# If list not given: build list with all installed packages
-		if [ ! -f "$LIST_NAME" -a -f "$LOCALSTATE/installed.info" ]; then
+		if [ ! -f "$LIST_NAME" ] && [ -f "$LOCALSTATE/installed.info" ]; then
 			awk -F$'\t' '{print $1}' "$LOCALSTATE/installed.info" >> "$LIST_NAME"
 		fi
 
@@ -2918,7 +2918,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
 				action 'Updating the boot directory...'
-				yes n | cp -ai ${ROOTFS}0$n/boot $ROOTCD 2> /dev/null
+				cp -an ${ROOTFS}0$n/boot $ROOTCD 2> /dev/null
 				rm -rf ${ROOTFS}0$n/boot
 
 				cd $DISTRO
@@ -3248,10 +3248,10 @@ EOT
 			_ '%s is already a merged iso. Aborting.' "$1"
 			cleanup_merge
 		fi
-		if [ ! -f $TMP_DIR/iso/boot/isolinux/ifmem.c32 -a
-		     ! -f $TMP_DIR/iso/boot/isolinux/c32box.c32 ]; then
-			if [ ! -f /boot/isolinux/ifmem.c32 -a
-			     ! -f /boot/isolinux/c32box.c32 ]; then
+		if [ ! -f $TMP_DIR/iso/boot/isolinux/ifmem.c32 ] &&
+		   [ ! -f $TMP_DIR/iso/boot/isolinux/c32box.c32 ]; then
+			if [ ! -f /boot/isolinux/ifmem.c32 ] &&
+			   [ ! -f /boot/isolinux/c32box.c32 ]; then
 				cat <<EOT
 No file /boot/isolinux/ifmem.c32
 Please install syslinux package !

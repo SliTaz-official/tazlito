@@ -31,7 +31,7 @@ root password to become super-user.\n"
 # We need to parse flavors.list for GTK tree.
 list_flavors()
 {
-	tazlito list-flavors | grep ^[a-z] | while read line
+	tazlito list-flavors | grep '^[a-z]' | while read line
 	do		
 		info=`echo -n $line | awk '{print $1 " " $2 " " $3}'`
 		printinfo=`echo -n $line | awk '{print $1 "|" $2 "|" $3}'`

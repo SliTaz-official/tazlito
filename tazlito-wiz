@@ -80,7 +80,6 @@ start() {
 		2) tazpanel live; exit 0;;
 		3) terminal -T 'write-iso' -e 'tazlito writeiso lzma'; exit 0;;
 		4) tazweb 'file:///usr/share/doc/tazlito/tazlito.html'; exit 0;;
-		*) continue;;
 	esac
 
 	# Deal with $main values
