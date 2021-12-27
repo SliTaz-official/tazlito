@@ -174,7 +174,7 @@ todomsg() {
 
 
 hexdump_R() {
-	sed '/ /!d;s/  |.*//;s| *$||;s|  *|\\\\x|g;s|^[^\\]*|busybox echo -en |' | sh
+	sed '/ /!d;s/ *|.*//;s| *$||;s|  *|\\\\x|g;s|^[^\\]*|busybox echo -en |' | sh
 }
 
 
@@ -2236,6 +2236,10 @@ Additional files	: $ADDFILES
 
 		action 'Copying the rootfs...'
 		cp $TMP_DIR/boot/rootfs*.?z* "$TARGET/rootcd/boot"
+		status
+
+		action 'Copying DOS boot files...'
+		cp $TMP_DIR/boot/linld.com $TMP_DIR/boot/*.exe "$TARGET/rootcd/boot"
 		status
 
 		cleanup_efi_boot "$TARGET/rootcd"
