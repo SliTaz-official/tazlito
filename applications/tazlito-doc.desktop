@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=Tazlito manual
+Exec=browser file:///usr/share/doc/tazlito/tazlito.html
+Icon=slitaz-doc
+Categories=Documentation;
 Name[fr]=Manuel de Tazlito
 Name[pt]=Manual do Tazlito
 Name[pt_BR]=Manual do Tazlito
 Name[ru]=Руководство TazLiTo
-Exec=browser file:///usr/share/doc/tazlito/tazlito.html
-Icon=slitaz-doc
-Categories=Documentation;

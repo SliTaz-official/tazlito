@@ -7,7 +7,7 @@
 # and/or a new ISO. Most commands must be run by root, except the stats
 # and the configuration file manipulation.
 #
-# (C) 2007-2018 SliTaz - GNU General Public License.
+# (C) 2007-2022 SliTaz - GNU General Public License.
 #
 # Authors: see the AUTHORS file
 #
@@ -258,13 +258,13 @@ verify_rootcd() {
 
 set32() {
 	for i in $(seq 0 8 $((${4:-32}-8))); do
-		printf '\\\\x%02X' $((($2 >> $i) & 255))
+		printf '\\\\x%02X' $((($2 >> i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$3 seek=$1 2>/dev/null
 }
 
 set64() {
 	for i in $(seq 0 8 24 ; seq 24 -8 0); do
-		printf '\\\\x%02X' $((($2 >> $i) & 255))
+		printf '\\\\x%02X' $((($2 >> i) & 255))
 	done | xargs echo -en | dd bs=1 conv=notrunc of=$3 seek=$1 2>/dev/null
 }
 
@@ -292,19 +292,19 @@ fix_efi_boot_img_size() {
 fix_efi_img_size() {
 	local e=$((0x809C))
 	for i in $(echo ${efi_img//\// } | tr a-z A-Z) ; do
-		local sz=$(get $(($e+10)) "$2" 4)
-		e=$(($(get $(($e+2)) "$2" 4) * 2048))
+		local sz=$(get $((e+10)) "$2" 4)
+		e=$(($(get $((e+2)) "$2" 4) * 2048))
 		while [ $sz -gt 0 ]; do
 			local len=$(get $e "$2")
-			[ "$(dd if="$2" bs=1 skip=$(($e+33)) count=${#i} \
+			[ "$(dd if="$2" bs=1 skip=$((e+33)) count=${#i} \
 				2>/dev/null)" = "$i" ] && continue 2
 			[ $len -eq 0 ] && break
-			sz=$(($sz-$len))
-			e=$(($e+$len))
+			sz=$((sz-len))
+			e=$((e+len))
 		done
 		return	# not found
 	done
-	set64 $(($e+10)) $1 "$2"
+	set64 $((e+10)) $1 "$2"
 }
 
 
@@ -316,7 +316,7 @@ fixup_uefi_part() {
 	local n=$(get 19 "$2/$efi_img")
 	[ $n -eq 0 ] && n=$(get 32 "$2/$efi_img" 4)
 	efiblock=$(first_block "$2/$efi_img")
-	fix_efi_img_size $(($n*512)) $1
+	fix_efi_img_size $((n*512)) $1
 	fix_efi_boot_img_size $1 $2 $n $efiblock
 	
 	# Build file list tree
@@ -324,13 +324,13 @@ fixup_uefi_part() {
 	if [ $(get 57 "$2/$efi_img" 1) -ne 49 ]; then
 		skiphead=5
 		fatsz=$(get 36 "$2/$efi_img" 4)
-		basecluster=$((($resv+2*$fatsz)/4+$efiblock-2))
-		dd if=$1 bs=512 skip=$(($efiblock*4)) count=3 \
-			of=$1 seek=$(($efiblock*4+3)) conv=notrunc
+		basecluster=$(((resv+2*fatsz)/4+efiblock-2))
+		dd if=$1 bs=512 skip=$((efiblock*4)) count=3 \
+			of=$1 seek=$((efiblock*4+3)) conv=notrunc
 	else
 		skiphead=4
 		fatsz=$(get 22 "$2/$efi_img")
-		basecluster=$((($resv+2*$fatsz)/4+$efiblock-1))
+		basecluster=$(((resv+2*fatsz)/4+efiblock-1))
 	fi 2> /dev/null
 	hd "$2/$efi_img" | awk 'BEGIN { skiphead='$skiphead' }
 {
@@ -390,9 +390,9 @@ fixup_uefi_part() {
   }
 }
 ' | (	while read offset cluster file; do
-		cluster=$(($(first_block "$2/$file")-$basecluster))
-		set32 $(($efiblock*2048+0x$offset+10)) $cluster "$1" 16
-		set32 $(($efiblock*2048+0x$offset+4)) $(($cluster>>16)) "$1" 16
+		cluster=$(($(first_block "$2/$file")-basecluster))
+		set32 $((efiblock*2048+0x$offset+10)) $cluster "$1" 16
+		set32 $((efiblock*2048+0x$offset+4)) $((cluster>>16)) "$1" 16
 		echo "$cluster $((($(stat -c %s "$2/$file")+2047)/2048)) $file"
 	done
 
@@ -460,10 +460,10 @@ END {
       printf "0  %02X %02X %02X %02X |\n",c[i+1]%256,(c[i+1]/256)%256,(c[i+1]/65536)%256,(c[i+1]/16777216)%256
     }
   }
-}' | hexdump_R | dd of="$1" seek=$((4*$efiblock+$fatsz+$resv)) \
+}' | hexdump_R | dd of="$1" seek=$((4*efiblock+fatsz+resv)) \
 		conv=notrunc bs=512 > /dev/null 2>&1
-	dd if="$1" of="$1" conv=notrunc bs=512 skip=$((4*$efiblock+$fatsz+$resv)) \
-		count=$fatsz seek=$((4*$efiblock+$resv)) > /dev/null 2>&1
+	dd if="$1" of="$1" conv=notrunc bs=512 skip=$((4*efiblock+fatsz+resv)) \
+		count=$fatsz seek=$((4*efiblock+resv)) > /dev/null 2>&1
 
 	# Cleanup cache
 	umount $2
@@ -520,38 +520,38 @@ EOT
 				n+=int((d[i]+63)/64)
 			print n
 		}')
-	local clusters=$(($fclust+$dclust))
+	local clusters=$((fclust+dclust))
 	if [ $clusters -lt 4068 ]; then
-		fsect=$(((($clusters+2)*3+1023)/1024))
+		fsect=$((((clusters+2)*3+1023)/1024))
 		ftype="31 32"
 		fhead="F8 FF FF"
-		rsect=$(( 1+ ((2*$fsect)-1)%4 ))
+		rsect=$(( 1+ ((2*fsect)-1)%4 ))
 		fsz="$(printf "%04X" $fsect | sed 's/\(..\)\(..\)/\2 \1/')"
 		rootsz=2
 	elif [ $clusters -lt 65525 ]; then
-		fsect=$((($clusters+2+255)/256))
+		fsect=$(((clusters+2+255)/256))
 		ftype="31 36"
 		fhead="F8 FF FF FF"
-		rsect=$(( 1+ ((2*$fsect)-1)%4 ))
+		rsect=$(( 1+ ((2*fsect)-1)%4 ))
 		fsz="$(printf "%04X" $fsect | sed 's/\(..\)\(..\)/\2 \1/')"
 		rootsz=2
 	else
-		fsect=$((($clusters+2+127)/128))
+		fsect=$(((clusters+2+127)/128))
 		ftype="33 32"
 		fhead="F8 FF FF 0F FF FF FF FF F8 FF FF 0F"
-		rsect=$(( 6+ ((2*$fsect)-6)%4 ))
+		rsect=$(( 6+ ((2*fsect)-6)%4 ))
 		fsz="$(printf "%08X" $fsect | sed 's/\(..\)\(..\)\(..\)\(..\)/\4 \3 \2 \1/')"
 		rootsz=1
 	fi
 	#       reserved +   fat*2   + root dir  +   dirs
-	count=$((($rsect + $fsect*2)/4 +  $rootsz  + $dclust ))
-	s=$((($count+$fclust)*4))
+	count=$(((rsect + fsect*2)/4 +  rootsz  + dclust ))
+	s=$(((count+fclust)*4))
 	if [ $s -gt 65535 ]; then
 		size="00 00"
-		size32="$(printf "%02X %02X %02X %02X" $(($s%256)) \
-			$((($s>>8)%256)) $((($s>>16)%256)) $((($s>>24)%256)) )"
+		size32="$(printf "%02X %02X %02X %02X" $((s%256)) \
+			$(((s>>8)%256)) $(((s>>16)%256)) $(((s>>24)%256)) )"
 	else
-		size="$(printf "%02X %02X" $(($s%256)) $((($s>>8)%256)) )"
+		size="$(printf "%02X %02X" $((s%256)) $(((s>>8)%256)) )"
 		size32="00 00 00 00"
 	fi
 	dd if=/dev/zero bs=512 of=$basedir/$efi_img \
@@ -592,14 +592,14 @@ EOT
 
 	# Create fats
 	echo "0  $fhead |" | hexdump_R | dd of=$basedir/$efi_img \
-		seek=$(($rsect)) bs=512 conv=notrunc 2> /dev/null
+		seek=$((rsect)) bs=512 conv=notrunc 2> /dev/null
 	echo "0  $fhead |" | hexdump_R | dd of=$basedir/$efi_img \
-		seek=$(($rsect+$fsect)) bs=512 conv=notrunc 2> /dev/null
+		seek=$((rsect+fsect)) bs=512 conv=notrunc 2> /dev/null
 
 	# Add label
 	echo "0  $doslabel 08 |" | hexdump_R | \
 		dd of=$basedir/$efi_img bs=512 conv=notrunc \
-		seek=$(($rsect+$fsect+$fsect)) 2> /dev/null
+		seek=$((rsect+fsect+fsect)) 2> /dev/null
 
 	mkdir -p /tmp/mnt$$
 	mount -o loop $basedir/$efi_img /tmp/mnt$$
@@ -755,8 +755,8 @@ lzma_history_bits() {
 #	n=20	# 1Mb
 #	sz=$(du -sk $1 | cut -f1)
 #	while [ $sz -gt 1024 -a $n -lt 28 ]; do
-#		n=$(( $n + 1 ))
-#		sz=$(( $sz / 2 ))
+#		n=$(( n + 1 ))
+#		sz=$(( sz / 2 ))
 #	done
 #	echo $n
 	echo ${LZMA_HISTORY_BITS:-24}
@@ -776,8 +776,8 @@ lzma_set_size() {
 	local n i
 	n=$(unlzma < $1 | wc -c)
 	for i in $(seq 1 8); do
-		printf '\\\\x%02X' $(($n & 255))
-		n=$(($n >> 8))
+		printf '\\\\x%02X' $((n & 255))
+		n=$((n >> 8))
 	done | xargs echo -en | dd of=$1 conv=notrunc bs=1 seek=5 2>/dev/null
 }
 
@@ -785,7 +785,7 @@ lzma_set_size() {
 align_to_32bits() {
 	local size=$(stat -c %s ${1:-/dev/null})
 	[ $((${size:-0} & 3)) -ne 0 ] &&
-		dd if=/dev/zero bs=1 count=$((4 - ($size & 3))) >> $1 2>/dev/null
+		dd if=/dev/zero bs=1 count=$((4 - (size & 3))) >> $1 2>/dev/null
 }
 
 
@@ -871,8 +871,8 @@ deduplicate() {
 					if ln "$old_file" "$file" 2>/dev/null; then
 						hinode="$inode"
 						inode="$old_inode"
-						[ "$link" -eq 1 ] && hardlinks=$(($hardlinks+1)) &&
-							save="$(($save+(${attr%%-*}+512)/1024))"
+						[ "$link" -eq 1 ] && hardlinks=$((hardlinks+1)) &&
+							save="$((save+(${attr%%-*}+512)/1024))"
 						continue
 					else
 						cp -p "$old_file" "$file"
@@ -897,7 +897,7 @@ deduplicate() {
 					if [ "$inode" != "$old_inode" ]; then
 						rm -f "$file"
 						if ln "$old_file" "$file" 2>/dev/null; then
-							[ "$link" -eq 1 ] && hardlinks=$(($hardlinks+1))
+							[ "$link" -eq 1 ] && hardlinks=$((hardlinks+1))
 						else
 							cp -a "$old_file" "$file"
 						fi
@@ -947,9 +947,9 @@ gen_initramfs() {
 
 distro_sizes() {
 	if [ -n "$start_time" ]; then
-		time=$(($(date +%s) - $start_time))
+		time=$(($(date +%s) - start_time))
 		sec=$time
-		div=$(( ($time + 30) / 60))
+		div=$(( (time + 30) / 60))
 		[ "$div" -ne 0 ] && min="~ ${div}m"
 		_ 'Build time      : %ss %s' "$sec" "$min"
 	fi
@@ -1473,7 +1473,7 @@ getarg() {
 copy_rootfs() {
 	total=\$(grep MemTotal /proc/meminfo | sed 's/[^0-9]//g')
 	need=\$(du -c \${path}rootfs* | tail -n 1 | cut -f1)
-	[ \$(( \$total / \$need )) -gt 1 ] || return 1
+	[ \$(( total / need )) -gt 1 ] || return 1
 	if ! grep -q " keep-loram" /proc/cmdline && cp \${path}rootfs* /mnt; then
 		path=/mnt/
 		return 0
@@ -1561,7 +1561,7 @@ for i in \${path}boot/rootfs?.* ; do
 	mkdir -p /mnt/.rw/mnt/.\$fs /mnt/.\$fs /mnt/.rw/mnt/.cdrom
 	losetup -o 124 /dev/loop\$lp \$i
 	mount -o loop,ro -t squashfs /dev/loop\$lp /mnt/.\$fs
-	lp=\$((\$lp+1))
+	lp=\$((lp+1))
 done
 fi
 mkdir -p /mnt/.rw/mnt/.httpfs
@@ -1707,7 +1707,7 @@ update_metaiso_sizes() {
 			esac
 			sizes=${sizes#* }
 			for i in $sizes ; do
-				s=$(( $s - $i ))
+				s=$(( s - i ))
 			done
 			new="$new $s $2"
 			shift 2
@@ -1863,7 +1863,7 @@ setup_mirrors() {
 
 	# Repacked packages: high priority
 	repacked="$PACKAGES_REPOSITORY"
-	if [ -d "$repacked" ] && [ "$repacked" != "$fresh" ] && ls "$repacked" | grep -q ".tazpkg"; then
+	if [ -d "$repacked" ] && [ "$repacked" != "$fresh" ] && ls "$repacked" | grep -q '\.tazpkg'; then
 		# According to Tazlito setup file (tazlito.conf):
 		# WORK_DIR="/home/slitaz/$SLITAZ_VERSION"
 		# or
@@ -2618,7 +2618,7 @@ EOT
 
 
 	iso2flavor)
-		[ -z "$3" -o ! -s "$2" ] && die 'Usage: tazlito iso2flavor <image.iso> <flavor_name>' \
+		[ -z "$3" -o ! -e "$2" ] && die 'Usage: tazlito iso2flavor <image.iso> <flavor_name>' \
 			'\n\nCreate a file <flavor_name>.flavor from the CD-ROM image file <image.iso>'
 
 		FLAVOR=${3%.flavor}
@@ -2891,7 +2891,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 			n=0
 			last=$ROOTFS
 			while read flavor; do
-				n=$(($n+1))
+				n=$((n+1))
 				mkdir ${ROOTFS}0$n
 				export root="${ROOTFS}0$n"
 				# initial tazpkg setup in empty rootfs
@@ -2922,7 +2922,7 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 				install_list_to_rootfs "$DISTRO/list-packages0$n" "${ROOTFS}0$n"
 
 				action 'Updating the boot directory...'
-				cp -an ${ROOTFS}0$n/boot $ROOTCD 2> /dev/null
+				yes n | cp -ai ${ROOTFS}0$n/boot $ROOTCD 2> /dev/null
 				rm -rf ${ROOTFS}0$n/boot
 
 				cd $DISTRO
@@ -2942,13 +2942,13 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 $(awk '{ for (i = 4; i <= NF; i+=2) print $i; }' < /etc/tazlito/rootfs.list)
 EOT
 #'
-			i=$(($n+1))
+			i=$((n+1))
 			while [ $n -gt 0 ]; do
 				mv ${ROOTFS}0$n ${ROOTFS}$i
 				_ 'Compressing %s (%s)...' "${ROOTFS}0$n" "$(du -hs ${ROOTFS}$i | awk '{ print $1 }')"
 				gen_initramfs ${ROOTFS}$i
-				n=$(($n-1))
-				i=$(($i-1))
+				n=$((n-1))
+				i=$((i-1))
 				export LZMA_HISTORY_BITS=26
 			done
 			mv $ROOTFS ${ROOTFS}$i
@@ -3276,7 +3276,7 @@ EOT
 		while [ -n "$2" ]; do
 			shift	# skip rootfs N-1
 			p=$n
-			n=$(($n + 1))
+			n=$((n + 1))
 			append="$append $1 slitaz$n"
 			shift	# skip size N
 			mkdir -p $TMP_DIR/rootfs$n

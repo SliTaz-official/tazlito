@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=Create a LiveCD
+Exec=tazbox su "tazlito-wiz"
+Icon=slitaz-icon
+Categories=GTK;System;FileTools;
 Name[fr]=Créer un LiveCD
 Name[pt]=Criação de LiveCD
 Name[pt_BR]=Criação de LiveCD
 Name[ru]=Создать Live CD
-Exec=tazbox su "tazlito-wiz"
-Icon=slitaz-icon
-Categories=GTK;System;FileTools;
