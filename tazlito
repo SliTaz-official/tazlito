@@ -498,7 +498,7 @@ alloc_uefi_part() {
 		return
 	fi
 	local fclust=$({
-	[ -d $basedir/efi ] && find $basedir/EFI -type f -exec \
+	[ -d $basedir/EFI ] && find $basedir/EFI -type f -exec \
 		busybox stat -c "%s %n" {} \; | grep -v $efi_img
 	while [ -s "$1" ]; do
 		local efifile
