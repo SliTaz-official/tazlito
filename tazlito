@@ -34,7 +34,7 @@ INSTALLED="$LOCALSTATE/installed"
 CACHE_DIR='/var/cache/tazpkg'
 MIRROR="$LOCALSTATE/mirror"
 DEFAULT_MIRROR="http://mirror1.slitaz.org/packages/$(cat /etc/slitaz-release)/"
-efi_img="efi/esp.img"
+efi_img="EFI/esp.img"
 
 log='/var/log/tazlito.log'
 if [ $(id -u) -eq 0 ]; then
@@ -278,10 +278,10 @@ first_block() {
 # Force size and location in the 2nd eltorito boot file (/$efi_img)
 
 fix_efi_boot_img_size() {
-	local n=$3
+	local n=$(($3/4))
 	# Sector count on 16 bits (max 128MB), see offset 6-7 in page 11 of
 	# https://pdos.csail.mit.edu/6.828/2014/readings/boot-cdrom.pdf
-	[ $n -gt 65535 ] && n=65535 && echo "Warning: truncate EFI eltorito boot file"
+	[ $n -gt 65535 ] && echo "Warning: truncate EFI eltorito boot file $n" && n=65535
 	set32 $((0x66+2048*$(first_block $2/boot/isolinux/boot.cat))) $n $1 16
 	set32 $((0x1C+2048*$4)) $(($4*4)) $1
 }
@@ -333,6 +333,16 @@ fixup_uefi_part() {
 		basecluster=$(((resv+2*fatsz)/4+efiblock-1))
 	fi 2> /dev/null
 	hd "$2/$efi_img" | awk 'BEGIN { skiphead='$skiphead' }
+function setname() {
+  if (name!="") return
+  name=substr($0,62,8)
+  i=index(name," ")
+  if (i>0) name=substr($0,62,i-1)
+  i=index(substr($0,70,3)," ")
+  if (i==0) i=3
+  if (i>1) name=name "." substr($0,70,i)
+  name=tolower(name)
+}
 {
   if (skiphead!=0) {
     if ($1=="*") skiphead--
@@ -380,16 +390,20 @@ fixup_uefi_part() {
     next
   }
   if ($13=="10") {
+    setname()
     name=name "/"
     gotname=2
     next
   }
   if ($13=="20") {
+    setname()
     gotname=1
     next
   }
+  if ($13!="08" && $13!="00" && $13!="") exit
 }
 ' | (	while read offset cluster file; do
+		file="${file/efi/EFI}"
 		cluster=$(($(first_block "$2/$file")-basecluster))
 		set32 $((efiblock*2048+0x$offset+10)) $cluster "$1" 16
 		set32 $((efiblock*2048+0x$offset+4)) $((cluster>>16)) "$1" 16
@@ -453,7 +467,11 @@ END {
   for (i=1;i<=pos;i+=2) {
     if (c[i]=="") c[i]=0
     if (c[i+1]=="") c[i+1]=0
-    if (fat==12) printf "0  %02X %1X%1X %02X |\n",c[i]%256,c[i+1]%16,(c[i]/256)%16,(c[i+1]/16)%256
+    if (fat==12) {
+      printf "0  %02X %1X%1X ",c[i]%256,c[i+1]%16,(c[i]/256)%16
+      if (i<pos) printf "%02X ",(c[i+1]/16)%256
+      print "|"
+    }
     else if (fat==16) printf "0  %02X %02X %02X %02X |\n",c[i]%256,(c[i]/256)%256,c[i+1]%256,(c[i+1]/256)%256
     else {
       printf "0  %02X %02X %02X %02X |\n",c[i]%256,(c[i]/256)%256,(c[i]/65536)%256,(c[i]/16777216)%256
@@ -480,34 +498,36 @@ alloc_uefi_part() {
 		return
 	fi
 	local fclust=$({
-	[ -d $basedir/efi ] &&
-		find $basedir/efi -type f -exec busybox stat -c "%s %n" {} \;
+	[ -d $basedir/efi ] && find $basedir/EFI -type f -exec \
+		busybox stat -c "%s %n" {} \; | grep -v $efi_img
 	while [ -s "$1" ]; do
 		local efifile
 		case "$1" in
 		*taz)	efifile=bootia32.efi ;;
 		*taz64) efifile=bootx64.efi ;;
 		esac
-		if [ ! -s $basedir/efi/boot/$efifile ] &&
+		if [ ! -s $basedir/EFI/boot/$efifile ] &&
 		   [ $(get $((0x82)) "$1") = $((0x4550)) ]; then
-			mkdir -p $basedir/efi/boot 2> /dev/null
-			ln "$1" "$basedir/efi/boot/$efifile"
+			mkdir -p $basedir/EFI/boot 2> /dev/null
+			ln "$1" "$basedir/EFI/boot/$efifile"
 			stat -c "%s %n" "$1"
 			for i in $basedir/boot/rootfs* ; do
-				ln "$i" $basedir/efi/boot/ &&
+				ln "$i" $basedir/EFI/boot/ &&
 				stat -c "%s %n" "$i"
 			done 2> /dev/null
-			[ -s $basedir/efi/boot/linux.cmdline ] ||
-			sed 's|/|\\|g' > $basedir/efi/boot/linux.cmdline <<EOT
+			if [ ! -s $basedir/EFI/boot/linux.cmdline ]; then
+				sed 's|/|\\|g' > $basedir/EFI/boot/linux.cmdline <<EOT
 rw root=0x100$(sed '/bzImage/!d;s|.*root=[^ ]*||;q' $basedir/boot/isolinux/isolinux.cfg)\
-$( ( cd $basedir/efi/boot ; ls -r rootfs*gz ) | while read f ; do \
-echo -n " initrd=/EFI/BOOT/$f";done)
+$( ( cd $basedir/EFI/boot ; ls -r rootfs*gz ) | while read f ; do \
+echo -n " initrd=/EFI/boot/$f";done)
 EOT
+				stat -c "%s %n" $basedir/EFI/boot/linux.cmdline
+			fi
 		fi
 		shift
-	done; } | sort | uniq | awk '{ n+=int(($1+2047)/2048) } END { print n+1 }')
+	done; } | sort | uniq | awk '{ n+=int(($1+2047)/2048) } END { print n }')
 	[ ${fclust:-0} -eq 0 ] && return
-	local dclust=$( (cd $basedir; find efi -type d 2>/dev/null) | awk '
+	local dclust=$( (cd $basedir; find EFI -type d 2>/dev/null) | awk '
 		BEGIN {
 			FS="/"
 		}
@@ -602,13 +622,13 @@ EOT
 		seek=$((rsect+fsect+fsect)) 2> /dev/null
 
 	mkdir -p /tmp/mnt$$
-	mount -o loop $basedir/$efi_img /tmp/mnt$$
-	( cd $basedir; find efi -type d | cpio -o -H newc ) | \
+	mount -o loop -t vfat $basedir/$efi_img /tmp/mnt$$
+	( cd $basedir; find EFI -type d | cpio -o -H newc ) | \
 		( cd /tmp/mnt$$ ; cpio -idmu 2> /dev/null )
 	sync
 	dd if=$basedir/$efi_img of=/tmp/fat$$ \
 		skip=$rsect bs=512 count=$fsect 2> /dev/null
-	( cd $basedir; find efi/boot -type f | cpio -o -H newc ) | \
+	( cd $basedir; find EFI -type f | grep -v $efi_img | cpio -o -H newc ) | \
 		( cd /tmp/mnt$$ ; cpio -idmu 2> /dev/null )
 	umount /tmp/mnt$$
 	cat /tmp/fat$$ /tmp/fat$$ | dd of=$basedir/$efi_img \
@@ -657,8 +677,10 @@ $PWD/boot/isolinux/i18n.cfg
 $PWD/boot/isolinux/c32box.c32
 $PWD/boot/isolinux/kbd
 $PWD/$efi_img
+$(find $PWD/$efi_img $PWD/EFI/ -type f 2> /dev/null | grep -v $PWD/EFI/boot/bzImage | \
+grep -v $PWD/EFI/boot/rootfs | grep -v $PWD/EFI/boot/linux.cmdline)
 $PWD/boot/bzImage*
-$PWD/efi/boot/linux.cmdline*
+$PWD/EFI/boot/linux.cmdline*
 $(ls $PWD/boot/rootfs* | tac)
 EOT
 
@@ -1300,23 +1322,23 @@ check_iso_for_loram() {
 }
 
 
-# Remove duplicated files in $1/efi/boot from $1/boot
+# Remove duplicated files in $1/EFI/boot from $1/boot
 
 cleanup_efi_boot() {
 	for i in $1/$efi_img $1/boot/isolinux/efi.img ; do
 		[ -s $i ] && [ ! -x $i ] && rm -f $i
 	done
-	for i in $1/efi/boot/* ; do
+	for i in $1/EFI/boot/* ; do
 		[ -f $i ] || continue
 		case "$i" in
-		*/rootfs*)	cmp $i ${i/\/efi\//\/} || continue ;;
+		*/rootfs*)	cmp $i ${i/\/EFI\//\/} || continue ;;
 		*/bootia32.efi)	cmp $i $1/boot/bzImage || continue
-				rm $1/efi/boot/linux.cmdline ;;
+				rm $1/EFI/boot/linux.cmdline ;;
 		*/bootx64.efi)	cmp $i $1/boot/bzImage64 || continue
-				rm $1/efi/boot/linux.cmdline* ;;
+				rm $1/EFI/boot/linux.cmdline* ;;
 		esac
 		rm -f $i
-		rmdir $1/efi/boot && rmdir $1/efi
+		rmdir $1/EFI/boot && rmdir $1/EFI
 	done 2> /dev/null
 }
 
@@ -2652,7 +2674,7 @@ EOT
 				INITRAMFS_SIZE=$(du -chs $TMP_DIR/rootcd/boot/rootfs*.gz | awk 'END { print $1 }')
 				rm -f $TMP_DIR/rootcd/boot/rootfs.gz $TMP_DIR/rootcd/md5sum
 				mv $TMP_DIR/rootcd/boot $TMP_DIR/rootfs
-				[ -d $TMP_DIR/rootcd/efi ] && mv $TMP_DIR/rootcd/efi $TMP_DIR/rootfs
+				[ -d $TMP_DIR/rootcd/EFI ] && mv $TMP_DIR/rootcd/EFI $TMP_DIR/rootfs
 				sed 's/.*  \(.*\).tazpkg*/\1/' > $TMP_DIR/$FLAVOR.pkglist \
 					< $TMP_DIR/rootfs$INSTALLED.md5
 				PKGCNT=$(grep -cv ^# $TMP_DIR/$FLAVOR.pkglist)
@@ -2668,7 +2690,7 @@ EOT
 				else
 					find_flavor_rootfs $TMP_DIR/rootfs
 					[ -d $TMP_DIR/rootfs/boot ] && mv $TMP_DIR/rootfs/boot $TMP_DIR/rootcd
-					[ -d $TMP_DIR/rootfs/efi ] && mv $TMP_DIR/rootfs/efi $TMP_DIR/rootcd
+					[ -d $TMP_DIR/rootfs/EFI ] && mv $TMP_DIR/rootfs/EFI $TMP_DIR/rootcd
 					for i in rootfs rootcd ; do
 						[ "$(ls $TMP_DIR/$i)" ] &&
 						( cd "$TMP_DIR/$i"; find * | cpio -o -H newc ) | dogzip "$TMP_DIR/$FLAVOR.$i"
@@ -2836,10 +2858,10 @@ repack the flavor (tazlito pack-flavor $FLAVOR)"
 		status
 
 		# Move the boot dir with the Linux kernel from rootfs.
-		# The efi & boot dirs go directly on the CD.
-		if [ -d "$ROOTFS/efi" ] ; then
-			action 'Moving the efi directory...'
-			mv $ROOTFS/efi $ROOTCD
+		# The EFI & boot dirs go directly on the CD.
+		if [ -d "$ROOTFS/EFI" ] ; then
+			action 'Moving the EFI directory...'
+			mv $ROOTFS/EFI $ROOTCD
 			status
 		fi
 		if [ -d "$ROOTFS/boot" ] ; then
